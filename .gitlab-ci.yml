@@ -1,0 +1,40 @@
+stages:
+  - test
+  - release
+
+lint:
+  stage: test
+  only: ['main']
+  image: registry.gitlab.com/etke.cc/base
+  script:
+    - make lint
+
+unit:
+  stage: test
+  only: ['main']
+  image: registry.gitlab.com/etke.cc/base
+  script:
+    - make test
+
+docker:
+  stage: release
+  only: ['main', 'tags']
+  services:
+    - docker:dind
+  image: docker:stable
+  before_script:
+    - apk --no-cache add make
+  script:
+    - make login docker publish
+  tags:
+    - docker
+
+
+release:
+  stage: release
+  only: ['tags']
+  image:
+    name: goreleaser/goreleaser
+    entrypoint: ['']
+  script:
+    - goreleaser release --rm-dist

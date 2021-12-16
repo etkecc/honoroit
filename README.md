@@ -4,25 +4,50 @@
 
 A helpdesk bot, used as part of [etke.cc](https://etke.cc) service.
 
+The main idea of that bot is to give you the same abilities as with website chats (like Intercom, jivosite, etc) inside the matrix.
+
 ## Features
 
-* TBD
+* Get a message from any matrix user proxied to a specific room. Any message that user will send in his 1:1 room with Honoroit will be proxied as thread messages
+* Chat with that user through the honoroit bot in a thread inside your special room. Any member of that special room can participate in discussion
+* When request fulfilled - send a `@honoroit done` (with mention) in that thread - thread topic will be renamed and "proxied user" will know that request was closed (bot will leave user's room with special notice)
+
+## How it looks like
+
+<details>
+<summary>Screenshots</summary>
+
+### Step 1: a matrix user (customer) sends a message to Honoroit bot in direct 1:1 chat
+
+![step 1][contrib/screenshots/1.customer sends a message.png]
+
+### Step 2: a new thread created in the backoffice room
+
+![step 2][contrib/screenshots/2.a new thread created in the backoffice room.png]
+
+### Step 3: operator(-s) chat with customer in that thread
+
+![step 3][contrib/screenshots/3.operator(-s) chat with customer in that thread.png]
+
+### Step 4: customer sees that like a direct 1:1 chat with honoroit user
+
+![step 4][contrib/screenshots/4.customer sees that like a direct 1:1 chat with honoroit user.png]
+
+### Step 5: operator closes the request
+
+![step 5][contrib/screenshots/5.operator closes the request.png]
+
+### Step 6: customer receives special message and bot leaves the room
+
+![step 6][contrib/screenshots/6.customer receives special message and bot leaves the room.png]
+
+</details>
 
 ## TODO
 
-* process files
-* process images
 * Email<->Matrix helpdesk
 * End-to-End Encryption
 * autoleave empty rooms and notify about that (requires persistent store)
-
-## How it works
-
-1. You configure Honoroit and start it
-2. Any matrix user starts a chat with honoroit bot and and sends it a message
-3. Honoroit with copy that message (any any following messages) to the predefined room, where will start a thread with name `Request by <MXID>`, posting all original messages in that thread.
-4. You can answer in the same thread and honoroit will copy your messages from that thread to the user's 1:1 with honoroit
-5. When request fulfilled, send `@honoroit:your.server done` - bot will send a message to the user's 1:1 chat that ticket has been closed and will leave that chat. You can safely remove the thread after that.
 
 
 ## Configuration

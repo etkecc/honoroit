@@ -8,12 +8,16 @@ import (
 )
 
 func (b *Bot) parseCommand(message string) string {
-	// ignore messages not prefixed with bot userID
-	if !strings.HasPrefix(message, b.userID.String()) {
+	// in some cases, localpart or MXID may be sent, so let's handle both
+	userID := b.userID.String()
+	localpart, _, _ := b.userID.Parse()
+	// ignore messages not prefixed with bot mention
+	if !strings.HasPrefix(message, userID) && !strings.HasPrefix(message, localpart) {
 		return ""
 	}
 
-	message = strings.Replace(message, b.userID.String(), "", 1)
+	message = strings.Replace(message, userID, "", 1)
+	message = strings.Replace(message, localpart, "", 1)
 	message = strings.Replace(message, ":", "", 1)
 	b.log.Debug("received a command: %s", message)
 	return strings.TrimSpace(message)

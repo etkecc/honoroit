@@ -27,7 +27,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ### Step 3: operator(-s) chat with customer in that thread
 
-![step 3](contrib/screenshots/3.operator(-s) chat with customer in that thread.png)
+![step 3](contrib/screenshots/3.operators chat with customer in that thread.png)
 
 ### Step 4: customer sees that like a direct 1:1 chat with honoroit user
 

@@ -2,16 +2,17 @@ package matrix
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/sethvargo/go-retry"
 	"maunium.net/go/mautrix"
 )
 
+const loginRetry = 15
+
 func (b *Bot) login(username string, password string) error {
-	return retry.Fibonacci(context.Background(), 1*time.Second, func(_ context.Context) error {
-		fmt.Println("logging in...")
+	return retry.Fibonacci(context.Background(), loginRetry*time.Second, func(_ context.Context) error {
+		b.log.Debug("auth using login and password...")
 		_, err := b.api.Login(&mautrix.ReqLogin{
 			Type: "m.login.password",
 			Identifier: mautrix.UserIdentifier{
@@ -22,7 +23,7 @@ func (b *Bot) login(username string, password string) error {
 			StoreCredentials: true,
 		})
 		if err != nil {
-			fmt.Println("login error:", err)
+			b.log.Error("cannot authorize using login and password: %v, retrying in %ds...", err, loginRetry)
 			return retry.RetryableError(err)
 		}
 		return nil

@@ -20,7 +20,7 @@ func (b *Bot) syncRoomsMap() {
 	ticker := time.NewTicker(30 * time.Second)
 	for range ticker.C {
 		if err := b.loadRoomsMap(); err != nil {
-			b.error(b.roomID, "sync rooms map error: "+err.Error())
+			b.error(b.roomID, "sync rooms map error: %v", err)
 		}
 	}
 }
@@ -28,6 +28,8 @@ func (b *Bot) syncRoomsMap() {
 func (b *Bot) loadRoomsMap() error {
 	b.admu.Lock()
 	defer b.admu.Unlock()
+
+	b.log.Debug("refreshing rooms<->events map from account data")
 	b.roomsMap = &accountDataRoomsMap{
 		Rooms:  make(map[id.RoomID]id.EventID),
 		Events: make(map[id.EventID]id.RoomID),
@@ -44,6 +46,7 @@ func (b *Bot) loadRoomsMap() error {
 func (b *Bot) getRoomsMap() (*accountDataRoomsMap, error) {
 	var err error
 	if b.roomsMap == nil || len(b.roomsMap.Rooms) == 0 {
+		b.log.Debug("no rooms<->events map in memory cache, requesting from account data")
 		err = b.loadRoomsMap()
 	}
 
@@ -51,6 +54,7 @@ func (b *Bot) getRoomsMap() (*accountDataRoomsMap, error) {
 }
 
 func (b *Bot) addRoomsMap(roomID id.RoomID, eventID id.EventID) error {
+	b.log.Debug("adding new rooms<->events map item: %s<->%s", roomID, eventID)
 	data, err := b.getRoomsMap()
 	if err != nil {
 		return err
@@ -67,12 +71,12 @@ func (b *Bot) addRoomsMap(roomID id.RoomID, eventID id.EventID) error {
 		return err
 	}
 
-	// force reload mapping to avoid cache
 	return nil
 }
 
 // findRoomID by eventID
 func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
+	b.log.Debug("trying to find room ID by eventID = %s", eventID)
 	rooms, err := b.getRoomsMap()
 	if err != nil {
 		return "", err
@@ -80,6 +84,7 @@ func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
 
 	roomID, ok := rooms.Events[eventID]
 	if !ok || roomID == "" {
+		b.log.Debug("room not found in existing rooms<->events map")
 		return "", errNotMapped
 	}
 
@@ -88,6 +93,7 @@ func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
 
 // findEventID by roomID
 func (b *Bot) findEventID(roomID id.RoomID) (id.EventID, error) {
+	b.log.Debug("trying to find event ID by roomID = %s", roomID)
 	rooms, err := b.getRoomsMap()
 	if err != nil {
 		return "", err
@@ -95,6 +101,7 @@ func (b *Bot) findEventID(roomID id.RoomID) (id.EventID, error) {
 
 	eventID, ok := rooms.Rooms[roomID]
 	if !ok || eventID == "" {
+		b.log.Debug("event not found in existing rooms<->events map")
 		return "", errNotMapped
 	}
 

@@ -6,12 +6,18 @@ import (
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
+
+	"gitlab.com/etke.cc/honoroit/logger"
 )
 
 const (
 	// ThreadRelation uses hardcoded value of element clients, should be replaced to m.thread after the MSC3440 release,
 	// ref: https://github.com/matrix-org/matrix-doc/pull/3440/files#diff-113727ce0257b4dc0ad6f1087b6402f2cfcb6ff93272757b947bf1ce444056aeR296
-	ThreadRelation       = "io.element.thread"
+	ThreadRelation = "io.element.thread"
+
+	// TypingTimeout in milliseconds, used to avoid stuck typing status
+	TypingTimeout = 5_000
+
 	accountDataPrefix    = "cc.etke.honoroit."
 	accountDataRooms     = accountDataPrefix + "rooms"
 	accountDataSyncToken = accountDataPrefix + "batch_token"
@@ -21,28 +27,47 @@ const (
 type Bot struct {
 	admu     sync.Mutex
 	api      *mautrix.Client
+	log      *logger.Logger
 	userID   id.UserID
 	roomID   id.RoomID
 	roomsMap *accountDataRoomsMap
 }
 
+// Config represents matrix config
+type Config struct {
+	// Homeserver url
+	Homeserver string
+	// Login is a localpart (honoroit - OK, @honoroit:example.com - wrong)
+	Login string
+	// Password for login/password auth only
+	Password string
+	// Token for access token auth only (not implemented yet)
+	Token string
+	// RoomID where threads will be created
+	RoomID string
+	// LogLevel for logger
+	LogLevel string
+}
+
 // NewBot creates a new matrix bot
-func NewBot(homeserver, username, password, roomID string) (*Bot, error) {
-	apiBot, err := mautrix.NewClient(homeserver, "", "")
+func NewBot(cfg *Config) (*Bot, error) {
+	logger := logger.New("matrix.", cfg.LogLevel)
+	apiBot, err := mautrix.NewClient(cfg.Homeserver, "", "")
 	if err != nil {
 		return nil, err
 	}
 
 	client := &Bot{
 		api: apiBot,
+		log: logger,
 	}
 
-	err = client.login(username, password)
+	err = client.login(cfg.Login, cfg.Password)
 	if err != nil {
 		return nil, err
 	}
 	client.userID = client.api.UserID
-	client.roomID = id.RoomID(roomID)
+	client.roomID = id.RoomID(cfg.RoomID)
 
 	return client, nil
 }
@@ -67,8 +92,8 @@ func (b *Bot) WithStore() error {
 	return nil
 }
 
-// Run performs matrix /sync
-func (b *Bot) Run() error {
+// Start performs matrix /sync
+func (b *Bot) Start() error {
 	// preload mappings
 	if err := b.loadRoomsMap(); err != nil {
 		return err
@@ -79,5 +104,27 @@ func (b *Bot) Run() error {
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventEncrypted, b.onEncryptedMessage)
 
 	go b.syncRoomsMap()
+
+	err := b.api.SetPresence(event.PresenceOnline)
+	if err != nil {
+		return err
+	}
+
+	b.log.Info("bot has been started")
 	return b.api.Sync()
+}
+
+func (b *Bot) Stop() {
+	b.log.Debug("stopping the bot")
+	err := b.api.SetPresence(event.PresenceOffline)
+	if err != nil {
+		b.log.Error("cannot set presence to offile: %v", err)
+	}
+
+	_, err = b.api.Logout()
+	if err != nil {
+		b.log.Error("cannot logout: %v", err)
+	}
+
+	b.log.Info("bot has been stopped")
 }

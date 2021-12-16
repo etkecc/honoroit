@@ -131,6 +131,7 @@ func (b *Bot) Start() error {
 	return b.api.Sync()
 }
 
+// Stop the bot
 func (b *Bot) Stop() {
 	b.log.Debug("stopping the bot")
 	err := b.api.SetPresence(event.PresenceOffline)

@@ -11,14 +11,14 @@ func (b *Bot) error(roomID id.RoomID, message string, args ...interface{}) {
 	b.log.Error(message, args...)
 	// nolint // if something goes wrong here nobody can help...
 	b.api.SendMessageEvent(roomID, event.EventMessage, &event.MessageEventContent{
-		MsgType: event.MsgText,
+		MsgType: event.MsgNotice,
 		Body:    "ERROR: " + message,
 	})
 }
 
 func (b *Bot) greetings(roomID id.RoomID, userID id.UserID) {
 	content := &event.MessageEventContent{
-		MsgType: "m.message",
+		MsgType: event.MsgNotice,
 		Body:    b.txt.Greetings,
 	}
 	if _, err := b.api.SendMessageEvent(roomID, event.EventMessage, content); err != nil {
@@ -34,22 +34,35 @@ func (b *Bot) typing(roomID id.RoomID, typing bool) {
 }
 
 func (b *Bot) handle(evt *event.Event) {
-	// message sent from control room
+	err := b.api.MarkRead(evt.RoomID, evt.ID)
+	if err != nil {
+		b.error(b.roomID, "cannot send mark event to the room %s: %v", evt.RoomID, err)
+	}
+
 	content := evt.Content.AsMessage()
 	if unsafe.Sizeof(content) == 0 {
-		b.error(evt.RoomID, "can't parse the message")
+		b.error(evt.RoomID, "cannot parse the message")
 		return
 	}
 
-	if evt.RoomID == b.roomID {
-		b.forwardToCustomer(evt, content)
+	// message sent by client
+	if evt.RoomID != b.roomID {
+		b.typing(evt.RoomID, true)
+		defer b.typing(evt.RoomID, false)
+
+		b.forwardToThread(evt, content)
 		return
 	}
 
-	b.typing(evt.RoomID, true)
-	defer b.typing(evt.RoomID, false)
+	// message sent from threads room
+	// special command
+	if command := b.parseCommand(content.Body); command != "" {
+		b.runCommand(command, evt)
+		return
+	}
 
-	b.forwardToThread(evt, content)
+	// not a command, but a message
+	b.forwardToCustomer(evt, content)
 }
 
 func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error) {
@@ -67,7 +80,7 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error
 	}
 
 	content := &event.MessageEventContent{
-		MsgType: "m.message",
+		MsgType: event.MsgText,
 		Body:    "Request by " + userID.String() + " in " + roomID.String(),
 	}
 

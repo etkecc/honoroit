@@ -10,9 +10,11 @@ A helpdesk bot, used as part of [etke.cc](https://etke.cc) service.
 
 ## TODO
 
-* autoleave empty rooms and notify about that
-* mark request as done
+* process files
+* process images
 * Email<->Matrix helpdesk
+* End-to-End Encryption
+* autoleave empty rooms and notify about that (requires persistent store)
 
 ## How it works
 

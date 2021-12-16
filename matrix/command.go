@@ -10,6 +10,7 @@ import (
 func (b *Bot) parseCommand(message string) string {
 	// in some cases, localpart or MXID may be sent, so let's handle both
 	userID := b.userID.String()
+	// nolint // we don't need to verify user id, just get the localpart
 	localpart, _, _ := b.userID.Parse()
 	// ignore messages not prefixed with bot mention
 	if !strings.HasPrefix(message, userID) && !strings.HasPrefix(message, localpart) {

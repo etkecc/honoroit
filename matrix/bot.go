@@ -25,9 +25,10 @@ const (
 
 // Bot represents matrix bot
 type Bot struct {
-	admu     sync.Mutex
-	api      *mautrix.Client
+	txt      *Text
 	log      *logger.Logger
+	api      *mautrix.Client
+	admu     sync.Mutex
 	userID   id.UserID
 	roomID   id.RoomID
 	roomsMap *accountDataRoomsMap
@@ -47,6 +48,21 @@ type Config struct {
 	RoomID string
 	// LogLevel for logger
 	LogLevel string
+
+	// Text messages
+	Text *Text
+}
+
+// Text messages
+type Text struct {
+	// Greetings message sent to customer on first contact
+	Greetings string
+	// Error message sent to customer if something goes wrong
+	Error string
+	// EmptyRoom message sent to backoffice/threads room when customer left his room
+	EmptyRoom string
+	// Done message sent to customer when request marked as done in the threads room
+	Done string
 }
 
 // NewBot creates a new matrix bot
@@ -60,6 +76,7 @@ func NewBot(cfg *Config) (*Bot, error) {
 	client := &Bot{
 		api: apiBot,
 		log: logger,
+		txt: cfg.Text,
 	}
 
 	err = client.login(cfg.Login, cfg.Password)

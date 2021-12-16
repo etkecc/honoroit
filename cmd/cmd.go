@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/logger"
 	"gitlab.com/etke.cc/honoroit/matrix"
 )
@@ -8,7 +9,8 @@ import (
 var version = "development"
 
 func main() {
-	log := logger.New("honoroit.", "DEBUG")
+	cfg := config.New()
+	log := logger.New("honoroit.", cfg.LogLevel)
 
 	log.Info("#############################")
 	log.Info("Honoroit " + version)
@@ -16,11 +18,13 @@ func main() {
 	log.Info("#############################")
 
 	botConfig := &matrix.Config{
-		Homeserver: "",
-		Login:      "",
-		Password:   "",
-		LogLevel:   "DEBUG",
-		RoomID:     "",
+		Homeserver: cfg.Homeserver,
+		Login:      cfg.Login,
+		Password:   cfg.Password,
+		Token:      cfg.Token,
+		LogLevel:   cfg.LogLevel,
+		RoomID:     cfg.RoomID,
+		Text:       (*matrix.Text)(&cfg.Text),
 	}
 	bot, err := matrix.NewBot(botConfig)
 	if err != nil {

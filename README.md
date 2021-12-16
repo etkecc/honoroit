@@ -8,6 +8,12 @@ A helpdesk bot, used as part of [etke.cc](https://etke.cc) service.
 
 * TBD
 
+## TODO
+
+* autoleave empty rooms and notify about that
+* mark request as done
+* Email<->Matrix helpdesk
+
 ## How it works
 
 1. You configure Honoroit and start it
@@ -19,7 +25,24 @@ A helpdesk bot, used as part of [etke.cc](https://etke.cc) service.
 
 ## Configuration
 
-* TBD
+env vars
+
+### mandatory
+
+* **HONOROIT_HOMESERVER** - homeserver url, eg: `https://matrix.example.com`
+* **HONOROIT_LOGIN** - user login/localpart, eg: `honoroit`
+* **HONOROIT_PASSWORD** - user password
+* **HONOROIT_ROOMID** - room ID where threads will be created, eg: `!test:example.com`
+
+### optional
+
+* **HONOROIT_LOGLEVEL** - log level
+* **HONOROIT_TEXT_GREETINGS** - a message sent to customer on first contact
+* **HONOROIT_TEXT_ERROR** - a message sent to customer if something goes wrong
+* **HONOROIT_TEXT_EMPTYROOM** - a message sent to backoffice/threads room when customer left his room
+* **HONOROIT_TEXT_DONE** - a message sent to customer when request marked as done in the threads room
+
+You can find default values in [config/defaults.go](config/defaults.go)
 
 ## Where to get
 

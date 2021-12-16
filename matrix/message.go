@@ -16,14 +16,10 @@ func (b *Bot) error(roomID id.RoomID, message string, args ...interface{}) {
 	})
 }
 
-func (b *Bot) errorCustomer(roomID id.RoomID) {
-	b.error(roomID, "something is wrong. I already notified developers, they're fixing the issue. Please, try again later or use other contact methods.")
-}
-
 func (b *Bot) greetings(roomID id.RoomID, userID id.UserID) {
 	content := &event.MessageEventContent{
 		MsgType: "m.message",
-		Body:    "Hello\nyour message was sent to developers. Please, keep calm and wait for answer, usually it takes 1-2 days.",
+		Body:    b.txt.Greetings,
 	}
 	if _, err := b.api.SendMessageEvent(roomID, event.EventMessage, content); err != nil {
 		b.error(b.roomID, "cannot send a greetings message to the user %s in the room %s: %v", userID, roomID, err)
@@ -61,7 +57,7 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error
 	eventID, err := b.findEventID(roomID)
 	if err != nil && err != errNotMapped {
 		b.error(b.roomID, "user %s tried to send a message from room %s, but account data operation returned a error: %v", userID, roomID, err)
-		b.errorCustomer(roomID)
+		b.error(roomID, b.txt.Error)
 		return "", err
 	}
 
@@ -118,7 +114,7 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 	b.log.Debug("forwaring a message from customer to the threads rooms")
 	eventID, err := b.startThread(evt.RoomID, evt.Sender)
 	if err != nil {
-		b.errorCustomer(evt.RoomID)
+		b.error(evt.RoomID, b.txt.Error)
 		return
 	}
 
@@ -130,6 +126,6 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 	_, err = b.api.SendMessageEvent(b.roomID, event.EventMessage, content)
 	if err != nil {
 		b.error(b.roomID, "user %s tried to send a message from room %s, but creation of a thread failed: %v", evt.Sender, evt.RoomID, err)
-		b.errorCustomer(evt.RoomID)
+		b.error(evt.RoomID, b.txt.Error)
 	}
 }

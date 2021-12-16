@@ -9,16 +9,16 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type LoggerSuite struct {
+type loggerSuite struct {
 	suite.Suite
 }
 
-func (s *LoggerSuite) SetupTest() {
+func (s *loggerSuite) SetupTest() {
 	s.T().Helper()
 }
 
 // catchStdout re-routes stdout to separate pipe before function and switches it back after that, returns text catched in separate pipe
-func (s *LoggerSuite) catchStdout(function func()) string {
+func (s *loggerSuite) catchStdout(function func()) string {
 	s.T().Helper()
 
 	osStdout := os.Stdout
@@ -35,20 +35,20 @@ func (s *LoggerSuite) catchStdout(function func()) string {
 	return string(out)
 }
 
-func (s *LoggerSuite) TestNew() {
+func (s *loggerSuite) TestNew() {
 	log := New("test", "example")
 
 	s.True(log.level == INFO)
 }
 
-func (s *LoggerSuite) TestGetLog() {
+func (s *loggerSuite) TestGetLog() {
 	logger := New("", "INFO")
 	stdLogger := log.New(os.Stdout, "", 0)
 
 	s.Equal(stdLogger, logger.GetLog())
 }
 
-func (s *LoggerSuite) TestError() {
+func (s *loggerSuite) TestError() {
 	expected := "ERROR Test\n"
 
 	actual := s.catchStdout(func() {
@@ -63,7 +63,7 @@ func (s *LoggerSuite) TestError() {
 	s.Equal(expected, actual)
 }
 
-func (s *LoggerSuite) TestWarn() {
+func (s *loggerSuite) TestWarn() {
 	expected := "ERROR Test\n"
 	expected += "WARNING Test\n"
 
@@ -79,7 +79,7 @@ func (s *LoggerSuite) TestWarn() {
 	s.Equal(expected, actual)
 }
 
-func (s *LoggerSuite) TestInfo() {
+func (s *loggerSuite) TestInfo() {
 	expected := "ERROR Test\n"
 	expected += "WARNING Test\n"
 	expected += "INFO Test\n"
@@ -96,7 +96,7 @@ func (s *LoggerSuite) TestInfo() {
 	s.Equal(expected, actual)
 }
 
-func (s *LoggerSuite) TestDebug() {
+func (s *loggerSuite) TestDebug() {
 	expected := "ERROR Test\n"
 	expected += "WARNING Test\n"
 	expected += "INFO Test\n"
@@ -114,7 +114,7 @@ func (s *LoggerSuite) TestDebug() {
 	s.Equal(expected, actual)
 }
 
-func (s *LoggerSuite) TestTrace() {
+func (s *loggerSuite) TestTrace() {
 	expected := "ERROR Test\n"
 	expected += "WARNING Test\n"
 	expected += "INFO Test\n"
@@ -133,6 +133,6 @@ func (s *LoggerSuite) TestTrace() {
 	s.Equal(expected, actual)
 }
 
-func TestLoggerSuite(t *testing.T) {
-	suite.Run(t, new(LoggerSuite))
+func TestLogger(t *testing.T) {
+	suite.Run(t, new(loggerSuite))
 }

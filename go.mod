@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/stretchr/testify v1.7.0
-	maunium.net/go/mautrix v0.10.6
+	maunium.net/go/mautrix v0.10.7
 )
 
 require (

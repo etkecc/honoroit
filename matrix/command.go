@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"strings"
+	"time"
 
 	"maunium.net/go/mautrix/event"
 )
@@ -47,6 +48,11 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	if err != nil {
 		b.error(evt.RoomID, err.Error())
 		return
+	}
+	timestamp := time.Now().UTC().Format("2006/01/02 15:04:05 MST")
+	err = b.replace(relation.EventID, "[DONE] ", " ("+timestamp+")")
+	if err != nil {
+		b.error(b.roomID, "cannot replace thread %s topic: %v", relation.EventID, err)
 	}
 
 	b.log.Debug("leaving room %s", roomID)

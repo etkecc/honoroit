@@ -65,6 +65,39 @@ func (b *Bot) handle(evt *event.Event) {
 	b.forwardToCustomer(evt, content)
 }
 
+func (b *Bot) replace(eventID id.EventID, prefix string, suffix string) error {
+	evt, err := b.api.GetEvent(b.roomID, eventID)
+	if err != nil {
+		b.error(b.roomID, "cannot find event %s: %v", eventID, err)
+		return err
+	}
+
+	err = evt.Content.ParseRaw(event.EventMessage)
+	if err != nil {
+		b.error(b.roomID, "cannot parse thread topic event %s: %v", eventID, err)
+		return err
+	}
+	content := evt.Content.AsMessage()
+	body := prefix + content.Body + suffix
+	formattedBody := prefix + content.FormattedBody + suffix
+
+	content.Body = " * " + body
+	content.FormattedBody = " * " + formattedBody
+	content.NewContent = &event.MessageEventContent{
+		MsgType:       event.MsgText,
+		Body:          body,
+		FormattedBody: formattedBody,
+	}
+	content.RelatesTo = &event.RelatesTo{
+		EventID: eventID,
+		Type:    event.RelReplace,
+	}
+
+	b.log.Debug("replacing thread topic event")
+	_, err = b.api.SendMessageEvent(b.roomID, event.EventMessage, content)
+	return err
+}
+
 func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error) {
 	b.log.Debug("starting new thread for %s request from %s", userID, roomID)
 	eventID, err := b.findEventID(roomID)

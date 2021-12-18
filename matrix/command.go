@@ -18,10 +18,12 @@ func (b *Bot) parseCommand(message string) []string {
 		return command
 	}
 
+	b.log.Debug("received a command: %s", message)
 	message = strings.Replace(message, userID, "", 1)
-	message = strings.Replace(message, localpart, "", 1)
 	message = strings.Replace(message, b.name, "", 1)
-	message = strings.Replace(message, ":", "", 1)
+	message = strings.Replace(message, localpart, "", 1)
+	delimiter := strings.Index(message, ":")
+	message = message[:delimiter]
 	message = strings.TrimSpace(message)
 	b.log.Debug("parsed a command: %s", message)
 

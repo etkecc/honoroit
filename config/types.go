@@ -15,7 +15,11 @@ type Config struct {
 	// LogLevel for logger
 	LogLevel string
 
+	// Text messages
 	Text Text
+
+	// TTL for cache
+	TTL int64
 }
 
 // Text messages

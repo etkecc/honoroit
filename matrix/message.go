@@ -134,7 +134,7 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error
 		return "", err
 	}
 
-	err = b.addRoomsMap(roomID, resp.EventID)
+	err = b.addMapping(roomID, resp.EventID)
 	if err != nil && err != errNotMapped {
 		b.Error(b.roomID, "user %s tried to send a message from room %s, but account data operation failed: %v", userID, roomID, err)
 	}

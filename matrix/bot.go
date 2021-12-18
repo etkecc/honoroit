@@ -1,8 +1,6 @@
 package matrix
 
 import (
-	"sync"
-
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
@@ -25,13 +23,12 @@ const (
 
 // Bot represents matrix bot
 type Bot struct {
-	txt      *Text
-	log      *logger.Logger
-	api      *mautrix.Client
-	admu     sync.Mutex
-	userID   id.UserID
-	roomID   id.RoomID
-	roomsMap *accountDataRoomsMap
+	txt    *Text
+	log    *logger.Logger
+	api    *mautrix.Client
+	cache  Cache
+	userID id.UserID
+	roomID id.RoomID
 }
 
 // Config represents matrix config
@@ -51,6 +48,9 @@ type Config struct {
 
 	// Text messages
 	Text *Text
+
+	// Cache client
+	Cache Cache
 }
 
 // Text messages
@@ -65,6 +65,12 @@ type Text struct {
 	Done string
 }
 
+// Cache client interface
+type Cache interface {
+	Set(string, interface{})
+	Get(string) interface{}
+}
+
 // NewBot creates a new matrix bot
 func NewBot(cfg *Config) (*Bot, error) {
 	logger := logger.New("matrix.", cfg.LogLevel)
@@ -74,9 +80,10 @@ func NewBot(cfg *Config) (*Bot, error) {
 	}
 
 	client := &Bot{
-		api: apiBot,
-		log: logger,
-		txt: cfg.Text,
+		api:   apiBot,
+		log:   logger,
+		txt:   cfg.Text,
+		cache: cfg.Cache,
 	}
 
 	err = client.login(cfg.Login, cfg.Password)
@@ -111,16 +118,9 @@ func (b *Bot) WithStore() error {
 
 // Start performs matrix /sync
 func (b *Bot) Start() error {
-	// preload mappings
-	if err := b.loadRoomsMap(); err != nil {
-		return err
-	}
-
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateMember, b.onInvite)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventMessage, b.onMessage)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventEncrypted, b.onEncryptedMessage)
-
-	go b.syncRoomsMap()
 
 	err := b.api.SetPresence(event.PresenceOnline)
 	if err != nil {

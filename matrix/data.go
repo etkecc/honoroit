@@ -3,12 +3,13 @@ package matrix
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"maunium.net/go/mautrix/id"
 )
 
-type accountDataRoomsMap struct {
+const cacheMappings = "mappings"
+
+type accountDataMappings struct {
 	Rooms  map[id.RoomID]id.EventID `json:"rooms"`
 	Events map[id.EventID]id.RoomID `json:"events"`
 }
@@ -16,56 +17,40 @@ type accountDataRoomsMap struct {
 // errNotMapped returned if roomID or eventID doesn't exist in room<->event map (yet)
 var errNotMapped = errors.New("cannot find appropriate mapping")
 
-func (b *Bot) syncRoomsMap() {
-	ticker := time.NewTicker(30 * time.Second)
-	for range ticker.C {
-		if err := b.loadRoomsMap(); err != nil {
-			b.Error(b.roomID, "sync rooms map error: %v", err)
+func (b *Bot) getMappings() (*accountDataMappings, error) {
+	var mappings *accountDataMappings
+	b.log.Debug("trying to get mappings")
+
+	cached := b.cache.Get(cacheMappings)
+	if cached != nil {
+		var ok bool
+		mappings, ok = cached.(*accountDataMappings)
+		if ok {
+			b.log.Debug("got mappings from cache")
+			return mappings, nil
 		}
 	}
+
+	b.log.Debug("mappings not cached yet, trying to get them from account data")
+	err := b.api.GetAccountData(accountDataRooms, &mappings)
+	if err != nil && !strings.Contains(err.Error(), "M_NOT_FOUND") {
+		return nil, err
+	}
+	b.cache.Set(cacheMappings, mappings)
+	return mappings, err
 }
 
-func (b *Bot) loadRoomsMap() error {
-	b.admu.Lock()
-	defer b.admu.Unlock()
-
-	b.log.Debug("refreshing rooms<->events map from account data")
-	b.roomsMap = &accountDataRoomsMap{
-		Rooms:  make(map[id.RoomID]id.EventID),
-		Events: make(map[id.EventID]id.RoomID),
-	}
-
-	err := b.api.GetAccountData(accountDataRooms, &b.roomsMap)
-	if err != nil && strings.Contains(err.Error(), "M_NOT_FOUND") {
-		return nil
-	}
-
-	return err
-}
-
-func (b *Bot) getRoomsMap() (*accountDataRoomsMap, error) {
-	var err error
-	if b.roomsMap == nil || len(b.roomsMap.Rooms) == 0 {
-		b.log.Debug("no rooms<->events map in memory cache, requesting from account data")
-		err = b.loadRoomsMap()
-	}
-
-	return b.roomsMap, err
-}
-
-func (b *Bot) addRoomsMap(roomID id.RoomID, eventID id.EventID) error {
-	b.log.Debug("adding new rooms<->events map item: %s<->%s", roomID, eventID)
-	data, err := b.getRoomsMap()
+func (b *Bot) addMapping(roomID id.RoomID, eventID id.EventID) error {
+	b.log.Debug("adding new mapping: %s<->%s", roomID, eventID)
+	data, err := b.getMappings()
 	if err != nil {
 		return err
 	}
 
-	b.admu.Lock()
-	defer b.admu.Unlock()
-
 	data.Rooms[roomID] = eventID
 	data.Events[eventID] = roomID
 
+	b.cache.Set(cacheMappings, data)
 	err = b.api.SetAccountData(accountDataRooms, data)
 	if err != nil {
 		return err
@@ -77,14 +62,14 @@ func (b *Bot) addRoomsMap(roomID id.RoomID, eventID id.EventID) error {
 // findRoomID by eventID
 func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
 	b.log.Debug("trying to find room ID by eventID = %s", eventID)
-	rooms, err := b.getRoomsMap()
+	mappings, err := b.getMappings()
 	if err != nil {
 		return "", err
 	}
 
-	roomID, ok := rooms.Events[eventID]
+	roomID, ok := mappings.Events[eventID]
 	if !ok || roomID == "" {
-		b.log.Debug("room not found in existing rooms<->events map")
+		b.log.Debug("room not found in existing mappings")
 		return "", errNotMapped
 	}
 
@@ -94,14 +79,14 @@ func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
 // findEventID by roomID
 func (b *Bot) findEventID(roomID id.RoomID) (id.EventID, error) {
 	b.log.Debug("trying to find event ID by roomID = %s", roomID)
-	rooms, err := b.getRoomsMap()
+	mappings, err := b.getMappings()
 	if err != nil {
 		return "", err
 	}
 
-	eventID, ok := rooms.Rooms[roomID]
+	eventID, ok := mappings.Rooms[roomID]
 	if !ok || eventID == "" {
-		b.log.Debug("event not found in existing rooms<->events map")
+		b.log.Debug("event not found in existing mappings")
 		return "", errNotMapped
 	}
 

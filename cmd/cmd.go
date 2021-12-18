@@ -1,8 +1,11 @@
 package main
 
 import (
+	"time"
+
 	"maunium.net/go/mautrix/id"
 
+	"gitlab.com/etke.cc/honoroit/cache"
 	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/logger"
 	"gitlab.com/etke.cc/honoroit/matrix"
@@ -27,6 +30,7 @@ func main() {
 	log.Info("Matrix: true")
 	log.Info("#############################")
 
+	inmemoryCache := cache.New(time.Duration(cfg.TTL) * time.Minute)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
 		Login:      cfg.Login,
@@ -35,6 +39,7 @@ func main() {
 		LogLevel:   cfg.LogLevel,
 		RoomID:     cfg.RoomID,
 		Text:       (*matrix.Text)(&cfg.Text),
+		Cache:      inmemoryCache,
 	}
 	bot, err = matrix.NewBot(botConfig)
 	if err != nil {

@@ -18,7 +18,10 @@ type accountDataMappings struct {
 var errNotMapped = errors.New("cannot find appropriate mapping")
 
 func (b *Bot) getMappings() (*accountDataMappings, error) {
-	var mappings *accountDataMappings
+	mappings := &accountDataMappings{
+		Rooms:  make(map[id.RoomID]id.EventID),
+		Events: make(map[id.EventID]id.RoomID),
+	}
 	b.log.Debug("trying to get mappings")
 
 	cached := b.cache.Get(cacheMappings)
@@ -48,6 +51,13 @@ func (b *Bot) addMapping(roomID id.RoomID, eventID id.EventID) error {
 	data, err := b.getMappings()
 	if err != nil {
 		return err
+	}
+
+	if data == nil {
+		data = &accountDataMappings{
+			Rooms:  make(map[id.RoomID]id.EventID),
+			Events: make(map[id.EventID]id.RoomID),
+		}
 	}
 
 	data.Rooms[roomID] = eventID

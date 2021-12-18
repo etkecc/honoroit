@@ -58,7 +58,7 @@ func main() {
 	log.Debug("starting bot...")
 	if err = bot.Start(); err != nil {
 		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("cannot start the matrix bot: %v", err)
+		log.Fatal("matrix bot crashed: %v", err)
 	}
 }
 
@@ -74,6 +74,4 @@ func recovery(roomID string) {
 		bot.Error(id.RoomID(roomID), fatalmessage, err)
 		return
 	}
-
-	log.Error(fatalmessage, err)
 }

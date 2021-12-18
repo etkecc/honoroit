@@ -33,7 +33,10 @@ func (b *Bot) getMappings() (*accountDataMappings, error) {
 
 	b.log.Debug("mappings not cached yet, trying to get them from account data")
 	err := b.api.GetAccountData(accountDataRooms, &mappings)
-	if err != nil && !strings.Contains(err.Error(), "M_NOT_FOUND") {
+	if err != nil {
+		if strings.Contains(err.Error(), "M_NOT_FOUND") {
+			return nil, nil
+		}
 		return nil, err
 	}
 	b.cache.Set(cacheMappings, mappings)

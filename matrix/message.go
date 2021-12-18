@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"fmt"
 	"unsafe"
 
 	"maunium.net/go/mautrix/event"
@@ -16,7 +17,7 @@ func (b *Bot) Error(roomID id.RoomID, message string, args ...interface{}) {
 	// nolint // if something goes wrong here nobody can help...
 	b.api.SendMessageEvent(roomID, event.EventMessage, &event.MessageEventContent{
 		MsgType: event.MsgNotice,
-		Body:    "ERROR: " + message,
+		Body:    "ERROR: " + fmt.Sprintf(message, args...),
 	})
 }
 

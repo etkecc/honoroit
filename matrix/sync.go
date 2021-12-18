@@ -37,6 +37,6 @@ func (b *Bot) onEncryptedMessage(_ mautrix.EventSource, evt *event.Event) {
 		Body:    "Unfortunately, I don't work in encrypted rooms yet. Please, send me an unencrypted message",
 	})
 	if err != nil {
-		b.error(b.roomID, "cannot send a message to an encrypted room: %v", err)
+		b.Error(b.roomID, "cannot send a message to an encrypted room: %v", err)
 	}
 }

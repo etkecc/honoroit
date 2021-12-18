@@ -50,7 +50,7 @@ func (b *Bot) renameRequest(evt *event.Event) {
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
 	if relation == nil {
-		b.error(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I rename your request.")
+		b.Error(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I rename your request.")
 		return
 	}
 
@@ -67,7 +67,7 @@ func (b *Bot) renameRequest(evt *event.Event) {
 
 	err := b.replace(relation.EventID, "", "", command, commandFormatted)
 	if err != nil {
-		b.error(b.roomID, "cannot replace thread %s topic: %v", relation.EventID, err)
+		b.Error(b.roomID, "cannot replace thread %s topic: %v", relation.EventID, err)
 	}
 }
 
@@ -76,13 +76,13 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
 	if relation == nil {
-		b.error(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I close your request.")
+		b.Error(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I close your request.")
 		return
 	}
 
 	roomID, err := b.findRoomID(relation.EventID)
 	if err != nil {
-		b.error(evt.RoomID, err.Error())
+		b.Error(evt.RoomID, err.Error())
 		return
 	}
 
@@ -91,13 +91,13 @@ func (b *Bot) closeRequest(evt *event.Event) {
 		Body:    b.txt.Done,
 	})
 	if err != nil {
-		b.error(evt.RoomID, err.Error())
+		b.Error(evt.RoomID, err.Error())
 		return
 	}
 	timestamp := time.Now().UTC().Format("2006/01/02 15:04:05 MST")
 	err = b.replace(relation.EventID, "[DONE] ", " ("+timestamp+")", "", "")
 	if err != nil {
-		b.error(b.roomID, "cannot replace thread %s topic: %v", relation.EventID, err)
+		b.Error(b.roomID, "cannot replace thread %s topic: %v", relation.EventID, err)
 	}
 
 	b.log.Debug("leaving room %s", roomID)
@@ -105,7 +105,7 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	if err != nil {
 		// do not send a message when already left
 		if !strings.Contains(err.Error(), "M_FORBIDDEN") {
-			b.error(evt.RoomID, "cannot leave the room %s after marking request as done: %v", roomID, err)
+			b.Error(evt.RoomID, "cannot leave the room %s after marking request as done: %v", roomID, err)
 			return
 		}
 	}

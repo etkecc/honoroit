@@ -20,7 +20,7 @@ func (b *Bot) syncRoomsMap() {
 	ticker := time.NewTicker(30 * time.Second)
 	for range ticker.C {
 		if err := b.loadRoomsMap(); err != nil {
-			b.error(b.roomID, "sync rooms map error: %v", err)
+			b.Error(b.roomID, "sync rooms map error: %v", err)
 		}
 	}
 }

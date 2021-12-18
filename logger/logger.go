@@ -24,6 +24,8 @@ const (
 	WARNING
 	// ERROR level
 	ERROR
+	// FATAL level
+	FATAL
 )
 
 var levelMap = map[string]int{
@@ -32,6 +34,7 @@ var levelMap = map[string]int{
 	"INFO":    INFO,
 	"WARNING": WARNING,
 	"ERROR":   ERROR,
+	"FATAL":   FATAL,
 }
 
 // New creates new Logger object
@@ -45,17 +48,26 @@ func New(prefix string, level string) *Logger {
 }
 
 // GetLog returns underlying Logger object, useful in cases where log.Logger required
-func (l Logger) GetLog() *log.Logger {
+func (l *Logger) GetLog() *log.Logger {
 	return l.log
 }
 
+// Fatal log and exit
+func (l *Logger) Fatal(message string, args ...interface{}) {
+	l.log.Panicln("FATAL", fmt.Sprintf(message, args...))
+}
+
 // Error log
-func (l Logger) Error(message string, args ...interface{}) {
+func (l *Logger) Error(message string, args ...interface{}) {
+	if l.level > ERROR {
+		return
+	}
+
 	l.log.Println("ERROR", fmt.Sprintf(message, args...))
 }
 
 // Warn log
-func (l Logger) Warn(message string, args ...interface{}) {
+func (l *Logger) Warn(message string, args ...interface{}) {
 	if l.level > WARNING {
 		return
 	}
@@ -64,7 +76,7 @@ func (l Logger) Warn(message string, args ...interface{}) {
 }
 
 // Info log
-func (l Logger) Info(message string, args ...interface{}) {
+func (l *Logger) Info(message string, args ...interface{}) {
 	if l.level > INFO {
 		return
 	}
@@ -73,7 +85,7 @@ func (l Logger) Info(message string, args ...interface{}) {
 }
 
 // Debug log
-func (l Logger) Debug(message string, args ...interface{}) {
+func (l *Logger) Debug(message string, args ...interface{}) {
 	if l.level > DEBUG {
 		return
 	}
@@ -82,7 +94,7 @@ func (l Logger) Debug(message string, args ...interface{}) {
 }
 
 // Trace log
-func (l Logger) Trace(message string, args ...interface{}) {
+func (l *Logger) Trace(message string, args ...interface{}) {
 	if l.level > TRACE {
 		return
 	}

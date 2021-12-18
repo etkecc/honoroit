@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -48,11 +49,44 @@ func (s *loggerSuite) TestGetLog() {
 	s.Equal(stdLogger, logger.GetLog())
 }
 
+func (s *loggerSuite) TestFatal() {
+	defer func() {
+		if r := recover(); r == nil {
+			s.Error(errors.New("the code did not panic"))
+		}
+	}()
+
+	s.catchStdout(func() {
+		logger := New("", "ERROR")
+		logger.Error("Test")
+		logger.Warn("Test")
+		logger.Info("Test")
+		logger.Debug("Test")
+		logger.Trace("Test")
+		logger.Fatal("Test")
+	})
+}
+
 func (s *loggerSuite) TestError() {
 	expected := "ERROR Test\n"
 
 	actual := s.catchStdout(func() {
 		logger := New("", "ERROR")
+		logger.Error("Test")
+		logger.Warn("Test")
+		logger.Info("Test")
+		logger.Debug("Test")
+		logger.Trace("Test")
+	})
+
+	s.Equal(expected, actual)
+}
+
+func (s *loggerSuite) TestError_Level() {
+	expected := ""
+
+	actual := s.catchStdout(func() {
+		logger := New("", "FATAL")
 		logger.Error("Test")
 		logger.Warn("Test")
 		logger.Info("Test")

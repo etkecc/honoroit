@@ -56,7 +56,7 @@ func (b *Bot) handle(evt *event.Event) {
 
 	// message sent from threads room
 	// special command
-	if command := b.parseCommand(content.Body); command != "" {
+	if command := b.readCommand(content.Body); command != "" {
 		b.runCommand(command, evt)
 		return
 	}
@@ -65,7 +65,7 @@ func (b *Bot) handle(evt *event.Event) {
 	b.forwardToCustomer(evt, content)
 }
 
-func (b *Bot) replace(eventID id.EventID, prefix string, suffix string) error {
+func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body string, formattedBody string) error {
 	evt, err := b.api.GetEvent(b.roomID, eventID)
 	if err != nil {
 		b.error(b.roomID, "cannot find event %s: %v", eventID, err)
@@ -78,8 +78,15 @@ func (b *Bot) replace(eventID id.EventID, prefix string, suffix string) error {
 		return err
 	}
 	content := evt.Content.AsMessage()
-	body := prefix + content.Body + suffix
-	formattedBody := prefix + content.FormattedBody + suffix
+	if body == "" {
+		body = content.Body
+	}
+	if formattedBody == "" {
+		formattedBody = content.FormattedBody
+	}
+
+	body = prefix + body + suffix
+	formattedBody = prefix + formattedBody + suffix
 
 	content.Body = " * " + body
 	content.FormattedBody = " * " + formattedBody

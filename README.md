@@ -49,6 +49,13 @@ The main idea of that bot is to give you the same abilities as with website chat
 * End-to-End Encryption
 * autoleave empty rooms and notify about that (requires persistent store)
 
+## Commands
+
+available commands in the threads. Note that all commands should be called with mention of honoroit, so `@honoroit done` will work, but simple `done` will not.
+
+* `done` - close the current request and mark is as done. Customer will receive special message and honoroit bot will leave 1:1 chat with customer. Any new message to the thread will not work and return error.
+* `rename` - rename the thread topic title, when you want to change the standard message to something different
+
 
 ## Configuration
 

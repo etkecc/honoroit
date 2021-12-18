@@ -23,7 +23,9 @@ func (b *Bot) parseCommand(message string) []string {
 	message = strings.Replace(message, b.name, "", 1)
 	message = strings.Replace(message, localpart, "", 1)
 	delimiter := strings.Index(message, ":")
-	message = message[:delimiter]
+	if delimiter >= 0 {
+		message = message[:delimiter]
+	}
 	message = strings.TrimSpace(message)
 	b.log.Debug("parsed a command: %s", message)
 

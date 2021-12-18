@@ -14,12 +14,13 @@ func (b *Bot) parseCommand(message string) []string {
 	// nolint // we don't need to verify user id, just get the localpart
 	localpart, _, _ := b.userID.Parse()
 	// ignore messages not prefixed with bot mention
-	if !strings.HasPrefix(message, userID) && !strings.HasPrefix(message, localpart) {
+	if !strings.HasPrefix(message, userID) && !strings.HasPrefix(message, localpart) && !strings.HasPrefix(message, b.name) {
 		return command
 	}
 
 	message = strings.Replace(message, userID, "", 1)
 	message = strings.Replace(message, localpart, "", 1)
+	message = strings.Replace(message, b.name, "", 1)
 	message = strings.Replace(message, ":", "", 1)
 	message = strings.TrimSpace(message)
 	b.log.Debug("parsed a command: %s", message)

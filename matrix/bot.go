@@ -27,6 +27,7 @@ type Bot struct {
 	log    *logger.Logger
 	api    *mautrix.Client
 	cache  Cache
+	name   string
 	userID id.UserID
 	roomID id.RoomID
 }
@@ -122,7 +123,13 @@ func (b *Bot) Start() error {
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventMessage, b.onMessage)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventEncrypted, b.onEncryptedMessage)
 
-	err := b.api.SetPresence(event.PresenceOnline)
+	nameResp, err := b.api.GetOwnDisplayName()
+	if err != nil {
+		return err
+	}
+	b.name = nameResp.DisplayName
+
+	err = b.api.SetPresence(event.PresenceOnline)
 	if err != nil {
 		return err
 	}

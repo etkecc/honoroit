@@ -36,8 +36,6 @@ func main() {
 		RoomID:     cfg.RoomID,
 		Text:       (*matrix.Text)(&cfg.Text),
 	}
-	// nolint // Fatal = panic, not os.Exit()
-	log.Fatal("oops")
 	bot, err = matrix.NewBot(botConfig)
 	if err != nil {
 		// nolint // Fatal = panic, not os.Exit()

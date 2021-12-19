@@ -16,20 +16,22 @@ const (
 	// TypingTimeout in milliseconds, used to avoid stuck typing status
 	TypingTimeout = 5_000
 
-	accountDataPrefix    = "cc.etke.honoroit."
-	accountDataRooms     = accountDataPrefix + "rooms"
-	accountDataSyncToken = accountDataPrefix + "batch_token"
+	accountDataPrefix       = "cc.etke.honoroit."
+	accountDataRooms        = accountDataPrefix + "rooms"
+	accountDataSyncToken    = accountDataPrefix + "batch_token"
+	accountDataSessionToken = accountDataPrefix + "session_token"
 )
 
 // Bot represents matrix bot
 type Bot struct {
-	txt    *Text
-	log    *logger.Logger
-	api    *mautrix.Client
-	cache  Cache
-	name   string
-	userID id.UserID
-	roomID id.RoomID
+	txt      *Text
+	log      *logger.Logger
+	api      *mautrix.Client
+	cache    Cache
+	name     string
+	userID   id.UserID
+	deviceID id.DeviceID
+	roomID   id.RoomID
 }
 
 // Config represents matrix config
@@ -75,24 +77,28 @@ type Cache interface {
 // NewBot creates a new matrix bot
 func NewBot(cfg *Config) (*Bot, error) {
 	logger := logger.New("matrix.", cfg.LogLevel)
-	apiBot, err := mautrix.NewClient(cfg.Homeserver, "", "")
+	api, err := mautrix.NewClient(cfg.Homeserver, "", cfg.Token)
 	if err != nil {
 		return nil, err
 	}
 
 	client := &Bot{
-		api:   apiBot,
-		log:   logger,
-		txt:   cfg.Text,
-		cache: cfg.Cache,
+		api:    api,
+		log:    logger,
+		txt:    cfg.Text,
+		cache:  cfg.Cache,
+		roomID: id.RoomID(cfg.RoomID),
 	}
 
-	err = client.login(cfg.Login, cfg.Password)
-	if err != nil {
+	if cfg.Token == "" {
+		if err = client.login(cfg.Login, cfg.Password); err != nil {
+			return nil, err
+		}
+	}
+
+	if err = client.hydrate(); err != nil {
 		return nil, err
 	}
-	client.userID = client.api.UserID
-	client.roomID = id.RoomID(cfg.RoomID)
 
 	return client, nil
 }

@@ -7,8 +7,6 @@ import (
 	"maunium.net/go/mautrix/id"
 )
 
-const cacheMappings = "mappings"
-
 type accountDataMappings struct {
 	Rooms  map[id.RoomID]id.EventID `json:"rooms"`
 	Events map[id.EventID]id.RoomID `json:"events"`
@@ -24,7 +22,7 @@ func (b *Bot) getMappings() (*accountDataMappings, error) {
 	}
 	b.log.Debug("trying to get mappings")
 
-	cached := b.cache.Get(cacheMappings)
+	cached := b.cache.Get(accountDataRooms)
 	if cached != nil {
 		var ok bool
 		mappings, ok = cached.(*accountDataMappings)
@@ -42,7 +40,7 @@ func (b *Bot) getMappings() (*accountDataMappings, error) {
 		}
 		return nil, err
 	}
-	b.cache.Set(cacheMappings, mappings)
+	b.cache.Set(accountDataRooms, mappings)
 	return mappings, err
 }
 
@@ -63,7 +61,7 @@ func (b *Bot) addMapping(roomID id.RoomID, eventID id.EventID) error {
 	data.Rooms[roomID] = eventID
 	data.Events[eventID] = roomID
 
-	b.cache.Set(cacheMappings, data)
+	b.cache.Set(accountDataRooms, data)
 	err = b.api.SetAccountData(accountDataRooms, data)
 	if err != nil {
 		return err

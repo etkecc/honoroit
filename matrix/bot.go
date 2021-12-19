@@ -152,10 +152,5 @@ func (b *Bot) Stop() {
 		b.log.Error("cannot set presence to offile: %v", err)
 	}
 
-	_, err = b.api.Logout()
-	if err != nil {
-		b.log.Error("cannot logout: %v", err)
-	}
-
 	b.log.Info("bot has been stopped")
 }

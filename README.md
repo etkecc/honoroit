@@ -47,7 +47,6 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 * Email<->Matrix helpdesk
 * End-to-End Encryption
-* autoleave empty rooms and notify about that (requires persistent store)
 
 ## Commands
 

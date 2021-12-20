@@ -29,6 +29,7 @@ type Bot struct {
 	txt      *Text
 	log      *logger.Logger
 	api      *mautrix.Client
+	store    *store.Store
 	cache    Cache
 	name     string
 	userID   id.UserID
@@ -129,23 +130,18 @@ func (b *Bot) WithStore(db *sql.DB, dialect string) error {
 		return err
 	}
 
+	b.store = storer
 	b.api.Store = storer
 	return nil
 }
 
 // Start performs matrix /sync
 func (b *Bot) Start() error {
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateMember, b.onInvite)
+	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateMember, b.onMembership)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventMessage, b.onMessage)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventEncrypted, b.onEncryptedMessage)
 
-	nameResp, err := b.api.GetOwnDisplayName()
-	if err != nil {
-		return err
-	}
-	b.name = nameResp.DisplayName
-
-	err = b.api.SetPresence(event.PresenceOnline)
+	err := b.api.SetPresence(event.PresenceOnline)
 	if err != nil {
 		return err
 	}

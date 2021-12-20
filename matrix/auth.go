@@ -74,17 +74,23 @@ func (b *Bot) restoreSession() {
 // hydrate loads auth-related info from already established session
 func (b *Bot) hydrate() error {
 	b.log.Debug("hydrating bot...")
-	resp, err := b.api.Whoami()
+	whoamiResp, err := b.api.Whoami()
 	if err != nil {
 		return err
 	}
+	nameResp, err := b.api.GetOwnDisplayName()
+	if err != nil {
+		return err
+	}
+
 	// following values required for api client to work properly
-	b.api.UserID = resp.UserID
-	b.api.DeviceID = resp.DeviceID
+	b.api.UserID = whoamiResp.UserID
+	b.api.DeviceID = whoamiResp.DeviceID
 
 	// AND required for the bot itself to perform some business logic-related stuff
-	b.userID = resp.UserID
-	b.deviceID = resp.DeviceID
+	b.userID = whoamiResp.UserID
+	b.deviceID = whoamiResp.DeviceID
+	b.name = nameResp.DisplayName
 
 	return nil
 }

@@ -18,8 +18,19 @@ type Config struct {
 	// Text messages
 	Text Text
 
+	// DB config
+	DB DB
+
 	// TTL for cache
 	TTL int64
+}
+
+// DB config
+type DB struct {
+	// DSN is a database connection string
+	DSN string
+	// Dialect of the db, allowed values: postgres, sqlite3
+	Dialect string
 }
 
 // Text messages

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"time"
 
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/cache"
@@ -49,7 +52,12 @@ func main() {
 	defer bot.Stop()
 	log.Debug("bot has been created")
 
-	if err = bot.WithStore(); err != nil {
+	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
+	if err != nil {
+		log.Fatal("cannot initialize SQL database: %v", err)
+	}
+
+	if err = bot.WithStore(db, cfg.DB.Dialect); err != nil {
 		// nolint // Fatal = panic, not os.Exit()
 		log.Fatal("cannot initialize data store: %v", err)
 	}

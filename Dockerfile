@@ -6,7 +6,9 @@ RUN make build
 
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates tzdata && update-ca-certificates && \
+ENV HONOROIT_DB_DSN /data/honoroit.db
+
+RUN apk --no-cache add ca-certificates tzdata olm && update-ca-certificates && \
     adduser -D -g '' honoroit && \
     mkdir /data && chown -R honoroit /data
 

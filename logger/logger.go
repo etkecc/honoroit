@@ -28,18 +28,28 @@ const (
 	FATAL
 )
 
-var levelMap = map[string]int{
-	"TRACE":   TRACE,
-	"DEBUG":   DEBUG,
-	"INFO":    INFO,
-	"WARNING": WARNING,
-	"ERROR":   ERROR,
-	"FATAL":   FATAL,
-}
+var (
+	txtLevelMap = map[string]int{
+		"TRACE":   TRACE,
+		"DEBUG":   DEBUG,
+		"INFO":    INFO,
+		"WARNING": WARNING,
+		"ERROR":   ERROR,
+		"FATAL":   FATAL,
+	}
+	levelMap = map[int]string{
+		TRACE:   "TRACE",
+		DEBUG:   "DEBUG",
+		INFO:    "INFO",
+		WARNING: "WARNING",
+		ERROR:   "ERROR",
+		FATAL:   "FATAL",
+	}
+)
 
 // New creates new Logger object
 func New(prefix string, level string) *Logger {
-	levelID, ok := levelMap[strings.ToUpper(level)]
+	levelID, ok := txtLevelMap[strings.ToUpper(level)]
 	if !ok {
 		levelID = INFO
 	}
@@ -50,6 +60,11 @@ func New(prefix string, level string) *Logger {
 // GetLog returns underlying Logger object, useful in cases where log.Logger required
 func (l *Logger) GetLog() *log.Logger {
 	return l.log
+}
+
+// GetLevel (current)
+func (l *Logger) GetLevel() string {
+	return levelMap[l.level]
 }
 
 // Fatal log and exit

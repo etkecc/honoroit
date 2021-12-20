@@ -1,11 +1,14 @@
 package matrix
 
 import (
+	"database/sql"
+
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/logger"
+	"gitlab.com/etke.cc/honoroit/matrix/store"
 )
 
 const (
@@ -18,7 +21,6 @@ const (
 
 	accountDataPrefix       = "cc.etke.honoroit."
 	accountDataRooms        = accountDataPrefix + "rooms"
-	accountDataSyncToken    = accountDataPrefix + "batch_token"
 	accountDataSessionToken = accountDataPrefix + "session_token"
 )
 
@@ -103,23 +105,31 @@ func NewBot(cfg *Config) (*Bot, error) {
 	return client, nil
 }
 
-// WithStore adds persistent storage to the bot. Right now it uses account data store, but will be changed in future
-func (b *Bot) WithStore() error {
-	filter := b.api.Syncer.GetFilterJSON(b.userID)
-	filter.AccountData = mautrix.FilterPart{
-		Limit: 50,
-		NotTypes: []event.Type{
-			event.NewEventType(accountDataSyncToken),
-		},
+// WithStore adds persistent storage to the bot.
+func (b *Bot) WithStore(db *sql.DB, dialect string) error {
+	// MIGRATION. TODO: remove
+	key := "cc.etke.honoroit.batch_token"
+	type accountData struct {
+		NextBatch string
 	}
-	filterResp, err := b.api.CreateFilter(filter)
+	data := accountData{}
+	// nolint // if there is a error, that means migration already done
+	b.api.GetAccountData(key, &data)
+	// nolint // if there is a error, that means migration already done
+	b.api.SetAccountData(key, accountData{})
+
+	cfg := &store.Config{
+		DB:      db,
+		Dialect: dialect,
+		Logger:  logger.New("store.", b.log.GetLevel()),
+	}
+	storer := store.New(cfg)
+	err := storer.CreateTables()
 	if err != nil {
 		return err
 	}
 
-	b.api.Store = mautrix.NewAccountDataStore(accountDataSyncToken, b.api)
-	b.api.Store.SaveFilterID(b.userID, filterResp.FilterID)
-
+	b.api.Store = storer
 	return nil
 }
 

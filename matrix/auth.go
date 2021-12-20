@@ -78,14 +78,15 @@ func (b *Bot) hydrate() error {
 	if err != nil {
 		return err
 	}
-	nameResp, err := b.api.GetOwnDisplayName()
-	if err != nil {
-		return err
-	}
 
 	// following values required for api client to work properly
 	b.api.UserID = whoamiResp.UserID
 	b.api.DeviceID = whoamiResp.DeviceID
+
+	nameResp, err := b.api.GetOwnDisplayName()
+	if err != nil {
+		return err
+	}
 
 	// AND required for the bot itself to perform some business logic-related stuff
 	b.userID = whoamiResp.UserID

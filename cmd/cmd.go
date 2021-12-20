@@ -14,7 +14,10 @@ import (
 	"gitlab.com/etke.cc/honoroit/matrix"
 )
 
-const fatalmessage = "recovery(): %v"
+const (
+	enableEncryption = false
+	fatalmessage     = "recovery(): %v"
+)
 
 var (
 	version = "development"
@@ -36,8 +39,6 @@ func main() {
 	inmemoryCache := cache.New(time.Duration(cfg.TTL) * time.Minute)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
-		Login:      cfg.Login,
-		Password:   cfg.Password,
 		Token:      cfg.Token,
 		LogLevel:   cfg.LogLevel,
 		RoomID:     cfg.RoomID,
@@ -63,11 +64,13 @@ func main() {
 	}
 	log.Debug("data store initialized")
 
-	if err = bot.WithEncryption(); err != nil {
-		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("cannot initialize e2ee support: %v", err)
+	if enableEncryption {
+		if err = bot.WithEncryption(); err != nil {
+			// nolint // Fatal = panic, not os.Exit()
+			log.Fatal("cannot initialize e2ee support: %v", err)
+		}
+		log.Debug("end-to-end encryption support initialized")
 	}
-	log.Debug("end-to-end encryption support initialized")
 
 	log.Debug("starting bot...")
 	if err = bot.Start(); err != nil {

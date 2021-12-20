@@ -47,7 +47,7 @@ type Config struct {
 	Login string
 	// Password for login/password auth only
 	Password string
-	// Token for access token auth only (not implemented yet)
+	// Token access token
 	Token string
 	// RoomID where threads will be created
 	RoomID string
@@ -149,9 +149,11 @@ func (b *Bot) WithEncryption() error {
 
 // Start performs matrix /sync
 func (b *Bot) Start() error {
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnSync(b.olm.ProcessSyncResponse)
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateMember, b.onMembership)
+	if b.olm != nil {
+		b.api.Syncer.(*mautrix.DefaultSyncer).OnSync(b.olm.ProcessSyncResponse)
+	}
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateEncryption, b.onEncryption)
+	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateMember, b.onMembership)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventMessage, b.onMessage)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventEncrypted, b.onEncryptedMessage)
 

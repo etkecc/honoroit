@@ -63,6 +63,12 @@ func main() {
 	}
 	log.Debug("data store initialized")
 
+	if err = bot.WithEncryption(); err != nil {
+		// nolint // Fatal = panic, not os.Exit()
+		log.Fatal("cannot initialize e2ee support: %v", err)
+	}
+	log.Debug("end-to-end encryption support initialized")
+
 	log.Debug("starting bot...")
 	if err = bot.Start(); err != nil {
 		// nolint // Fatal = panic, not os.Exit()

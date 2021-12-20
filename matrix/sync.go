@@ -6,7 +6,7 @@ import (
 )
 
 func (b *Bot) onMembership(_ mautrix.EventSource, evt *event.Event) {
-	// b.machine.HandleMemberEvent(evt) TODO
+	b.olm.HandleMemberEvent(evt)
 	b.store.SetMembership(evt)
 
 	// autoaccept invites
@@ -34,6 +34,10 @@ func (b *Bot) onEmpty(evt *event.Event) {
 			b.log.Error("cannot leave room: %v", err)
 		}
 	}
+}
+
+func (b *Bot) onEncryption(_ mautrix.EventSource, evt *event.Event) {
+	b.store.SetEncryptionEvent(evt)
 }
 
 func (b *Bot) onMessage(_ mautrix.EventSource, evt *event.Event) {

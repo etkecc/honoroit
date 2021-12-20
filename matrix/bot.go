@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"maunium.net/go/mautrix"
+	"maunium.net/go/mautrix/crypto"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
@@ -29,6 +30,7 @@ type Bot struct {
 	txt      *Text
 	log      *logger.Logger
 	api      *mautrix.Client
+	olm      *crypto.OlmMachine
 	store    *store.Store
 	cache    Cache
 	name     string
@@ -120,9 +122,11 @@ func (b *Bot) WithStore(db *sql.DB, dialect string) error {
 	b.api.SetAccountData(key, accountData{})
 
 	cfg := &store.Config{
-		DB:      db,
-		Dialect: dialect,
-		Logger:  logger.New("store.", b.log.GetLevel()),
+		DB:       db,
+		Dialect:  dialect,
+		UserID:   b.userID,
+		DeviceID: b.deviceID,
+		Logger:   logger.New("store.", b.log.GetLevel()),
 	}
 	storer := store.New(cfg)
 	err := storer.CreateTables()
@@ -135,9 +139,19 @@ func (b *Bot) WithStore(db *sql.DB, dialect string) error {
 	return nil
 }
 
+// WithEncryption adds OLM machine to the bot
+func (b *Bot) WithEncryption() error {
+	log := logger.New("olm.", b.log.GetLevel())
+	b.olm = crypto.NewOlmMachine(b.api, log, b.store, b.store)
+
+	return b.olm.Load()
+}
+
 // Start performs matrix /sync
 func (b *Bot) Start() error {
+	b.api.Syncer.(*mautrix.DefaultSyncer).OnSync(b.olm.ProcessSyncResponse)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateMember, b.onMembership)
+	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateEncryption, b.onEncryption)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventMessage, b.onMessage)
 	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventEncrypted, b.onEncryptedMessage)
 

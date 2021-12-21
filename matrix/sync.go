@@ -5,6 +5,37 @@ import (
 	"maunium.net/go/mautrix/event"
 )
 
+func (b *Bot) initSync() {
+	if b.olm != nil {
+		b.api.Syncer.(*mautrix.DefaultSyncer).OnSync(b.olm.ProcessSyncResponse)
+	}
+
+	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(
+		event.StateEncryption,
+		func(source mautrix.EventSource, evt *event.Event) {
+			go b.onEncryption(source, evt)
+		},
+	)
+	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(
+		event.StateMember,
+		func(source mautrix.EventSource, evt *event.Event) {
+			go b.onMembership(source, evt)
+		},
+	)
+	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(
+		event.EventMessage,
+		func(source mautrix.EventSource, evt *event.Event) {
+			go b.onMessage(source, evt)
+		},
+	)
+	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(
+		event.EventEncrypted,
+		func(source mautrix.EventSource, evt *event.Event) {
+			go b.onEncryptedMessage(source, evt)
+		},
+	)
+}
+
 func (b *Bot) onMembership(_ mautrix.EventSource, evt *event.Event) {
 	if b.olm != nil {
 		b.olm.HandleMemberEvent(evt)
@@ -30,7 +61,7 @@ func (b *Bot) onInvite(evt *event.Event) {
 
 func (b *Bot) onEmpty(evt *event.Event) {
 	members := b.store.GetRoomMembers(evt.RoomID)
-	if len(members) >= 1 || members[0] != b.userID {
+	if len(members) >= 1 && members[0] != b.userID {
 		return
 	}
 

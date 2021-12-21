@@ -149,14 +149,7 @@ func (b *Bot) WithEncryption() error {
 
 // Start performs matrix /sync
 func (b *Bot) Start() error {
-	if b.olm != nil {
-		b.api.Syncer.(*mautrix.DefaultSyncer).OnSync(b.olm.ProcessSyncResponse)
-	}
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateEncryption, b.onEncryption)
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateMember, b.onMembership)
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventMessage, b.onMessage)
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventEncrypted, b.onEncryptedMessage)
-
+	b.initSync()
 	err := b.api.SetPresence(event.PresenceOnline)
 	if err != nil {
 		return err

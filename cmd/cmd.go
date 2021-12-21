@@ -2,6 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -36,6 +39,18 @@ func main() {
 	log.Info("Matrix: true")
 	log.Info("#############################")
 
+	initBot(cfg)
+	initShutdown()
+
+	log.Debug("starting bot...")
+	if err = bot.Start(); err != nil {
+		// nolint // Fatal = panic, not os.Exit()
+		log.Fatal("matrix bot crashed: %v", err)
+	}
+}
+
+func initBot(cfg *config.Config) {
+	var err error
 	inmemoryCache := cache.New(time.Duration(cfg.TTL) * time.Minute)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
@@ -52,7 +67,6 @@ func main() {
 		// nolint // Fatal = panic, not os.Exit()
 		log.Fatal("cannot create the matrix bot: %v", err)
 	}
-	defer bot.Stop()
 	log.Debug("bot has been created")
 
 	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
@@ -73,12 +87,6 @@ func main() {
 		}
 		log.Debug("end-to-end encryption support initialized")
 	}
-
-	log.Debug("starting bot...")
-	if err = bot.Start(); err != nil {
-		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("matrix bot crashed: %v", err)
-	}
 }
 
 func recovery(roomID string) {
@@ -93,4 +101,15 @@ func recovery(roomID string) {
 		bot.Error(id.RoomID(roomID), fatalmessage, err)
 		return
 	}
+}
+
+func initShutdown() {
+	listener := make(chan os.Signal, 1)
+	signal.Notify(listener, os.Interrupt, syscall.SIGABRT, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	go func() {
+		for range listener {
+			bot.Stop()
+			os.Exit(0)
+		}
+	}()
 }

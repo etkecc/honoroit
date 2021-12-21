@@ -166,6 +166,6 @@ func (b *Bot) Stop() {
 	if err != nil {
 		b.log.Error("cannot set presence to offile: %v", err)
 	}
-
+	b.api.StopSync()
 	b.log.Info("bot has been stopped")
 }

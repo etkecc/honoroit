@@ -89,6 +89,17 @@ func initBot(cfg *config.Config) {
 	}
 }
 
+func initShutdown() {
+	listener := make(chan os.Signal, 1)
+	signal.Notify(listener, os.Interrupt, syscall.SIGABRT, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	go func() {
+		for range listener {
+			bot.Stop()
+			os.Exit(0)
+		}
+	}()
+}
+
 func recovery(roomID string) {
 	err := recover()
 	// no problem just shutdown
@@ -101,15 +112,4 @@ func recovery(roomID string) {
 		bot.Error(id.RoomID(roomID), fatalmessage, err)
 		return
 	}
-}
-
-func initShutdown() {
-	listener := make(chan os.Signal, 1)
-	signal.Notify(listener, os.Interrupt, syscall.SIGABRT, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-	go func() {
-		for range listener {
-			bot.Stop()
-			os.Exit(0)
-		}
-	}()
 }

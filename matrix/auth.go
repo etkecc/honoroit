@@ -1,15 +1,9 @@
 package matrix
 
 import (
-	"context"
-	"time"
-
-	"github.com/sethvargo/go-retry"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/id"
 )
-
-const loginRetry = 15
 
 type accountDataSession struct {
 	Token    string
@@ -17,27 +11,25 @@ type accountDataSession struct {
 }
 
 func (b *Bot) login(username string, password string) error {
-	return retry.Fibonacci(context.Background(), loginRetry*time.Second, func(_ context.Context) error {
-		b.log.Debug("auth using login and password...")
-		_, err := b.api.Login(&mautrix.ReqLogin{
-			Type: "m.login.password",
-			Identifier: mautrix.UserIdentifier{
-				Type: mautrix.IdentifierTypeUser,
-				User: username,
-			},
-			Password:         password,
-			StoreCredentials: true,
-		})
-		if err != nil {
-			b.log.Error("cannot authorize using login and password: %v, retrying in %ds...", err, loginRetry)
-			return retry.RetryableError(err)
-		}
-		b.restoreSession()
-		b.userID = b.api.UserID
-		b.deviceID = b.api.DeviceID
-
-		return nil
+	b.log.Debug("auth using login and password...")
+	_, err := b.api.Login(&mautrix.ReqLogin{
+		Type: "m.login.password",
+		Identifier: mautrix.UserIdentifier{
+			Type: mautrix.IdentifierTypeUser,
+			User: username,
+		},
+		Password:         password,
+		StoreCredentials: true,
 	})
+	if err != nil {
+		b.log.Error("cannot authorize using login and password: %v", err)
+		return err
+	}
+	b.restoreSession()
+	b.userID = b.api.UserID
+	b.deviceID = b.api.DeviceID
+
+	return nil
 }
 
 // restoreSession tries to load previous active session token from account data (if any)

@@ -81,15 +81,15 @@ type Cache interface {
 
 // NewBot creates a new matrix bot
 func NewBot(cfg *Config) (*Bot, error) {
-	logger := logger.New("matrix.", cfg.LogLevel)
 	api, err := mautrix.NewClient(cfg.Homeserver, "", cfg.Token)
 	if err != nil {
 		return nil, err
 	}
+	api.Logger = logger.New("api.", cfg.LogLevel)
 
 	client := &Bot{
 		api:    api,
-		log:    logger,
+		log:    logger.New("matrix.", cfg.LogLevel),
 		txt:    cfg.Text,
 		cache:  cfg.Cache,
 		roomID: id.RoomID(cfg.RoomID),

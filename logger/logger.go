@@ -90,6 +90,11 @@ func (l *Logger) Warn(message string, args ...interface{}) {
 	l.log.Println("WARNING", fmt.Sprintf(message, args...))
 }
 
+// Warnfln for mautrix.Logger
+func (l *Logger) Warnfln(message string, args ...interface{}) {
+	l.Warn(message, args...)
+}
+
 // Info log
 func (l *Logger) Info(message string, args ...interface{}) {
 	if l.level > INFO {
@@ -106,6 +111,11 @@ func (l *Logger) Debug(message string, args ...interface{}) {
 	}
 
 	l.log.Println("DEBUG", fmt.Sprintf(message, args...))
+}
+
+// Debugfln for mautrix.Logger
+func (l *Logger) Debugfln(message string, args ...interface{}) {
+	l.Debug(message, args...)
 }
 
 // Trace log

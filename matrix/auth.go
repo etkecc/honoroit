@@ -42,42 +42,54 @@ func (b *Bot) login(username string, password string) error {
 
 // restoreSession tries to load previous active session token from account data (if any)
 func (b *Bot) restoreSession() {
-	var data accountDataSession
-	currentToken := b.api.AccessToken
-	currentDeviceID := b.api.DeviceID
 	b.log.Debug("restoring previous session...")
 
+	var data accountDataSession
 	err := b.api.GetAccountData(accountDataSessionToken, &data)
-	if err == nil && data.Token != "" && data.DeviceID != "" {
-		b.log.Debug("previous session token found, trying it...")
-		b.api.AccessToken = data.Token
-		b.api.DeviceID = data.DeviceID
-		if _, restoredSessionErr := b.api.GetOwnPresence(); restoredSessionErr == nil {
-			b.log.Debug("previous session restored successfully. Closing current session...")
-			// we don't need to save current session, because previous one will be used anyway, so - logout!
-			b.api.AccessToken = currentToken
-			b.api.DeviceID = currentDeviceID
-			if _, logoutErr := b.api.Logout(); logoutErr != nil {
-				b.log.Error("cannot logout of current session in favor of previous session: %v", logoutErr)
-			}
-			b.api.AccessToken = data.Token
-			b.api.DeviceID = data.DeviceID
-			b.log.Info("restored previous session")
-			return
-		}
-
+	if err != nil || !b.validateSession(data.Token, data.DeviceID) {
+		b.log.Debug("previous session token was not found or invalid: %v", err)
+		b.saveSession(b.api.AccessToken, b.api.DeviceID)
+		return
 	}
 
-	b.log.Debug("previous session token was not found or invalid")
+	b.log.Debug("previous session restored successfully. Closing current session...")
+	if _, logoutErr := b.api.Logout(); logoutErr != nil {
+		b.log.Error("cannot logout of current session in favor of previous session: %v", logoutErr)
+	}
+
+	b.api.AccessToken = data.Token
+	b.api.DeviceID = data.DeviceID
+}
+
+func (b *Bot) validateSession(token string, deviceID id.DeviceID) bool {
+	valid := true
+	// preserve current values
+	currentToken := b.api.AccessToken
+	currentDeviceID := b.api.DeviceID
+	// set new values
+	b.api.AccessToken = token
+	b.api.DeviceID = deviceID
+
+	if _, err := b.api.GetOwnPresence(); err != nil {
+		b.log.Debug("previous session token was not found or invalid: %v", err)
+		valid = false
+	}
+
+	// restore original values
 	b.api.AccessToken = currentToken
 	b.api.DeviceID = currentDeviceID
-	data.Token = currentToken
-	data.DeviceID = currentDeviceID
+	return valid
+}
 
-	b.log.Debug("saving session token to account data...")
-	err = b.api.SetAccountData(accountDataSessionToken, &data)
-	if err != nil {
-		b.log.Error("cannot save session token to account data: %v", err)
+func (b *Bot) saveSession(token string, deviceID id.DeviceID) {
+	data := accountDataSession{
+		Token:    token,
+		DeviceID: deviceID,
+	}
+
+	b.log.Debug("saving session to account data...")
+	if err := b.api.SetAccountData(accountDataSessionToken, &data); err != nil {
+		b.log.Error("cannot save session to account data: %v", err)
 	}
 }
 

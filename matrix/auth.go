@@ -6,12 +6,14 @@ import (
 
 	"github.com/sethvargo/go-retry"
 	"maunium.net/go/mautrix"
+	"maunium.net/go/mautrix/id"
 )
 
 const loginRetry = 15
 
 type accountDataSession struct {
-	Token string
+	Token    string
+	DeviceID id.DeviceID
 }
 
 func (b *Bot) login(username string, password string) error {
@@ -30,8 +32,10 @@ func (b *Bot) login(username string, password string) error {
 			b.log.Error("cannot authorize using login and password: %v, retrying in %ds...", err, loginRetry)
 			return retry.RetryableError(err)
 		}
-
 		b.restoreSession()
+		b.userID = b.api.UserID
+		b.deviceID = b.api.DeviceID
+
 		return nil
 	})
 }
@@ -40,20 +44,24 @@ func (b *Bot) login(username string, password string) error {
 func (b *Bot) restoreSession() {
 	var data accountDataSession
 	currentToken := b.api.AccessToken
+	currentDeviceID := b.api.DeviceID
 	b.log.Debug("restoring previous session...")
 
 	err := b.api.GetAccountData(accountDataSessionToken, &data)
-	if err == nil && data.Token != "" {
+	if err == nil && data.Token != "" && data.DeviceID != "" {
 		b.log.Debug("previous session token found, trying it...")
 		b.api.AccessToken = data.Token
+		b.api.DeviceID = data.DeviceID
 		if _, restoredSessionErr := b.api.GetOwnPresence(); restoredSessionErr == nil {
 			b.log.Debug("previous session restored successfully. Closing current session...")
 			// we don't need to save current session, because previous one will be used anyway, so - logout!
 			b.api.AccessToken = currentToken
+			b.api.DeviceID = currentDeviceID
 			if _, logoutErr := b.api.Logout(); logoutErr != nil {
 				b.log.Error("cannot logout of current session in favor of previous session: %v", logoutErr)
 			}
 			b.api.AccessToken = data.Token
+			b.api.DeviceID = data.DeviceID
 			b.log.Info("restored previous session")
 			return
 		}
@@ -62,7 +70,9 @@ func (b *Bot) restoreSession() {
 
 	b.log.Debug("previous session token was not found or invalid")
 	b.api.AccessToken = currentToken
+	b.api.DeviceID = currentDeviceID
 	data.Token = currentToken
+	data.DeviceID = currentDeviceID
 
 	b.log.Debug("saving session token to account data...")
 	err = b.api.SetAccountData(accountDataSessionToken, &data)
@@ -74,23 +84,10 @@ func (b *Bot) restoreSession() {
 // hydrate loads auth-related info from already established session
 func (b *Bot) hydrate() error {
 	b.log.Debug("hydrating bot...")
-	whoamiResp, err := b.api.Whoami()
-	if err != nil {
-		return err
-	}
-
-	// following values required for api client to work properly
-	b.api.UserID = whoamiResp.UserID
-	b.api.DeviceID = whoamiResp.DeviceID
-
 	nameResp, err := b.api.GetOwnDisplayName()
 	if err != nil {
 		return err
 	}
-
-	// AND required for the bot itself to perform some business logic-related stuff
-	b.userID = whoamiResp.UserID
-	b.deviceID = whoamiResp.DeviceID
 	b.name = nameResp.DisplayName
 
 	return nil

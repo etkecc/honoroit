@@ -39,6 +39,8 @@ func main() {
 	inmemoryCache := cache.New(time.Duration(cfg.TTL) * time.Minute)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
+		Login:      cfg.Login,
+		Password:   cfg.Password,
 		Token:      cfg.Token,
 		LogLevel:   cfg.LogLevel,
 		RoomID:     cfg.RoomID,

@@ -78,6 +78,11 @@ func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
 		return "", err
 	}
 
+	if mappings == nil {
+		b.log.Debug("cannot get mappings: no error returned, but mappings = nil")
+		return "", errNotMapped
+	}
+
 	roomID, ok := mappings.Events[eventID]
 	if !ok || roomID == "" {
 		b.log.Debug("room not found in existing mappings")

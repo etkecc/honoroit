@@ -1,11 +1,15 @@
 package matrix
 
 import (
+	"database/sql"
+
 	"maunium.net/go/mautrix"
+	"maunium.net/go/mautrix/crypto"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/logger"
+	"gitlab.com/etke.cc/honoroit/matrix/store"
 )
 
 const (
@@ -18,7 +22,6 @@ const (
 
 	accountDataPrefix       = "cc.etke.honoroit."
 	accountDataRooms        = accountDataPrefix + "rooms"
-	accountDataSyncToken    = accountDataPrefix + "batch_token"
 	accountDataSessionToken = accountDataPrefix + "session_token"
 )
 
@@ -27,6 +30,8 @@ type Bot struct {
 	txt      *Text
 	log      *logger.Logger
 	api      *mautrix.Client
+	olm      *crypto.OlmMachine
+	store    *store.Store
 	cache    Cache
 	name     string
 	userID   id.UserID
@@ -42,7 +47,7 @@ type Config struct {
 	Login string
 	// Password for login/password auth only
 	Password string
-	// Token for access token auth only (not implemented yet)
+	// Token access token
 	Token string
 	// RoomID where threads will be created
 	RoomID string
@@ -76,15 +81,15 @@ type Cache interface {
 
 // NewBot creates a new matrix bot
 func NewBot(cfg *Config) (*Bot, error) {
-	logger := logger.New("matrix.", cfg.LogLevel)
 	api, err := mautrix.NewClient(cfg.Homeserver, "", cfg.Token)
 	if err != nil {
 		return nil, err
 	}
+	api.Logger = logger.New("api.", cfg.LogLevel)
 
 	client := &Bot{
 		api:    api,
-		log:    logger,
+		log:    logger.New("matrix.", cfg.LogLevel),
 		txt:    cfg.Text,
 		cache:  cfg.Cache,
 		roomID: id.RoomID(cfg.RoomID),
@@ -103,39 +108,49 @@ func NewBot(cfg *Config) (*Bot, error) {
 	return client, nil
 }
 
-// WithStore adds persistent storage to the bot. Right now it uses account data store, but will be changed in future
-func (b *Bot) WithStore() error {
-	filter := b.api.Syncer.GetFilterJSON(b.userID)
-	filter.AccountData = mautrix.FilterPart{
-		Limit: 50,
-		NotTypes: []event.Type{
-			event.NewEventType(accountDataSyncToken),
-		},
+// WithStore adds persistent storage to the bot.
+func (b *Bot) WithStore(db *sql.DB, dialect string) error {
+	// MIGRATION. TODO: remove
+	key := "cc.etke.honoroit.batch_token"
+	type accountData struct {
+		NextBatch string
 	}
-	filterResp, err := b.api.CreateFilter(filter)
+	data := accountData{}
+	// nolint // if there is a error, that means migration already done
+	b.api.GetAccountData(key, &data)
+	// nolint // if there is a error, that means migration already done
+	b.api.SetAccountData(key, accountData{})
+
+	cfg := &store.Config{
+		DB:       db,
+		Dialect:  dialect,
+		UserID:   b.userID,
+		DeviceID: b.deviceID,
+		Logger:   logger.New("store.", b.log.GetLevel()),
+	}
+	storer := store.New(cfg)
+	err := storer.CreateTables()
 	if err != nil {
 		return err
 	}
 
-	b.api.Store = mautrix.NewAccountDataStore(accountDataSyncToken, b.api)
-	b.api.Store.SaveFilterID(b.userID, filterResp.FilterID)
-
+	b.store = storer
+	b.api.Store = storer
 	return nil
+}
+
+// WithEncryption adds OLM machine to the bot
+func (b *Bot) WithEncryption() error {
+	log := logger.New("olm.", b.log.GetLevel())
+	b.olm = crypto.NewOlmMachine(b.api, log, b.store, b.store)
+
+	return b.olm.Load()
 }
 
 // Start performs matrix /sync
 func (b *Bot) Start() error {
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.StateMember, b.onInvite)
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventMessage, b.onMessage)
-	b.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(event.EventEncrypted, b.onEncryptedMessage)
-
-	nameResp, err := b.api.GetOwnDisplayName()
-	if err != nil {
-		return err
-	}
-	b.name = nameResp.DisplayName
-
-	err = b.api.SetPresence(event.PresenceOnline)
+	b.initSync()
+	err := b.api.SetPresence(event.PresenceOnline)
 	if err != nil {
 		return err
 	}
@@ -151,6 +166,6 @@ func (b *Bot) Stop() {
 	if err != nil {
 		b.log.Error("cannot set presence to offile: %v", err)
 	}
-
+	b.api.StopSync()
 	b.log.Info("bot has been stopped")
 }

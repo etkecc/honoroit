@@ -29,6 +29,14 @@ func New() *Config {
 		config.LogLevel = level
 	}
 
+	// db
+	if dialect := env("db.dialect"); dialect != "" {
+		config.DB.Dialect = dialect
+	}
+	if dsn := env("db.dsn"); dsn != "" {
+		config.DB.DSN = dsn
+	}
+
 	// text
 	if txt := env("text.greetings"); txt != "" {
 		config.Text.Greetings = txt

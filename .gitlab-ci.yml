@@ -28,13 +28,3 @@ docker:
     - make login docker publish
   tags:
     - docker
-
-
-release:
-  stage: release
-  only: ['tags']
-  image:
-    name: goreleaser/goreleaser
-    entrypoint: ['']
-  script:
-    - goreleaser release --rm-dist

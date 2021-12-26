@@ -28,18 +28,28 @@ const (
 	FATAL
 )
 
-var levelMap = map[string]int{
-	"TRACE":   TRACE,
-	"DEBUG":   DEBUG,
-	"INFO":    INFO,
-	"WARNING": WARNING,
-	"ERROR":   ERROR,
-	"FATAL":   FATAL,
-}
+var (
+	txtLevelMap = map[string]int{
+		"TRACE":   TRACE,
+		"DEBUG":   DEBUG,
+		"INFO":    INFO,
+		"WARNING": WARNING,
+		"ERROR":   ERROR,
+		"FATAL":   FATAL,
+	}
+	levelMap = map[int]string{
+		TRACE:   "TRACE",
+		DEBUG:   "DEBUG",
+		INFO:    "INFO",
+		WARNING: "WARNING",
+		ERROR:   "ERROR",
+		FATAL:   "FATAL",
+	}
+)
 
 // New creates new Logger object
 func New(prefix string, level string) *Logger {
-	levelID, ok := levelMap[strings.ToUpper(level)]
+	levelID, ok := txtLevelMap[strings.ToUpper(level)]
 	if !ok {
 		levelID = INFO
 	}
@@ -50,6 +60,11 @@ func New(prefix string, level string) *Logger {
 // GetLog returns underlying Logger object, useful in cases where log.Logger required
 func (l *Logger) GetLog() *log.Logger {
 	return l.log
+}
+
+// GetLevel (current)
+func (l *Logger) GetLevel() string {
+	return levelMap[l.level]
 }
 
 // Fatal log and exit
@@ -75,6 +90,11 @@ func (l *Logger) Warn(message string, args ...interface{}) {
 	l.log.Println("WARNING", fmt.Sprintf(message, args...))
 }
 
+// Warnfln for mautrix.Logger
+func (l *Logger) Warnfln(message string, args ...interface{}) {
+	l.Warn(message, args...)
+}
+
 // Info log
 func (l *Logger) Info(message string, args ...interface{}) {
 	if l.level > INFO {
@@ -91,6 +111,11 @@ func (l *Logger) Debug(message string, args ...interface{}) {
 	}
 
 	l.log.Println("DEBUG", fmt.Sprintf(message, args...))
+}
+
+// Debugfln for mautrix.Logger
+func (l *Logger) Debugfln(message string, args ...interface{}) {
+	l.Debug(message, args...)
 }
 
 // Trace log

@@ -1,8 +1,14 @@
 package main
 
 import (
+	"database/sql"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/cache"
@@ -11,7 +17,10 @@ import (
 	"gitlab.com/etke.cc/honoroit/matrix"
 )
 
-const fatalmessage = "recovery(): %v"
+const (
+	enableEncryption = false
+	fatalmessage     = "recovery(): %v"
+)
 
 var (
 	version = "development"
@@ -30,6 +39,18 @@ func main() {
 	log.Info("Matrix: true")
 	log.Info("#############################")
 
+	initBot(cfg)
+	initShutdown()
+
+	log.Debug("starting bot...")
+	if err = bot.Start(); err != nil {
+		// nolint // Fatal = panic, not os.Exit()
+		log.Fatal("matrix bot crashed: %v", err)
+	}
+}
+
+func initBot(cfg *config.Config) {
+	var err error
 	inmemoryCache := cache.New(time.Duration(cfg.TTL) * time.Minute)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
@@ -46,20 +67,37 @@ func main() {
 		// nolint // Fatal = panic, not os.Exit()
 		log.Fatal("cannot create the matrix bot: %v", err)
 	}
-	defer bot.Stop()
 	log.Debug("bot has been created")
 
-	if err = bot.WithStore(); err != nil {
+	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
+	if err != nil {
+		log.Fatal("cannot initialize SQL database: %v", err)
+	}
+
+	if err = bot.WithStore(db, cfg.DB.Dialect); err != nil {
 		// nolint // Fatal = panic, not os.Exit()
 		log.Fatal("cannot initialize data store: %v", err)
 	}
 	log.Debug("data store initialized")
 
-	log.Debug("starting bot...")
-	if err = bot.Start(); err != nil {
-		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("matrix bot crashed: %v", err)
+	if enableEncryption {
+		if err = bot.WithEncryption(); err != nil {
+			// nolint // Fatal = panic, not os.Exit()
+			log.Fatal("cannot initialize e2ee support: %v", err)
+		}
+		log.Debug("end-to-end encryption support initialized")
 	}
+}
+
+func initShutdown() {
+	listener := make(chan os.Signal, 1)
+	signal.Notify(listener, os.Interrupt, syscall.SIGABRT, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	go func() {
+		for range listener {
+			bot.Stop()
+			os.Exit(0)
+		}
+	}()
 }
 
 func recovery(roomID string) {

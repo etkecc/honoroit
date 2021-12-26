@@ -88,7 +88,7 @@ func (b *Bot) closeRequest(evt *event.Event) {
 		return
 	}
 
-	_, err = b.api.SendMessageEvent(roomID, event.EventMessage, &event.MessageEventContent{
+	_, err = b.send(roomID, &event.MessageEventContent{
 		MsgType: event.MsgNotice,
 		Body:    b.txt.Done,
 	})

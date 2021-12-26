@@ -104,7 +104,7 @@ func (s *loggerSuite) TestWarn() {
 	actual := s.catchStdout(func() {
 		logger := New("", "WARNING")
 		logger.Error("Test")
-		logger.Warn("Test")
+		logger.Warnfln("Test")
 		logger.Info("Test")
 		logger.Debug("Test")
 		logger.Trace("Test")
@@ -141,7 +141,7 @@ func (s *loggerSuite) TestDebug() {
 		logger.Error("Test")
 		logger.Warn("Test")
 		logger.Info("Test")
-		logger.Debug("Test")
+		logger.Debugfln("Test")
 		logger.Trace("Test")
 	})
 

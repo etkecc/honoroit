@@ -47,7 +47,6 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 * Email<->Matrix helpdesk
 * End-to-End Encryption
-* autoleave empty rooms and notify about that (requires persistent store)
 
 ## Commands
 
@@ -71,6 +70,8 @@ env vars
 ### optional
 
 * **HONOROIT_LOGLEVEL** - log level
+* **HONOROIT_DB_DSN** - database connection string
+* **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
 * **HONOROIT_TEXT_GREETINGS** - a message sent to customer on first contact
 * **HONOROIT_TEXT_ERROR** - a message sent to customer if something goes wrong
 * **HONOROIT_TEXT_EMPTYROOM** - a message sent to backoffice/threads room when customer left his room
@@ -80,4 +81,4 @@ You can find default values in [config/defaults.go](config/defaults.go)
 
 ## Where to get
 
-[Binary releases](https://gitlab.com/etke.cc/honoroit/-/releases), [docker registry](https://gitlab.com/etke.cc/honoroit/container_registry), [etke.cc](https://etke.cc)
+[docker registry](https://gitlab.com/etke.cc/honoroit/container_registry), [etke.cc](https://etke.cc)

@@ -110,17 +110,6 @@ func NewBot(cfg *Config) (*Bot, error) {
 
 // WithStore adds persistent storage to the bot.
 func (b *Bot) WithStore(db *sql.DB, dialect string) error {
-	// MIGRATION. TODO: remove
-	key := "cc.etke.honoroit.batch_token"
-	type accountData struct {
-		NextBatch string
-	}
-	data := accountData{}
-	// nolint // if there is a error, that means migration already done
-	b.api.GetAccountData(key, &data)
-	// nolint // if there is a error, that means migration already done
-	b.api.SetAccountData(key, accountData{})
-
 	cfg := &store.Config{
 		DB:       db,
 		Dialect:  dialect,

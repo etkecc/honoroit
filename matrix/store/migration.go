@@ -59,10 +59,5 @@ func (s *Store) migrate() error {
 		return commitErr
 	}
 
-	// MIGRATION. TODO: remove
-	if s.nextBatchToken != "" {
-		s.SaveNextBatch(s.userID, s.nextBatchToken)
-	}
-
 	return nil
 }

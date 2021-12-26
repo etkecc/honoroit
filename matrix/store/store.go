@@ -11,8 +11,6 @@ import (
 type Store struct {
 	s      *crypto.SQLCryptoStore
 	userID id.UserID
-	// nextBatchToken MIGRATION. TODO: remove
-	nextBatchToken string
 }
 
 // Config the store
@@ -27,9 +25,6 @@ type Config struct {
 	DeviceID id.DeviceID
 	// Logger object
 	Logger crypto.Logger
-
-	// NextBatchToken MIGRATION. TODO: remove
-	NextBatchToken string
 }
 
 // New store
@@ -44,8 +39,7 @@ func New(cfg *Config) *Store {
 	)
 
 	return &Store{
-		s:              cs,
-		userID:         cfg.UserID,
-		nextBatchToken: cfg.NextBatchToken,
+		s:      cs,
+		userID: cfg.UserID,
 	}
 }

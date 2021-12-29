@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 )
 
@@ -35,6 +36,8 @@ func (b *Bot) runCommand(command string, evt *event.Event) {
 		b.closeRequest(evt)
 	case "rename":
 		b.renameRequest(evt)
+	case "invite":
+		b.inviteRequest(evt)
 	}
 }
 
@@ -105,5 +108,29 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	if err = b.removeMapping(roomID, relation.EventID); err != nil {
 		b.Error(evt.RoomID, "cannot remove mapping %s<->%s from account data: %v", roomID, relation.EventID, err)
 		return
+	}
+}
+
+func (b *Bot) inviteRequest(evt *event.Event) {
+	b.log.Debug("inviting the operator (%s) into customer room...", evt.Sender)
+	content := evt.Content.AsMessage()
+	relation := content.RelatesTo
+	if relation == nil {
+		b.Error(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I invite you.")
+		return
+	}
+
+	roomID, err := b.findRoomID(relation.EventID)
+	if err != nil {
+		b.Error(evt.RoomID, err.Error())
+		return
+	}
+	_, err = b.api.InviteUser(roomID, &mautrix.ReqInviteUser{
+		Reason: "you asked it",
+		UserID: evt.Sender,
+	})
+
+	if err != nil {
+		b.Error(evt.RoomID, "cannot invite the operator (%s) into customer room %s: %v", evt.Sender, roomID, err)
 	}
 }

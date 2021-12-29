@@ -50,7 +50,10 @@ func main() {
 }
 
 func initBot(cfg *config.Config) {
-	var err error
+	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
+	if err != nil {
+		log.Fatal("cannot initialize SQL database: %v", err)
+	}
 	inmemoryCache := cache.New(time.Duration(cfg.TTL) * time.Minute)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
@@ -61,6 +64,8 @@ func initBot(cfg *config.Config) {
 		RoomID:     cfg.RoomID,
 		Text:       (*matrix.Text)(&cfg.Text),
 		Cache:      inmemoryCache,
+		DB:         db,
+		Dialect:    cfg.DB.Dialect,
 	}
 	bot, err = matrix.NewBot(botConfig)
 	if err != nil {
@@ -68,17 +73,6 @@ func initBot(cfg *config.Config) {
 		log.Fatal("cannot create the matrix bot: %v", err)
 	}
 	log.Debug("bot has been created")
-
-	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
-	if err != nil {
-		log.Fatal("cannot initialize SQL database: %v", err)
-	}
-
-	if err = bot.WithStore(db, cfg.DB.Dialect); err != nil {
-		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("cannot initialize data store: %v", err)
-	}
-	log.Debug("data store initialized")
 
 	if enableEncryption {
 		if err = bot.WithEncryption(); err != nil {

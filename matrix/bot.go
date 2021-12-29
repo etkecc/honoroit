@@ -20,23 +20,20 @@ const (
 	// TypingTimeout in milliseconds, used to avoid stuck typing status
 	TypingTimeout = 5_000
 
-	accountDataPrefix       = "cc.etke.honoroit."
-	accountDataRooms        = accountDataPrefix + "rooms"
-	accountDataSessionToken = accountDataPrefix + "session_token"
+	accountDataPrefix = "cc.etke.honoroit."
+	accountDataRooms  = accountDataPrefix + "rooms"
 )
 
 // Bot represents matrix bot
 type Bot struct {
-	txt      *Text
-	log      *logger.Logger
-	api      *mautrix.Client
-	olm      *crypto.OlmMachine
-	store    *store.Store
-	cache    Cache
-	name     string
-	userID   id.UserID
-	deviceID id.DeviceID
-	roomID   id.RoomID
+	txt    *Text
+	log    *logger.Logger
+	api    *mautrix.Client
+	olm    *crypto.OlmMachine
+	store  *store.Store
+	cache  Cache
+	name   string
+	roomID id.RoomID
 }
 
 // Config represents matrix config
@@ -59,6 +56,10 @@ type Config struct {
 
 	// Cache client
 	Cache Cache
+	// DB object
+	DB *sql.DB
+	// Dialect of the DB: postgres, sqlite3
+	Dialect string
 }
 
 // Text messages
@@ -95,10 +96,15 @@ func NewBot(cfg *Config) (*Bot, error) {
 		roomID: id.RoomID(cfg.RoomID),
 	}
 
-	if cfg.Token == "" {
-		if err = client.login(cfg.Login, cfg.Password); err != nil {
-			return nil, err
-		}
+	storer := store.New(cfg.DB, cfg.Dialect)
+	if err = storer.CreateTables(); err != nil {
+		return nil, err
+	}
+	client.store = storer
+	client.api.Store = storer
+
+	if err = client.login(cfg.Login, cfg.Password); err != nil {
+		return nil, err
 	}
 
 	if err = client.hydrate(); err != nil {
@@ -108,30 +114,14 @@ func NewBot(cfg *Config) (*Bot, error) {
 	return client, nil
 }
 
-// WithStore adds persistent storage to the bot.
-func (b *Bot) WithStore(db *sql.DB, dialect string) error {
-	cfg := &store.Config{
-		DB:       db,
-		Dialect:  dialect,
-		UserID:   b.userID,
-		DeviceID: b.deviceID,
-		Logger:   logger.New("store.", b.log.GetLevel()),
-	}
-	storer := store.New(cfg)
-	err := storer.CreateTables()
-	if err != nil {
-		return err
-	}
-
-	b.store = storer
-	b.api.Store = storer
-	return nil
-}
-
 // WithEncryption adds OLM machine to the bot
 func (b *Bot) WithEncryption() error {
-	log := logger.New("olm.", b.log.GetLevel())
-	b.olm = crypto.NewOlmMachine(b.api, log, b.store, b.store)
+	storeLog := logger.New("store.", b.log.GetLevel())
+	cryptoLog := logger.New("olm.", b.log.GetLevel())
+	if err := b.store.WithCrypto(b.api.UserID, b.api.DeviceID, storeLog); err != nil {
+		return err
+	}
+	b.olm = crypto.NewOlmMachine(b.api, cryptoLog, b.store, b.store)
 
 	return b.olm.Load()
 }

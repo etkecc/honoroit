@@ -26,19 +26,18 @@ var migrations = []string{
 			PRIMARY KEY (room_id, user_id)
 		)
 		`,
+	`
+		CREATE TABLE IF NOT EXISTS session (
+			user_id VARCHAR(255),
+			device_id VARCHAR(255),
+			access_token VARCHAR(255)
+		)
+		`,
 }
 
 // CreateTables applies all the pending database migrations.
 func (s *Store) CreateTables() error {
-	if err := s.s.CreateTables(); err != nil {
-		return err
-	}
-
-	return s.migrate()
-}
-
-func (s *Store) migrate() error {
-	tx, beginErr := s.s.DB.Begin()
+	tx, beginErr := s.db.Begin()
 	if beginErr != nil {
 		return beginErr
 	}

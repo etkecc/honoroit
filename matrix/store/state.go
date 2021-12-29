@@ -18,7 +18,7 @@ func (s *Store) IsEncrypted(roomID id.RoomID) bool {
 // GetEncryptionEvent returns the encryption event's content for an encrypted room.
 func (s *Store) GetEncryptionEvent(roomID id.RoomID) *event.EncryptionEventContent {
 	query := "SELECT encryption_event FROM rooms WHERE room_id = $1"
-	row := s.s.DB.QueryRow(query, roomID)
+	row := s.db.QueryRow(query, roomID)
 
 	var encryptionEventJSON []byte
 	if err := row.Scan(&encryptionEventJSON); err != nil {
@@ -34,13 +34,13 @@ func (s *Store) GetEncryptionEvent(roomID id.RoomID) *event.EncryptionEventConte
 
 // SetEncryptionEvent creates or updates room's encryption event info
 func (s *Store) SetEncryptionEvent(evt *event.Event) {
-	tx, err := s.s.DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return
 	}
 
 	var insert string
-	switch s.s.Dialect {
+	switch s.dialect {
 	case "sqlite3":
 		insert = "INSERT OR IGNORE INTO rooms VALUES (?, ?)"
 	case "postgres":
@@ -74,13 +74,13 @@ func (s *Store) SetEncryptionEvent(evt *event.Event) {
 
 // SetMembership saves room members
 func (s *Store) SetMembership(evt *event.Event) {
-	tx, err := s.s.DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return
 	}
 
 	var insert string
-	switch s.s.Dialect {
+	switch s.dialect {
 	case "sqlite3":
 		insert = "INSERT OR IGNORE INTO room_members VALUES (?, ?)"
 	case "postgres":
@@ -115,7 +115,7 @@ func (s *Store) SetMembership(evt *event.Event) {
 // GetRoomMembers ...
 func (s *Store) GetRoomMembers(roomID id.RoomID) []id.UserID {
 	query := "SELECT user_id FROM room_members WHERE room_id = $1"
-	rows, err := s.s.DB.Query(query, roomID)
+	rows, err := s.db.Query(query, roomID)
 	users := make([]id.UserID, 0)
 	if err != nil {
 		return users
@@ -134,7 +134,7 @@ func (s *Store) GetRoomMembers(roomID id.RoomID) []id.UserID {
 // FindSharedRooms returns the encrypted rooms that another user is also in for a user ID.
 func (s *Store) FindSharedRooms(userID id.UserID) []id.RoomID {
 	query := "SELECT room_id FROM room_members WHERE user_id = $1"
-	rows, queryErr := s.s.DB.Query(query, userID)
+	rows, queryErr := s.db.Query(query, userID)
 	rooms := make([]id.RoomID, 0)
 	if queryErr != nil {
 		return rooms
@@ -151,4 +151,48 @@ func (s *Store) FindSharedRooms(userID id.UserID) []id.RoomID {
 	}
 
 	return rooms
+}
+
+// SaveSession to DB
+func (s *Store) SaveSession(userID id.UserID, deviceID id.DeviceID, accessToken string) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return
+	}
+
+	var insert string
+	switch s.dialect {
+	case "sqlite3":
+		insert = "INSERT OR IGNORE INTO session VALUES (?, ?, ?)"
+	case "postgres":
+		insert = "INSERT INTO session VALUES ($1, $2, $3) ON CONFLICT DO NOTHING"
+	}
+	update := "UPDATE session SET access_token = $1, device_id = $2 WHERE user_id = $3"
+
+	if _, err := tx.Exec(update, accessToken, deviceID, userID); err != nil {
+		// nolint // no need to check error here
+		tx.Rollback()
+		return
+	}
+
+	if _, err := tx.Exec(insert, userID, deviceID, accessToken); err != nil {
+		// nolint // no need to check error here
+		tx.Rollback()
+		return
+	}
+
+	// nolint // interface doesn't allow to return error
+	tx.Commit()
+}
+
+// LoadSession from DB (user ID, device ID, access token)
+func (s *Store) LoadSession() (id.UserID, id.DeviceID, string) {
+	row := s.db.QueryRow("SELECT * FROM session LIMIT 1")
+	var userID id.UserID
+	var deviceID id.DeviceID
+	var accessToken string
+	if err := row.Scan(&userID, &deviceID, &accessToken); err != nil {
+		return "", "", ""
+	}
+	return userID, deviceID, accessToken
 }

@@ -49,6 +49,15 @@ func (s *loggerSuite) TestGetLog() {
 	s.Equal(stdLogger, logger.GetLog())
 }
 
+func (s *loggerSuite) TestGetLevel() {
+	text := "INFO"
+	id := INFO
+	logger := New("", text)
+
+	s.Equal(id, logger.level)
+	s.Equal(text, logger.GetLevel())
+}
+
 func (s *loggerSuite) TestFatal() {
 	defer func() {
 		if r := recover(); r == nil {
@@ -73,6 +82,21 @@ func (s *loggerSuite) TestError() {
 	actual := s.catchStdout(func() {
 		logger := New("", "ERROR")
 		logger.Error("Test")
+		logger.Warn("Test")
+		logger.Info("Test")
+		logger.Debug("Test")
+		logger.Trace("Test")
+	})
+
+	s.Equal(expected, actual)
+}
+
+func (s *loggerSuite) TestError_Skip() {
+	expected := ""
+
+	actual := s.catchStdout(func() {
+		logger := New("", "ERROR")
+		logger.Error("recovery(): Test")
 		logger.Warn("Test")
 		logger.Info("Test")
 		logger.Debug("Test")

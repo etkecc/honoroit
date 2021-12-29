@@ -13,6 +13,9 @@ import (
 )
 
 const (
+	// Prefix of commands
+	Prefix = "!ho"
+
 	// ThreadRelation uses hardcoded value of element clients, should be replaced to m.thread after the MSC3440 release,
 	// ref: https://github.com/matrix-org/matrix-doc/pull/3440/files#diff-113727ce0257b4dc0ad6f1087b6402f2cfcb6ff93272757b947bf1ce444056aeR296
 	ThreadRelation = "io.element.thread"
@@ -24,6 +27,8 @@ const (
 	accountDataRooms  = accountDataPrefix + "rooms"
 )
 
+var prefixLen = len(Prefix)
+
 // Bot represents matrix bot
 type Bot struct {
 	txt    *Text
@@ -32,7 +37,6 @@ type Bot struct {
 	olm    *crypto.OlmMachine
 	store  *store.Store
 	cache  Cache
-	name   string
 	roomID id.RoomID
 }
 
@@ -104,10 +108,6 @@ func NewBot(cfg *Config) (*Bot, error) {
 	client.api.Store = storer
 
 	if err = client.login(cfg.Login, cfg.Password); err != nil {
-		return nil, err
-	}
-
-	if err = client.hydrate(); err != nil {
 		return nil, err
 	}
 

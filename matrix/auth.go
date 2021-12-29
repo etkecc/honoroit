@@ -72,15 +72,3 @@ func (b *Bot) validateSession(userID id.UserID, deviceID id.DeviceID, token stri
 	b.api.DeviceID = currentDeviceID
 	return valid
 }
-
-// hydrate loads auth-related info from already established session
-func (b *Bot) hydrate() error {
-	b.log.Debug("hydrating bot...")
-	nameResp, err := b.api.GetOwnDisplayName()
-	if err != nil {
-		return err
-	}
-	b.name = nameResp.DisplayName
-
-	return nil
-}

@@ -10,7 +10,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 * Get a message from any matrix user proxied to a specific room. Any message that user will send in his 1:1 room with Honoroit will be proxied as thread messages
 * Chat with that user through the honoroit bot in a thread inside your special room. Any member of that special room can participate in discussion
-* When request fulfilled - send a `@honoroit done` (with mention) in that thread - thread topic will be renamed and "proxied user" will know that request was closed (bot will leave user's room with special notice)
+* When request fulfilled - send a `!ho done` in that thread - thread topic will be renamed and "proxied user" will know that request was closed (bot will leave user's room with special notice)
 
 ## How it looks like
 
@@ -50,7 +50,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ## Commands
 
-available commands in the threads. Note that all commands should be called with mention of honoroit, so `@honoroit done` will work, but simple `done` will not.
+available commands in the threads. Note that all commands should be called with prefix, so `!ho done` will work, but simple `done` will not.
 
 * `done` - close the current request and mark is as done. Customer will receive special message and honoroit bot will leave 1:1 chat with customer. Any new message to the thread will not work and return error.
 * `rename` - rename the thread topic title, when you want to change the standard message to something different

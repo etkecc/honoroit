@@ -25,6 +25,8 @@ func New() *Config {
 	config.Password = env("password")
 	config.Token = env("token")
 
+	// infrastructure
+	config.Sentry = env("sentry")
 	if level := env("loglevel"); level != "" {
 		config.LogLevel = level
 	}

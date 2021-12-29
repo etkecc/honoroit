@@ -49,7 +49,7 @@ func (b *Bot) onMembership(_ mautrix.EventSource, evt *event.Event) {
 }
 
 func (b *Bot) onInvite(evt *event.Event) {
-	userID := b.userID.String()
+	userID := b.api.UserID.String()
 	invite := evt.Content.AsMember().Membership == event.MembershipInvite
 	if invite && evt.GetStateKey() == userID {
 		_, err := b.api.JoinRoomByID(evt.RoomID)
@@ -61,7 +61,7 @@ func (b *Bot) onInvite(evt *event.Event) {
 
 func (b *Bot) onEmpty(evt *event.Event) {
 	members := b.store.GetRoomMembers(evt.RoomID)
-	if len(members) >= 1 && members[0] != b.userID {
+	if len(members) >= 1 && members[0] != b.api.UserID {
 		return
 	}
 
@@ -101,7 +101,7 @@ func (b *Bot) onEncryption(_ mautrix.EventSource, evt *event.Event) {
 
 func (b *Bot) onMessage(_ mautrix.EventSource, evt *event.Event) {
 	// ignore own messages
-	if evt.Sender == b.userID {
+	if evt.Sender == b.api.UserID {
 		return
 	}
 
@@ -110,7 +110,7 @@ func (b *Bot) onMessage(_ mautrix.EventSource, evt *event.Event) {
 
 func (b *Bot) onEncryptedMessage(_ mautrix.EventSource, evt *event.Event) {
 	// ignore own messages
-	if evt.Sender == b.userID {
+	if evt.Sender == b.api.UserID {
 		return
 	}
 

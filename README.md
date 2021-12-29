@@ -69,6 +69,7 @@ env vars
 
 ### optional
 
+* **HONOROIT_SENTRY** - sentry DSN
 * **HONOROIT_LOGLEVEL** - log level
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)

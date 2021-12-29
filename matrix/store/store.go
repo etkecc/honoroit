@@ -9,37 +9,29 @@ import (
 
 // Store for the matrix
 type Store struct {
-	s      *crypto.SQLCryptoStore
-	userID id.UserID
-}
-
-// Config the store
-type Config struct {
-	// DB - sql dirver object
-	DB *sql.DB
-	// Dialect - one of: postgres, sqlite3
-	Dialect string
-	// UserID to use with
-	UserID id.UserID
-	// DeviceID to use with
-	DeviceID id.DeviceID
-	// Logger object
-	Logger crypto.Logger
+	db      *sql.DB
+	dialect string
+	s       *crypto.SQLCryptoStore
 }
 
 // New store
-func New(cfg *Config) *Store {
-	cs := crypto.NewSQLCryptoStore(
-		cfg.DB,
-		cfg.Dialect,
-		cfg.UserID.String(),
-		cfg.DeviceID,
-		[]byte(cfg.UserID),
-		cfg.Logger,
+func New(db *sql.DB, dialect string) *Store {
+	return &Store{
+		db:      db,
+		dialect: dialect,
+	}
+}
+
+// WithCrypto adds crypto store support
+func (s *Store) WithCrypto(userID id.UserID, deviceID id.DeviceID, logger crypto.Logger) error {
+	s.s = crypto.NewSQLCryptoStore(
+		s.db,
+		s.dialect,
+		userID.String(),
+		deviceID,
+		[]byte(userID),
+		logger,
 	)
 
-	return &Store{
-		s:      cs,
-		userID: cfg.UserID,
-	}
+	return s.s.CreateTables()
 }

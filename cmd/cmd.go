@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"maunium.net/go/mautrix/id"
@@ -17,10 +18,7 @@ import (
 	"gitlab.com/etke.cc/honoroit/matrix"
 )
 
-const (
-	enableEncryption = false
-	fatalmessage     = "recovery(): %v"
-)
+const enableEncryption = false
 
 var (
 	version = "development"
@@ -32,6 +30,7 @@ func main() {
 	var err error
 	cfg := config.New()
 	log = logger.New("honoroit.", cfg.LogLevel)
+	initSentry(cfg)
 	defer recovery(cfg.RoomID)
 
 	log.Info("#############################")
@@ -49,8 +48,26 @@ func main() {
 	}
 }
 
+func initSentry(cfg *config.Config) {
+	env := version
+	if env != "development" {
+		env = "production"
+	}
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:         cfg.Sentry,
+		Release:     "honoroit@" + version,
+		Environment: env,
+	})
+	if err != nil {
+		log.Fatal("cannot initialize sentry: %v", err)
+	}
+}
+
 func initBot(cfg *config.Config) {
-	var err error
+	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
+	if err != nil {
+		log.Fatal("cannot initialize SQL database: %v", err)
+	}
 	inmemoryCache := cache.New(time.Duration(cfg.TTL) * time.Minute)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
@@ -61,6 +78,8 @@ func initBot(cfg *config.Config) {
 		RoomID:     cfg.RoomID,
 		Text:       (*matrix.Text)(&cfg.Text),
 		Cache:      inmemoryCache,
+		DB:         db,
+		Dialect:    cfg.DB.Dialect,
 	}
 	bot, err = matrix.NewBot(botConfig)
 	if err != nil {
@@ -68,17 +87,6 @@ func initBot(cfg *config.Config) {
 		log.Fatal("cannot create the matrix bot: %v", err)
 	}
 	log.Debug("bot has been created")
-
-	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
-	if err != nil {
-		log.Fatal("cannot initialize SQL database: %v", err)
-	}
-
-	if err = bot.WithStore(db, cfg.DB.Dialect); err != nil {
-		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("cannot initialize data store: %v", err)
-	}
-	log.Debug("data store initialized")
 
 	if enableEncryption {
 		if err = bot.WithEncryption(); err != nil {
@@ -101,6 +109,7 @@ func initShutdown() {
 }
 
 func recovery(roomID string) {
+	defer sentry.Flush(2 * time.Second)
 	err := recover()
 	// no problem just shutdown
 	if err == nil {
@@ -109,7 +118,9 @@ func recovery(roomID string) {
 
 	// try to send that error to matrix and log, if available
 	if bot != nil {
-		bot.Error(id.RoomID(roomID), fatalmessage, err)
-		return
+		bot.Error(id.RoomID(roomID), "recovery(): %v", err)
 	}
+
+	sentry.CurrentHub().Recover(err)
+	sentry.Flush(5 * time.Second)
 }

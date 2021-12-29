@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/getsentry/sentry-go"
 )
 
 // Logger struct
@@ -45,6 +47,14 @@ var (
 		ERROR:   "ERROR",
 		FATAL:   "FATAL",
 	}
+	sentryLevelMap = map[int]sentry.Level{
+		TRACE:   sentry.LevelDebug,
+		DEBUG:   sentry.LevelDebug,
+		INFO:    sentry.LevelInfo,
+		WARNING: sentry.LevelWarning,
+		ERROR:   sentry.LevelError,
+		FATAL:   sentry.LevelFatal,
+	}
 )
 
 // New creates new Logger object
@@ -74,20 +84,38 @@ func (l *Logger) Fatal(message string, args ...interface{}) {
 
 // Error log
 func (l *Logger) Error(message string, args ...interface{}) {
+	// do not recover
+	if strings.HasPrefix(message, "recovery()") {
+		return
+	}
+
+	message = fmt.Sprintf(message, args...)
+	sentry.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: l.log.Prefix(),
+		Message:  message,
+		Level:    sentryLevelMap[ERROR],
+	})
+
 	if l.level > ERROR {
 		return
 	}
 
-	l.log.Println("ERROR", fmt.Sprintf(message, args...))
+	l.log.Println("ERROR", message)
 }
 
 // Warn log
 func (l *Logger) Warn(message string, args ...interface{}) {
+	message = fmt.Sprintf(message, args...)
+	sentry.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: l.log.Prefix(),
+		Message:  message,
+		Level:    sentryLevelMap[WARNING],
+	})
 	if l.level > WARNING {
 		return
 	}
 
-	l.log.Println("WARNING", fmt.Sprintf(message, args...))
+	l.log.Println("WARNING", message)
 }
 
 // Warnfln for mautrix.Logger
@@ -97,20 +125,32 @@ func (l *Logger) Warnfln(message string, args ...interface{}) {
 
 // Info log
 func (l *Logger) Info(message string, args ...interface{}) {
+	message = fmt.Sprintf(message, args...)
+	sentry.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: l.log.Prefix(),
+		Message:  message,
+		Level:    sentryLevelMap[INFO],
+	})
 	if l.level > INFO {
 		return
 	}
 
-	l.log.Println("INFO", fmt.Sprintf(message, args...))
+	l.log.Println("INFO", message)
 }
 
 // Debug log
 func (l *Logger) Debug(message string, args ...interface{}) {
+	message = fmt.Sprintf(message, args...)
+	sentry.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: l.log.Prefix(),
+		Message:  message,
+		Level:    sentryLevelMap[DEBUG],
+	})
 	if l.level > DEBUG {
 		return
 	}
 
-	l.log.Println("DEBUG", fmt.Sprintf(message, args...))
+	l.log.Println("DEBUG", message)
 }
 
 // Debugfln for mautrix.Logger
@@ -120,9 +160,15 @@ func (l *Logger) Debugfln(message string, args ...interface{}) {
 
 // Trace log
 func (l *Logger) Trace(message string, args ...interface{}) {
+	message = fmt.Sprintf(message, args...)
+	sentry.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: l.log.Prefix(),
+		Message:  message,
+		Level:    sentryLevelMap[TRACE],
+	})
 	if l.level > TRACE {
 		return
 	}
 
-	l.log.Println("TRACE", fmt.Sprintf(message, args...))
+	l.log.Println("TRACE", message)
 }

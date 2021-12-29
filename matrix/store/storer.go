@@ -10,13 +10,13 @@ import (
 
 // SaveFilterID to DB
 func (s *Store) SaveFilterID(userID id.UserID, filterID string) {
-	tx, err := s.s.DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return
 	}
 
 	var insert string
-	switch s.s.Dialect {
+	switch s.dialect {
 	case "sqlite3":
 		insert = "INSERT OR IGNORE INTO user_filter_ids VALUES (?, ?)"
 	case "postgres":
@@ -48,7 +48,7 @@ func (s *Store) SaveFilterID(userID id.UserID, filterID string) {
 // LoadFilterID from DB
 func (s *Store) LoadFilterID(userID id.UserID) string {
 	query := "SELECT filter_id FROM user_filter_ids WHERE user_id = $1"
-	row := s.s.DB.QueryRow(query, userID)
+	row := s.db.QueryRow(query, userID)
 	var filterID string
 	if err := row.Scan(&filterID); err != nil {
 		return ""
@@ -58,13 +58,13 @@ func (s *Store) LoadFilterID(userID id.UserID) string {
 
 // SaveNextBatch to DB
 func (s *Store) SaveNextBatch(userID id.UserID, nextBatchToken string) {
-	tx, err := s.s.DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return
 	}
 
 	var insert string
-	switch s.s.Dialect {
+	switch s.dialect {
 	case "sqlite3":
 		insert = "INSERT OR IGNORE INTO user_batch_tokens VALUES (?, ?)"
 	case "postgres":
@@ -91,7 +91,7 @@ func (s *Store) SaveNextBatch(userID id.UserID, nextBatchToken string) {
 // LoadNextBatch from DB
 func (s *Store) LoadNextBatch(userID id.UserID) string {
 	query := "SELECT next_batch_token FROM user_batch_tokens WHERE user_id = $1"
-	row := s.s.DB.QueryRow(query, userID)
+	row := s.db.QueryRow(query, userID)
 	var batchToken string
 	if err := row.Scan(&batchToken); err != nil {
 		return ""

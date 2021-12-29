@@ -70,6 +70,7 @@ env vars
 
 ### optional
 
+* **HONOROIT_PREFIX** - command prefix
 * **HONOROIT_SENTRY** - sentry DSN
 * **HONOROIT_LOGLEVEL** - log level
 * **HONOROIT_DB_DSN** - database connection string

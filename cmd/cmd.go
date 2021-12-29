@@ -75,6 +75,7 @@ func initBot(cfg *config.Config) {
 		Password:   cfg.Password,
 		Token:      cfg.Token,
 		LogLevel:   cfg.LogLevel,
+		Prefix:     cfg.Prefix,
 		RoomID:     cfg.RoomID,
 		Text:       (*matrix.Text)(&cfg.Text),
 		Cache:      inmemoryCache,

@@ -1,6 +1,7 @@
 package config
 
 var defaultConfig = &Config{
+	Prefix:   "!ho",
 	LogLevel: "INFO",
 	TTL:      1,
 	DB: DB{

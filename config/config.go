@@ -40,6 +40,10 @@ func New() *Config {
 	}
 
 	// text
+	if prefix := env("prefix"); prefix != "" {
+		config.Prefix = prefix
+	}
+
 	if txt := env("text.greetings"); txt != "" {
 		config.Text.Greetings = txt
 	}

@@ -12,6 +12,8 @@ type Config struct {
 	Token string
 	// RoomID where threads will be created
 	RoomID string
+	// Prefix for honoroit commands
+	Prefix string
 	// LogLevel for logger
 	LogLevel string
 

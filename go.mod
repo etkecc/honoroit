@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/lib/pq v1.10.4
-	github.com/mattn/go-sqlite3 v1.14.9
+	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/stretchr/testify v1.7.0
 	maunium.net/go/mautrix v0.10.7
 )
@@ -23,5 +23,5 @@ require (
 	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
-	maunium.net/go/maulogger/v2 v2.3.1 // indirect
+	maunium.net/go/maulogger/v2 v2.3.2 // indirect
 )

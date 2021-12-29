@@ -102,4 +102,8 @@ func (b *Bot) closeRequest(evt *event.Event) {
 			return
 		}
 	}
+	if err = b.removeMapping(roomID, relation.EventID); err != nil {
+		b.Error(evt.RoomID, "cannot remove mapping %s<->%s from account data: %v", roomID, relation.EventID, err)
+		return
+	}
 }

@@ -62,12 +62,27 @@ func (b *Bot) addMapping(roomID id.RoomID, eventID id.EventID) error {
 	data.Events[eventID] = roomID
 
 	b.cache.Set(accountDataRooms, data)
-	err = b.api.SetAccountData(accountDataRooms, data)
+	return b.api.SetAccountData(accountDataRooms, data)
+}
+
+func (b *Bot) removeMapping(roomID id.RoomID, eventID id.EventID) error {
+	b.log.Debug("removing mapping %s<->%s...", roomID, eventID)
+	data, err := b.getMappings()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if data == nil {
+		b.log.Debug("no mappings, so nothing to remove")
+		return nil
+	}
+
+	delete(data.Rooms, roomID)
+	delete(data.Events, eventID)
+
+	b.log.Debug("mapping has been removed, uploading data...")
+	b.cache.Set(accountDataRooms, data)
+	return b.api.SetAccountData(accountDataRooms, data)
 }
 
 // findRoomID by eventID

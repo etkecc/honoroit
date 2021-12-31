@@ -10,8 +10,10 @@ import (
 
 // SaveFilterID to DB
 func (s *Store) SaveFilterID(userID id.UserID, filterID string) {
+	s.log.Debug("saving filter ID %s for %s", filterID, userID)
 	tx, err := s.db.Begin()
 	if err != nil {
+		s.log.Error("cannot begin transaction: %v", err)
 		return
 	}
 
@@ -26,6 +28,7 @@ func (s *Store) SaveFilterID(userID id.UserID, filterID string) {
 
 	_, updateErr := tx.Exec(update, filterID, userID)
 	if updateErr != nil {
+		s.log.Error("cannot update filter ID: %v", updateErr)
 		// nolint // no need to check error here
 		tx.Rollback()
 		return
@@ -33,6 +36,7 @@ func (s *Store) SaveFilterID(userID id.UserID, filterID string) {
 
 	_, insertErr := tx.Exec(insert, userID, filterID)
 	if insertErr != nil {
+		s.log.Error("cannot create filter ID: %v", insertErr)
 		// nolint // no need to check error here
 		tx.Rollback()
 		return
@@ -40,6 +44,7 @@ func (s *Store) SaveFilterID(userID id.UserID, filterID string) {
 
 	commitErr := tx.Commit()
 	if commitErr != nil {
+		s.log.Error("cannot upsert filter ID: %v", commitErr)
 		// nolint // no need to check error here
 		tx.Rollback()
 	}
@@ -47,10 +52,12 @@ func (s *Store) SaveFilterID(userID id.UserID, filterID string) {
 
 // LoadFilterID from DB
 func (s *Store) LoadFilterID(userID id.UserID) string {
+	s.log.Debug("loading filter ID for %s", userID)
 	query := "SELECT filter_id FROM user_filter_ids WHERE user_id = $1"
 	row := s.db.QueryRow(query, userID)
 	var filterID string
 	if err := row.Scan(&filterID); err != nil {
+		s.log.Error("cannot load filter ID: %s", err)
 		return ""
 	}
 	return filterID
@@ -58,8 +65,10 @@ func (s *Store) LoadFilterID(userID id.UserID) string {
 
 // SaveNextBatch to DB
 func (s *Store) SaveNextBatch(userID id.UserID, nextBatchToken string) {
+	s.log.Debug("saving next batch token for %s", userID)
 	tx, err := s.db.Begin()
 	if err != nil {
+		s.log.Error("cannot begin transaction: %v", err)
 		return
 	}
 
@@ -73,36 +82,45 @@ func (s *Store) SaveNextBatch(userID id.UserID, nextBatchToken string) {
 	update := "UPDATE user_batch_tokens SET next_batch_token = $1 WHERE user_id = $2"
 
 	if _, err := tx.Exec(update, nextBatchToken, userID); err != nil {
+		s.log.Error("cannot update next batch token: %v", err)
 		// nolint // no need to check error here
 		tx.Rollback()
 		return
 	}
 
 	if _, err := tx.Exec(insert, userID, nextBatchToken); err != nil {
+		s.log.Error("cannot insert next batch token: %v", err)
 		// nolint // no need to check error here
 		tx.Rollback()
 		return
 	}
 
-	// nolint // interface doesn't allow to return error
-	tx.Commit()
+	commitErr := tx.Commit()
+	if commitErr != nil {
+		s.log.Error("cannot commit transaction: %v", commitErr)
+	}
 }
 
 // LoadNextBatch from DB
 func (s *Store) LoadNextBatch(userID id.UserID) string {
+	s.log.Debug("loading next batch token for %s", userID)
 	query := "SELECT next_batch_token FROM user_batch_tokens WHERE user_id = $1"
 	row := s.db.QueryRow(query, userID)
 	var batchToken string
 	if err := row.Scan(&batchToken); err != nil {
+		s.log.Error("cannot load next batch token: %v", err)
 		return ""
 	}
 	return batchToken
 }
 
 // SaveRoom to DB, not implemented
-func (s *Store) SaveRoom(_ *mautrix.Room) {}
+func (s *Store) SaveRoom(room *mautrix.Room) {
+	s.log.Debug("saving room %s (stub, not implemented)", room.ID)
+}
 
 // LoadRoom from DB, not implemented
 func (s *Store) LoadRoom(roomID id.RoomID) *mautrix.Room {
+	s.log.Debug("loading room %s (stub, not implemented)", roomID)
 	return mautrix.NewRoom(roomID)
 }

@@ -18,7 +18,8 @@ import (
 	"gitlab.com/etke.cc/honoroit/matrix"
 )
 
-const enableEncryption = false
+// Encryption switch. Due to unclear issue with mautrix-go/canonicaljson, olm machine panics.
+const Encryption = false
 
 var (
 	version = "development"
@@ -89,7 +90,7 @@ func initBot(cfg *config.Config) {
 	}
 	log.Debug("bot has been created")
 
-	if enableEncryption {
+	if Encryption {
 		if err = bot.WithEncryption(); err != nil {
 			// nolint // Fatal = panic, not os.Exit()
 			log.Fatal("cannot initialize e2ee support: %v", err)

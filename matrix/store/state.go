@@ -12,20 +12,24 @@ import (
 
 // IsEncrypted returns whether a room is encrypted.
 func (s *Store) IsEncrypted(roomID id.RoomID) bool {
+	s.log.Debug("checking if room %s is encrypted", roomID)
 	return s.GetEncryptionEvent(roomID) != nil
 }
 
 // GetEncryptionEvent returns the encryption event's content for an encrypted room.
 func (s *Store) GetEncryptionEvent(roomID id.RoomID) *event.EncryptionEventContent {
+	s.log.Debug("finding encryption event of %s", roomID)
 	query := "SELECT encryption_event FROM rooms WHERE room_id = $1"
 	row := s.db.QueryRow(query, roomID)
 
 	var encryptionEventJSON []byte
 	if err := row.Scan(&encryptionEventJSON); err != nil {
+		s.log.Error("cannot find encryption event: %v", err)
 		return nil
 	}
 	var encryptionEvent event.EncryptionEventContent
 	if err := json.Unmarshal(encryptionEventJSON, &encryptionEvent); err != nil {
+		s.log.Error("cannot unmarshal encryption event: %s", err)
 		return nil
 	}
 
@@ -36,6 +40,7 @@ func (s *Store) GetEncryptionEvent(roomID id.RoomID) *event.EncryptionEventConte
 func (s *Store) SetEncryptionEvent(evt *event.Event) {
 	tx, err := s.db.Begin()
 	if err != nil {
+		s.log.Error("cannot begin transaction: %v", err)
 		return
 	}
 
@@ -51,11 +56,13 @@ func (s *Store) SetEncryptionEvent(evt *event.Event) {
 	var encryptionEventJSON []byte
 	encryptionEventJSON, err = json.Marshal(evt)
 	if err != nil {
+		s.log.Error("cannot marshal encryption event: %v", err)
 		encryptionEventJSON = nil
 	}
 
 	_, err = tx.Exec(update, encryptionEventJSON, evt.RoomID)
 	if err != nil {
+		s.log.Error("cannot update encryption event: %v", err)
 		// nolint // we already have err to return
 		tx.Rollback()
 		return
@@ -63,19 +70,24 @@ func (s *Store) SetEncryptionEvent(evt *event.Event) {
 
 	_, err = tx.Exec(insert, evt.RoomID, encryptionEventJSON)
 	if err != nil {
+		s.log.Error("cannot insert encryption event: %v", err)
 		// nolint // interface doesn't allow to return error
 		tx.Rollback()
 		return
 	}
 
-	// nolint // interface doesn't allow to return error
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		s.log.Error("cannot commit transaction: %v", err)
+	}
 }
 
 // SetMembership saves room members
 func (s *Store) SetMembership(evt *event.Event) {
+	s.log.Debug("saving membership event for %s", evt.RoomID)
 	tx, err := s.db.Begin()
 	if err != nil {
+		s.log.Error("cannot begin transaction: %v", err)
 		return
 	}
 
@@ -92,6 +104,7 @@ func (s *Store) SetMembership(evt *event.Event) {
 	if membershipEvent.Membership.IsInviteOrJoin() {
 		_, err := tx.Exec(insert, evt.RoomID, evt.GetStateKey())
 		if err != nil {
+			s.log.Error("cannot insert membership event: %v", err)
 			// nolint // interface doesn't allow to return error
 			tx.Rollback()
 			return
@@ -99,6 +112,7 @@ func (s *Store) SetMembership(evt *event.Event) {
 	} else {
 		_, err := tx.Exec(del, evt.RoomID, evt.GetStateKey())
 		if err != nil {
+			s.log.Error("cannot delete membership event: %v", err)
 			// nolint // interface doesn't allow to return error
 			tx.Rollback()
 			return
@@ -107,6 +121,7 @@ func (s *Store) SetMembership(evt *event.Event) {
 
 	commitErr := tx.Commit()
 	if commitErr != nil {
+		s.log.Error("cannot commit transaction: %v", commitErr)
 		// nolint // interface doesn't allow to return error
 		tx.Rollback()
 	}
@@ -114,10 +129,12 @@ func (s *Store) SetMembership(evt *event.Event) {
 
 // GetRoomMembers ...
 func (s *Store) GetRoomMembers(roomID id.RoomID) []id.UserID {
+	s.log.Debug("loading room members of %s", roomID)
 	query := "SELECT user_id FROM room_members WHERE room_id = $1"
 	rows, err := s.db.Query(query, roomID)
 	users := make([]id.UserID, 0)
 	if err != nil {
+		s.log.Error("cannot load room members: %v", err)
 		return users
 	}
 	defer rows.Close()
@@ -133,10 +150,12 @@ func (s *Store) GetRoomMembers(roomID id.RoomID) []id.UserID {
 
 // FindSharedRooms returns the encrypted rooms that another user is also in for a user ID.
 func (s *Store) FindSharedRooms(userID id.UserID) []id.RoomID {
+	s.log.Debug("loading shared rooms for %s", userID)
 	query := "SELECT room_id FROM room_members WHERE user_id = $1"
 	rows, queryErr := s.db.Query(query, userID)
 	rooms := make([]id.RoomID, 0)
 	if queryErr != nil {
+		s.log.Error("cannot load room members: %s", queryErr)
 		return rooms
 	}
 	defer rows.Close()
@@ -155,6 +174,7 @@ func (s *Store) FindSharedRooms(userID id.UserID) []id.RoomID {
 
 // SaveSession to DB
 func (s *Store) SaveSession(userID id.UserID, deviceID id.DeviceID, accessToken string) {
+	s.log.Debug("saving session credentials of %s/%s", userID, deviceID)
 	tx, err := s.db.Begin()
 	if err != nil {
 		return
@@ -169,29 +189,35 @@ func (s *Store) SaveSession(userID id.UserID, deviceID id.DeviceID, accessToken 
 	}
 	update := "UPDATE session SET access_token = $1, device_id = $2 WHERE user_id = $3"
 
-	if _, err := tx.Exec(update, accessToken, deviceID, userID); err != nil {
+	if _, err = tx.Exec(update, accessToken, deviceID, userID); err != nil {
+		s.log.Error("cannot update session credentials: %v", err)
 		// nolint // no need to check error here
 		tx.Rollback()
 		return
 	}
 
-	if _, err := tx.Exec(insert, userID, deviceID, accessToken); err != nil {
+	if _, err = tx.Exec(insert, userID, deviceID, accessToken); err != nil {
+		s.log.Error("cannot insert session credentials: %v", err)
 		// nolint // no need to check error here
 		tx.Rollback()
 		return
 	}
 
-	// nolint // interface doesn't allow to return error
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		s.log.Error("cannot commit transaction: %v", err)
+	}
 }
 
 // LoadSession from DB (user ID, device ID, access token)
 func (s *Store) LoadSession() (id.UserID, id.DeviceID, string) {
+	s.log.Debug("loading session credentials...")
 	row := s.db.QueryRow("SELECT * FROM session LIMIT 1")
 	var userID id.UserID
 	var deviceID id.DeviceID
 	var accessToken string
 	if err := row.Scan(&userID, &deviceID, &accessToken); err != nil {
+		s.log.Error("cannot load session credentials: %v", err)
 		return "", "", ""
 	}
 	return userID, deviceID, accessToken

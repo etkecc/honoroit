@@ -7,7 +7,7 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/stretchr/testify v1.7.0
-	maunium.net/go/mautrix v0.10.7
+	maunium.net/go/mautrix v0.10.8
 )
 
 require (

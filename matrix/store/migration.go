@@ -37,14 +37,17 @@ var migrations = []string{
 
 // CreateTables applies all the pending database migrations.
 func (s *Store) CreateTables() error {
+	s.log.Debug("migrating database...")
 	tx, beginErr := s.db.Begin()
 	if beginErr != nil {
+		s.log.Error("cannot begin transaction: %v", beginErr)
 		return beginErr
 	}
 
 	for _, query := range migrations {
 		_, execErr := tx.Exec(query)
 		if execErr != nil {
+			s.log.Error("cannot apply migration: %v", execErr)
 			// nolint // we already have the execErr to return
 			tx.Rollback()
 			return execErr
@@ -53,6 +56,7 @@ func (s *Store) CreateTables() error {
 
 	commitErr := tx.Commit()
 	if commitErr != nil {
+		s.log.Error("cannot commit transaction: %v", commitErr)
 		// nolint // we already have the commitErr to return
 		tx.Rollback()
 		return commitErr

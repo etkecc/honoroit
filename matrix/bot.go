@@ -99,7 +99,7 @@ func NewBot(cfg *Config) (*Bot, error) {
 		roomID: id.RoomID(cfg.RoomID),
 	}
 
-	storer := store.New(cfg.DB, cfg.Dialect)
+	storer := store.New(cfg.DB, cfg.Dialect, logger.New("store.", cfg.LogLevel))
 	if err = storer.CreateTables(); err != nil {
 		return nil, err
 	}

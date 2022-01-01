@@ -6,35 +6,8 @@ import (
 	"maunium.net/go/mautrix/id"
 )
 
-type accountDataMappings struct {
-	Rooms  map[id.RoomID]id.EventID `json:"rooms"`
-	Events map[id.EventID]id.RoomID `json:"events"`
-}
-
 // errNotMapped returned if roomID or eventID doesn't exist in room<->event map (yet)
 var errNotMapped = errors.New("cannot find appropriate mapping")
-
-// migrateMappings MIGRATION. TODO: remove
-func (b *Bot) migrateMappings() {
-	var data *accountDataMappings
-	err := b.api.GetAccountData(accountDataRooms, &data)
-	if err != nil {
-		b.log.Error("cannot find account data mappings: %v", err)
-		return
-	}
-	if data == nil {
-		b.log.Debug("account data mappings not found")
-	}
-
-	for roomID, eventID := range data.Rooms {
-		b.store.SaveMapping(roomID, "", eventID)
-	}
-
-	err = b.api.SetAccountData(accountDataRooms, struct{}{})
-	if err != nil {
-		b.log.Error("cannot wipe account data mappings: %v", err)
-	}
-}
 
 func (b *Bot) addMapping(roomID id.RoomID, eventID id.EventID) {
 	b.log.Debug("adding new mapping: %s<->%s", roomID, eventID)

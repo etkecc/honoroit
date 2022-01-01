@@ -19,9 +19,6 @@ const (
 
 	// TypingTimeout in milliseconds, used to avoid stuck typing status
 	TypingTimeout = 5_000
-
-	accountDataPrefix = "cc.etke.honoroit."
-	accountDataRooms  = accountDataPrefix + "rooms"
 )
 
 // Bot represents matrix bot
@@ -99,9 +96,6 @@ func NewBot(cfg *Config) (*Bot, error) {
 	if err = client.login(cfg.Login, cfg.Password); err != nil {
 		return nil, err
 	}
-
-	// TODO
-	client.migrateMappings()
 	return client, nil
 }
 

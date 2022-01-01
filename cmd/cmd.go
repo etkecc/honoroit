@@ -115,6 +115,7 @@ func initMail(cfg *config.Config) {
 		Sentbox:  cfg.Mail.Sentbox,
 		LogLevel: cfg.LogLevel,
 	})
+	defer email.Stop()
 
 	go func(email *mail.Client) {
 		err := email.Start()

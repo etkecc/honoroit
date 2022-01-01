@@ -60,3 +60,10 @@ func (c *Client) Start() error {
 	c.log.Info("IMAP client initialized, enabling IDLE mode")
 	return c.imap.Idle(idlechan, nil)
 }
+
+// Stop email client
+func (c *Client) Stop() {
+	if err := c.imap.Logout(); err != nil {
+		c.log.Error("cannot logout IMAP: %v", err)
+	}
+}

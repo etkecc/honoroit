@@ -23,9 +23,6 @@ type Config struct {
 	// DB config
 	DB DB
 
-	// TTL for cache
-	TTL int64
-
 	// Sentry DSN
 	Sentry string
 }

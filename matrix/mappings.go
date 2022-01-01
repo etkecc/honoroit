@@ -2,7 +2,6 @@ package matrix
 
 import (
 	"errors"
-	"strings"
 
 	"maunium.net/go/mautrix/id"
 )
@@ -15,91 +14,43 @@ type accountDataMappings struct {
 // errNotMapped returned if roomID or eventID doesn't exist in room<->event map (yet)
 var errNotMapped = errors.New("cannot find appropriate mapping")
 
-func (b *Bot) getMappings() (*accountDataMappings, error) {
-	mappings := &accountDataMappings{
-		Rooms:  make(map[id.RoomID]id.EventID),
-		Events: make(map[id.EventID]id.RoomID),
-	}
-	b.log.Debug("trying to get mappings")
-
-	cached := b.cache.Get(accountDataRooms)
-	if cached != nil {
-		var ok bool
-		mappings, ok = cached.(*accountDataMappings)
-		if ok {
-			b.log.Debug("got mappings from cache")
-			return mappings, nil
-		}
-	}
-
-	b.log.Debug("mappings not cached yet, trying to get them from account data")
-	err := b.api.GetAccountData(accountDataRooms, &mappings)
+// migrateMappings MIGRATION. TODO: remove
+func (b *Bot) migrateMappings() {
+	var data *accountDataMappings
+	err := b.api.GetAccountData(accountDataRooms, &data)
 	if err != nil {
-		if strings.Contains(err.Error(), "M_NOT_FOUND") {
-			return nil, nil
-		}
-		return nil, err
+		b.log.Error("cannot find account data mappings: %v", err)
+		return
 	}
-	b.cache.Set(accountDataRooms, mappings)
-	return mappings, err
+	if data == nil {
+		b.log.Debug("account data mappings not found")
+	}
+
+	for roomID, eventID := range data.Rooms {
+		b.store.SaveMapping(roomID, "", eventID)
+	}
+
+	err = b.api.SetAccountData(accountDataRooms, struct{}{})
+	if err != nil {
+		b.log.Error("cannot wipe account data mappings: %v", err)
+	}
 }
 
-func (b *Bot) addMapping(roomID id.RoomID, eventID id.EventID) error {
+func (b *Bot) addMapping(roomID id.RoomID, eventID id.EventID) {
 	b.log.Debug("adding new mapping: %s<->%s", roomID, eventID)
-	data, err := b.getMappings()
-	if err != nil {
-		return err
-	}
-
-	if data == nil {
-		data = &accountDataMappings{
-			Rooms:  make(map[id.RoomID]id.EventID),
-			Events: make(map[id.EventID]id.RoomID),
-		}
-	}
-
-	data.Rooms[roomID] = eventID
-	data.Events[eventID] = roomID
-
-	b.cache.Set(accountDataRooms, data)
-	return b.api.SetAccountData(accountDataRooms, data)
+	b.store.SaveMapping(roomID, "", eventID)
 }
 
-func (b *Bot) removeMapping(roomID id.RoomID, eventID id.EventID) error {
+func (b *Bot) removeMapping(roomID id.RoomID, eventID id.EventID) {
 	b.log.Debug("removing mapping %s<->%s...", roomID, eventID)
-	data, err := b.getMappings()
-	if err != nil {
-		return err
-	}
-
-	if data == nil {
-		b.log.Debug("no mappings, so nothing to remove")
-		return nil
-	}
-
-	delete(data.Rooms, roomID)
-	delete(data.Events, eventID)
-
-	b.log.Debug("mapping has been removed, uploading data...")
-	b.cache.Set(accountDataRooms, data)
-	return b.api.SetAccountData(accountDataRooms, data)
+	b.store.RemoveMapping(roomID, "", eventID)
 }
 
 // findRoomID by eventID
 func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
 	b.log.Debug("trying to find room ID by eventID = %s", eventID)
-	mappings, err := b.getMappings()
-	if err != nil {
-		return "", err
-	}
-
-	if mappings == nil {
-		b.log.Debug("cannot get mappings: no error returned, but mappings = nil")
-		return "", errNotMapped
-	}
-
-	roomID, ok := mappings.Events[eventID]
-	if !ok || roomID == "" {
+	roomID, _, _ := b.store.LoadMapping("", "", eventID)
+	if roomID == "" {
 		b.log.Debug("room not found in existing mappings")
 		return "", errNotMapped
 	}
@@ -110,21 +61,10 @@ func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
 // findEventID by roomID
 func (b *Bot) findEventID(roomID id.RoomID) (id.EventID, error) {
 	b.log.Debug("trying to find event ID by roomID = %s", roomID)
-	mappings, err := b.getMappings()
-	if err != nil {
-		return "", err
-	}
-
-	if mappings == nil {
-		b.log.Debug("mappings not created yet in account data, seems like first run")
+	_, _, eventID := b.store.LoadMapping(roomID, "", "")
+	if eventID == "" {
+		b.log.Debug("room not found in existing mappings")
 		return "", errNotMapped
 	}
-
-	eventID, ok := mappings.Rooms[roomID]
-	if !ok || eventID == "" {
-		b.log.Debug("event not found in existing mappings")
-		return "", errNotMapped
-	}
-
 	return eventID, nil
 }

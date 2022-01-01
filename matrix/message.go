@@ -9,6 +9,7 @@ import (
 	"maunium.net/go/mautrix/id"
 )
 
+// Error message to the log and matrix room
 func (b *Bot) Error(roomID id.RoomID, message string, args ...interface{}) {
 	b.log.Error(message, args...)
 
@@ -171,11 +172,7 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error
 		return "", err
 	}
 
-	err = b.addMapping(roomID, eventID)
-	if err != nil && err != errNotMapped {
-		b.Error(b.roomID, "user %s tried to send a message from room %s, but account data operation failed: %v", userID, roomID, err)
-	}
-
+	b.addMapping(roomID, eventID)
 	b.greetings(roomID, userID)
 	return eventID, nil
 }

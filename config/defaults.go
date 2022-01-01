@@ -3,7 +3,6 @@ package config
 var defaultConfig = &Config{
 	Prefix:   "!ho",
 	LogLevel: "INFO",
-	TTL:      1,
 	DB: DB{
 		DSN:     "/tmp/honoroit.db",
 		Dialect: "sqlite3",

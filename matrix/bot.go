@@ -31,7 +31,6 @@ type Bot struct {
 	api    *mautrix.Client
 	olm    *crypto.OlmMachine
 	store  *store.Store
-	cache  Cache
 	prefix string
 	roomID id.RoomID
 }
@@ -56,8 +55,6 @@ type Config struct {
 	// Text messages
 	Text *Text
 
-	// Cache client
-	Cache Cache
 	// DB object
 	DB *sql.DB
 	// Dialect of the DB: postgres, sqlite3
@@ -76,12 +73,6 @@ type Text struct {
 	Done string
 }
 
-// Cache client interface
-type Cache interface {
-	Set(string, interface{})
-	Get(string) interface{}
-}
-
 // NewBot creates a new matrix bot
 func NewBot(cfg *Config) (*Bot, error) {
 	api, err := mautrix.NewClient(cfg.Homeserver, "", cfg.Token)
@@ -94,7 +85,6 @@ func NewBot(cfg *Config) (*Bot, error) {
 		api:    api,
 		log:    logger.New("matrix.", cfg.LogLevel),
 		txt:    cfg.Text,
-		cache:  cfg.Cache,
 		prefix: cfg.Prefix,
 		roomID: id.RoomID(cfg.RoomID),
 	}
@@ -110,6 +100,8 @@ func NewBot(cfg *Config) (*Bot, error) {
 		return nil, err
 	}
 
+	// TODO
+	client.migrateMappings()
 	return client, nil
 }
 

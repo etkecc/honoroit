@@ -12,7 +12,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"maunium.net/go/mautrix/id"
 
-	"gitlab.com/etke.cc/honoroit/cache"
 	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/logger"
 	"gitlab.com/etke.cc/honoroit/matrix"
@@ -69,7 +68,6 @@ func initBot(cfg *config.Config) {
 	if err != nil {
 		log.Fatal("cannot initialize SQL database: %v", err)
 	}
-	inmemoryCache := cache.New(time.Duration(cfg.TTL) * time.Minute)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
 		Login:      cfg.Login,
@@ -79,7 +77,6 @@ func initBot(cfg *config.Config) {
 		Prefix:     cfg.Prefix,
 		RoomID:     cfg.RoomID,
 		Text:       (*matrix.Text)(&cfg.Text),
-		Cache:      inmemoryCache,
 		DB:         db,
 		Dialect:    cfg.DB.Dialect,
 	}

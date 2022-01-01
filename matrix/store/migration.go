@@ -33,6 +33,13 @@ var migrations = []string{
 			access_token VARCHAR(255)
 		)
 		`,
+	`
+		CREATE TABLE IF NOT EXISTS mappings (
+			room_id VARCHAR(255),
+			email VARCHAR(255),
+			event_id VARCHAR(255)
+		)
+		`,
 }
 
 // CreateTables applies all the pending database migrations.

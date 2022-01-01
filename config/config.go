@@ -7,58 +7,46 @@ import (
 
 const prefix = "honoroit"
 
-func env(shortkey string) string {
+func env(shortkey string, defaultValue string) string {
 	key := strings.ToUpper(prefix + "_" + strings.ReplaceAll(shortkey, ".", "_"))
-	return strings.TrimSpace(os.Getenv(key))
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return defaultValue
+	}
+
+	return value
 }
 
 // New config
 func New() *Config {
-	config := defaultConfig
-
-	// matrix
-	config.Homeserver = env("homeserver")
-	config.RoomID = env("roomid")
-
-	// matrix::auth
-	config.Login = env("login")
-	config.Password = env("password")
-	config.Token = env("token")
-
-	// infrastructure
-	config.Sentry = env("sentry")
-	if level := env("loglevel"); level != "" {
-		config.LogLevel = level
+	return &Config{
+		Homeserver: env("homeserver", defaultConfig.Homeserver),
+		RoomID:     env("roomid", defaultConfig.RoomID),
+		Login:      env("login", defaultConfig.Login),
+		Password:   env("password", defaultConfig.Password),
+		Sentry:     env("sentry", defaultConfig.Sentry),
+		LogLevel:   env("loglevel", defaultConfig.LogLevel),
+		Prefix:     env("prefix", defaultConfig.Prefix),
+		DB: DB{
+			DSN:     env("db.dsn", defaultConfig.DB.DSN),
+			Dialect: env("db.dialect", defaultConfig.DB.Dialect),
+		},
+		Mail: Mail{
+			IMAPhost: env("mail.imap.host", defaultConfig.Mail.IMAPhost),
+			IMAPport: env("mail.imap.port", defaultConfig.Mail.IMAPport),
+			SMTPhost: env("mail.smtp.host", defaultConfig.Mail.SMTPhost),
+			SMTPport: env("mail.smtp.port", defaultConfig.Mail.SMTPport),
+			Login:    env("mail.login", defaultConfig.Mail.Login),
+			Password: env("mail.password", defaultConfig.Mail.Password),
+			Email:    env("mail.email", defaultConfig.Mail.Email),
+			Mailbox:  env("mail.mailbox", defaultConfig.Mail.Mailbox),
+			Sentbox:  env("mail.sentbox", defaultConfig.Mail.Sentbox),
+		},
+		Text: Text{
+			Greetings: env("text.greetings", defaultConfig.Text.Greetings),
+			Error:     env("text.error", defaultConfig.Text.Error),
+			EmptyRoom: env("text.emptyroom", defaultConfig.Text.EmptyRoom),
+			Done:      env("text.done", defaultConfig.Text.Done),
+		},
 	}
-
-	// db
-	if dialect := env("db.dialect"); dialect != "" {
-		config.DB.Dialect = dialect
-	}
-	if dsn := env("db.dsn"); dsn != "" {
-		config.DB.DSN = dsn
-	}
-
-	// text
-	if prefix := env("prefix"); prefix != "" {
-		config.Prefix = prefix
-	}
-
-	if txt := env("text.greetings"); txt != "" {
-		config.Text.Greetings = txt
-	}
-
-	if txt := env("text.error"); txt != "" {
-		config.Text.Error = txt
-	}
-
-	if txt := env("text.emptyroom"); txt != "" {
-		config.Text.EmptyRoom = txt
-	}
-
-	if txt := env("text.done"); txt != "" {
-		config.Text.Done = txt
-	}
-
-	return config
 }

@@ -14,15 +14,20 @@ import (
 
 	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/logger"
+	"gitlab.com/etke.cc/honoroit/mail"
 	"gitlab.com/etke.cc/honoroit/matrix"
 )
 
 // Encryption switch. Due to unclear issue with mautrix-go/canonicaljson, olm machine panics.
 const Encryption = false
 
+// Email switch. That functionality is WIP.
+const Email = false
+
 var (
 	version = "development"
 	bot     *matrix.Bot
+	email   *mail.Client
 	log     *logger.Logger
 )
 
@@ -39,6 +44,7 @@ func main() {
 	log.Info("#############################")
 
 	initBot(cfg)
+	initMail(cfg)
 	initShutdown()
 
 	log.Debug("starting bot...")
@@ -94,6 +100,28 @@ func initBot(cfg *config.Config) {
 		}
 		log.Debug("end-to-end encryption support initialized")
 	}
+}
+
+func initMail(cfg *config.Config) {
+	if !Email {
+		return
+	}
+	email = mail.New(&mail.Config{
+		IMAPhost: cfg.Mail.IMAPhost,
+		IMAPPort: cfg.Mail.IMAPport,
+		Login:    cfg.Mail.Login,
+		Password: cfg.Mail.Password,
+		Mailbox:  cfg.Mail.Mailbox,
+		Sentbox:  cfg.Mail.Sentbox,
+		LogLevel: cfg.LogLevel,
+	})
+
+	go func(email *mail.Client) {
+		err := email.Start()
+		if err != nil {
+			log.Fatal("cannot start email: %v", err)
+		}
+	}(email)
 }
 
 func initShutdown() {

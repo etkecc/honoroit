@@ -8,8 +8,6 @@ type Config struct {
 	Login string
 	// Password for login/password auth only
 	Password string
-	// Token for access token auth only (not implemented yet)
-	Token string
 	// RoomID where threads will be created
 	RoomID string
 	// Prefix for honoroit commands
@@ -23,6 +21,9 @@ type Config struct {
 	// DB config
 	DB DB
 
+	// Mail config
+	Mail Mail
+
 	// Sentry DSN
 	Sentry string
 }
@@ -33,6 +34,20 @@ type DB struct {
 	DSN string
 	// Dialect of the db, allowed values: postgres, sqlite3
 	Dialect string
+}
+
+// Mail config
+type Mail struct {
+	SMTPhost string
+	SMTPport string
+	IMAPhost string
+	IMAPport string
+	Login    string
+	Password string
+	Email    string
+
+	Mailbox string
+	Sentbox string
 }
 
 // Text messages

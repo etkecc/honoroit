@@ -40,8 +40,6 @@ type Config struct {
 	Login string
 	// Password for login/password auth only
 	Password string
-	// Token access token
-	Token string
 	// RoomID where threads will be created
 	RoomID string
 	// Prefix of commands
@@ -72,7 +70,7 @@ type Text struct {
 
 // NewBot creates a new matrix bot
 func NewBot(cfg *Config) (*Bot, error) {
-	api, err := mautrix.NewClient(cfg.Homeserver, "", cfg.Token)
+	api, err := mautrix.NewClient(cfg.Homeserver, "", "")
 	if err != nil {
 		return nil, err
 	}

@@ -90,7 +90,6 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	})
 	if err != nil {
 		b.Error(evt.RoomID, err.Error())
-		return
 	}
 	timestamp := time.Now().UTC().Format("2006/01/02 15:04:05 MST")
 	err = b.replace(relation.EventID, "[DONE] ", " ("+timestamp+")", "", "")
@@ -104,7 +103,6 @@ func (b *Bot) closeRequest(evt *event.Event) {
 		// do not send a message when already left
 		if !strings.Contains(err.Error(), "M_FORBIDDEN") {
 			b.Error(evt.RoomID, "cannot leave the room %s after marking request as done: %v", roomID, err)
-			return
 		}
 	}
 	b.removeMapping(roomID, relation.EventID)

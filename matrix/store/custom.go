@@ -207,15 +207,15 @@ func (s *Store) SaveMapping(roomID id.RoomID, email string, eventID id.EventID) 
 	}
 }
 
-// LoadMapping by one of the arguments
-func (s *Store) LoadMapping(roomID id.RoomID, email string, eventID id.EventID) (id.RoomID, string, id.EventID) {
-	s.log.Debug("loading mapping of %s/%s/%s", roomID, email, eventID)
-	query := "SELECT * FROM mappings WHERE room_id = $1 OR email = $2 OR eventID = $3"
-	row, err := s.db.Query(query, roomID, email, eventID)
-	if err != nil {
-		s.log.Error("cannot load mapping: %v", err)
-	}
-	if err = row.Scan(&roomID, &email, eventID); err != nil {
+// LoadMapping by field
+func (s *Store) LoadMapping(field, value string) (id.RoomID, string, id.EventID) {
+	s.log.Debug("loading mapping of with %s = %s", field, value)
+	query := "SELECT * FROM mappings WHERE " + field + " = $1"
+	row := s.db.QueryRow(query, value)
+	var roomID id.RoomID
+	var email string
+	var eventID id.EventID
+	if err := row.Scan(&roomID, &email, &eventID); err != nil {
 		s.log.Error("cannot load mapping: %v", err)
 		return "", "", ""
 	}
@@ -224,15 +224,15 @@ func (s *Store) LoadMapping(roomID id.RoomID, email string, eventID id.EventID) 
 }
 
 // RemoveMapping by one of the arguments
-func (s *Store) RemoveMapping(roomID id.RoomID, email string, eventID id.EventID) {
-	s.log.Debug("removing mapping of %s/%s/%s", roomID, email, eventID)
+func (s *Store) RemoveMapping(field, value string) {
+	s.log.Debug("removing mapping of %s = %s", field, value)
 	tx, err := s.db.Begin()
 	if err != nil {
 		s.log.Error("cannot begin transaction: %v", err)
 		return
 	}
-	query := "DELETE FROM mappings WHERE room_id = $1 OR email = $2 OR eventID = $3"
-	_, err = tx.Exec(query, roomID, email, eventID)
+	query := "DELETE FROM mappings WHERE " + field + " = $1"
+	_, err = tx.Exec(query, value)
 	if err != nil {
 		s.log.Error("cannot delete mapping: %v", err)
 		// nolint // no need

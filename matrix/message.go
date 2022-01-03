@@ -72,6 +72,9 @@ func (b *Bot) sendEncrypted(roomID id.RoomID, content interface{}) (id.EventID, 
 	}
 
 	resp, err := b.api.SendMessageEvent(roomID, event.EventEncrypted, encrypted)
+	if err != nil {
+		return "", err
+	}
 	return resp.EventID, err
 }
 

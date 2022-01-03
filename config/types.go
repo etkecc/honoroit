@@ -8,8 +8,6 @@ type Config struct {
 	Login string
 	// Password for login/password auth only
 	Password string
-	// Token for access token auth only (not implemented yet)
-	Token string
 	// RoomID where threads will be created
 	RoomID string
 	// Prefix for honoroit commands

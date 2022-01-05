@@ -14,7 +14,7 @@ endif
 
 # update go dependencies
 update:
-	go get -u ./cmd
+	go get ./cmd
 	go mod tidy
 
 mock:

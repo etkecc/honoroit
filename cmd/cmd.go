@@ -88,12 +88,6 @@ func initBot(cfg *config.Config) {
 		log.Fatal("cannot create the matrix bot: %v", err)
 	}
 	log.Debug("bot has been created")
-
-	if err = bot.WithEncryption(); err != nil {
-		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("cannot initialize e2ee support: %v", err)
-	}
-	log.Debug("end-to-end encryption support initialized")
 }
 
 func initMail(cfg *config.Config) {

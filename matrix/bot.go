@@ -3,13 +3,11 @@ package matrix
 import (
 	"database/sql"
 
-	"maunium.net/go/mautrix"
-	"maunium.net/go/mautrix/crypto"
-	"maunium.net/go/mautrix/event"
+	"gitlab.com/etke.cc/linkpearl"
+	"gitlab.com/etke.cc/linkpearl/config"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/logger"
-	"gitlab.com/etke.cc/honoroit/matrix/store"
 )
 
 const (
@@ -25,9 +23,7 @@ const (
 type Bot struct {
 	txt    *Text
 	log    *logger.Logger
-	api    *mautrix.Client
-	olm    *crypto.OlmMachine
-	store  *store.Store
+	lp     *linkpearl.Linkpearl
 	prefix string
 	roomID id.RoomID
 }
@@ -70,64 +66,44 @@ type Text struct {
 
 // NewBot creates a new matrix bot
 func NewBot(cfg *Config) (*Bot, error) {
-	api, err := mautrix.NewClient(cfg.Homeserver, "", "")
+	log := logger.New("matrix.", cfg.LogLevel)
+	lp, err := linkpearl.New(&config.Config{
+		Homeserver:   cfg.Homeserver,
+		Login:        cfg.Login,
+		Password:     cfg.Password,
+		DB:           cfg.DB,
+		Dialect:      cfg.Dialect,
+		LPLogger:     log,
+		APILogger:    logger.New("api.", cfg.LogLevel),
+		StoreLogger:  logger.New("store.", cfg.LogLevel),
+		CryptoLogger: logger.New("olm.", cfg.LogLevel),
+	})
 	if err != nil {
 		return nil, err
 	}
-	api.Logger = logger.New("api.", cfg.LogLevel)
 
-	client := &Bot{
-		api:    api,
-		log:    logger.New("matrix.", cfg.LogLevel),
+	bot := &Bot{
+		lp:     lp,
+		log:    log,
 		txt:    cfg.Text,
 		prefix: cfg.Prefix,
 		roomID: id.RoomID(cfg.RoomID),
 	}
 
-	storer := store.New(cfg.DB, cfg.Dialect, logger.New("store.", cfg.LogLevel))
-	if err = storer.CreateTables(); err != nil {
-		return nil, err
-	}
-	client.store = storer
-	client.api.Store = storer
-
-	if err = client.login(cfg.Login, cfg.Password); err != nil {
-		return nil, err
-	}
-	return client, nil
-}
-
-// WithEncryption adds OLM machine to the bot
-func (b *Bot) WithEncryption() error {
-	storeLog := logger.New("store.", b.log.GetLevel())
-	cryptoLog := logger.New("olm.", b.log.GetLevel())
-	if err := b.store.WithCrypto(b.api.UserID, b.api.DeviceID, storeLog); err != nil {
-		return err
-	}
-	b.olm = crypto.NewOlmMachine(b.api, cryptoLog, b.store, b.store)
-
-	return b.olm.Load()
+	return bot, nil
 }
 
 // Start performs matrix /sync
 func (b *Bot) Start() error {
-	b.initSync()
-	err := b.api.SetPresence(event.PresenceOnline)
-	if err != nil {
+	if err := b.migrate(); err != nil {
 		return err
 	}
 
-	b.log.Info("bot has been started")
-	return b.api.Sync()
+	b.initSync()
+	return b.lp.Start()
 }
 
 // Stop the bot
 func (b *Bot) Stop() {
-	b.log.Debug("stopping the bot")
-	err := b.api.SetPresence(event.PresenceOffline)
-	if err != nil {
-		b.log.Error("cannot set presence to offile: %v", err)
-	}
-	b.api.StopSync()
-	b.log.Info("bot has been stopped")
+	b.lp.Stop()
 }

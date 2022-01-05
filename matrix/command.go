@@ -84,7 +84,7 @@ func (b *Bot) closeRequest(evt *event.Event) {
 		return
 	}
 
-	_, err = b.send(roomID, &event.MessageEventContent{
+	_, err = b.lp.Send(roomID, &event.MessageEventContent{
 		MsgType: event.MsgNotice,
 		Body:    b.txt.Done,
 	})
@@ -98,14 +98,14 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	}
 
 	b.log.Debug("leaving room %s", roomID)
-	_, err = b.api.LeaveRoom(roomID)
+	_, err = b.lp.GetClient().LeaveRoom(roomID)
 	if err != nil {
 		// do not send a message when already left
 		if !strings.Contains(err.Error(), "M_FORBIDDEN") {
 			b.Error(evt.RoomID, "cannot leave the room %s after marking request as done: %v", roomID, err)
 		}
 	}
-	b.removeMapping(roomID, relation.EventID)
+	b.removeMapping("event_id", relation.EventID.String())
 }
 
 func (b *Bot) inviteRequest(evt *event.Event) {
@@ -122,7 +122,7 @@ func (b *Bot) inviteRequest(evt *event.Event) {
 		b.Error(evt.RoomID, err.Error())
 		return
 	}
-	_, err = b.api.InviteUser(roomID, &mautrix.ReqInviteUser{
+	_, err = b.lp.GetClient().InviteUser(roomID, &mautrix.ReqInviteUser{
 		Reason: "you asked it",
 		UserID: evt.Sender,
 	})
@@ -142,7 +142,7 @@ func (b *Bot) help() {
 
 ` + b.prefix + ` invite - invite yourself into the customer's room
 `
-	_, err := b.send(b.roomID, &event.MessageEventContent{
+	_, err := b.lp.Send(b.roomID, &event.MessageEventContent{
 		MsgType: event.MsgText,
 		Body:    text,
 	})

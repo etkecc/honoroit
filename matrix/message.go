@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"unsafe"
 
-	"maunium.net/go/mautrix/crypto"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
@@ -13,11 +12,11 @@ import (
 func (b *Bot) Error(roomID id.RoomID, message string, args ...interface{}) {
 	b.log.Error(message, args...)
 
-	if b.api == nil {
+	if b.lp == nil {
 		return
 	}
 	// nolint // if something goes wrong here nobody can help...
-	b.send(roomID, &event.MessageEventContent{
+	b.lp.Send(roomID, &event.MessageEventContent{
 		MsgType: event.MsgNotice,
 		Body:    "ERROR: " + fmt.Sprintf(message, args...),
 	})
@@ -28,58 +27,20 @@ func (b *Bot) greetings(roomID id.RoomID, userID id.UserID) {
 		MsgType: event.MsgNotice,
 		Body:    b.txt.Greetings,
 	}
-	if _, err := b.send(roomID, content); err != nil {
+	if _, err := b.lp.Send(roomID, content); err != nil {
 		b.Error(b.roomID, "cannot send a greetings message to the user %s in the room %s: %v", userID, roomID, err)
 	}
 }
 
 func (b *Bot) typing(roomID id.RoomID, typing bool) {
-	_, err := b.api.UserTyping(roomID, typing, TypingTimeout)
+	_, err := b.lp.GetClient().UserTyping(roomID, typing, TypingTimeout)
 	if err != nil {
 		b.log.Error("cannot send typing = %t status to the room %s: %v", typing, roomID, err)
 	}
 }
 
-func (b *Bot) send(roomID id.RoomID, content interface{}) (id.EventID, error) {
-	if !b.store.IsEncrypted(roomID) || b.olm == nil {
-		resp, err := b.api.SendMessageEvent(roomID, event.EventMessage, content)
-		if err != nil {
-			return "", err
-		}
-		return resp.EventID, nil
-	}
-
-	return b.sendEncrypted(roomID, content)
-}
-
-func (b *Bot) sendEncrypted(roomID id.RoomID, content interface{}) (id.EventID, error) {
-	encrypted, err := b.olm.EncryptMegolmEvent(roomID, event.EventMessage, content)
-	if crypto.IsShareError(err) {
-		err = b.olm.ShareGroupSession(roomID, b.store.GetRoomMembers(roomID))
-		if err != nil {
-			return "", err
-		}
-		encrypted, err = b.olm.EncryptMegolmEvent(roomID, event.EventMessage, content)
-	}
-
-	if err != nil {
-		b.log.Error("cannot send encrypted message into %s: %v, sending plaintext...", roomID, err)
-		resp, plaintextErr := b.api.SendMessageEvent(roomID, event.EventMessage, content)
-		if plaintextErr != nil {
-			return "", plaintextErr
-		}
-		return resp.EventID, nil
-	}
-
-	resp, err := b.api.SendMessageEvent(roomID, event.EventEncrypted, encrypted)
-	if err != nil {
-		return "", err
-	}
-	return resp.EventID, err
-}
-
 func (b *Bot) handle(evt *event.Event) {
-	err := b.api.MarkRead(evt.RoomID, evt.ID)
+	err := b.lp.GetClient().MarkRead(evt.RoomID, evt.ID)
 	if err != nil {
 		b.Error(b.roomID, "cannot send mark event to the room %s: %v", evt.RoomID, err)
 	}
@@ -92,9 +53,6 @@ func (b *Bot) handle(evt *event.Event) {
 
 	// message sent by client
 	if evt.RoomID != b.roomID {
-		b.typing(evt.RoomID, true)
-		defer b.typing(evt.RoomID, false)
-
 		b.forwardToThread(evt, content)
 		return
 	}
@@ -111,7 +69,7 @@ func (b *Bot) handle(evt *event.Event) {
 }
 
 func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body string, formattedBody string) error {
-	evt, err := b.api.GetEvent(b.roomID, eventID)
+	evt, err := b.lp.GetClient().GetEvent(b.roomID, eventID)
 	if err != nil {
 		b.Error(b.roomID, "cannot find event %s: %v", eventID, err)
 		return err
@@ -146,7 +104,7 @@ func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body str
 	}
 
 	b.log.Debug("replacing thread topic event")
-	_, err = b.send(b.roomID, content)
+	_, err = b.lp.Send(b.roomID, content)
 	return err
 }
 
@@ -169,13 +127,13 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error
 		Body:    "Request by " + userID.String() + " in " + roomID.String(),
 	}
 
-	eventID, err = b.send(b.roomID, content)
+	eventID, err = b.lp.Send(b.roomID, content)
 	if err != nil {
 		b.Error(b.roomID, "user %s tried to send a message from room %s, but creation of a thread failed: %v", userID, roomID, err)
 		return "", err
 	}
 
-	b.addMapping(roomID, eventID)
+	b.saveMapping(roomID, "", eventID)
 	b.greetings(roomID, userID)
 	return eventID, nil
 }
@@ -198,7 +156,7 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 	defer b.typing(roomID, false)
 
 	content.RelatesTo = nil
-	_, err = b.send(roomID, content)
+	_, err = b.lp.Send(roomID, content)
 	if err != nil {
 		b.Error(evt.RoomID, err.Error())
 	}
@@ -217,7 +175,7 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 		EventID: eventID,
 	}
 
-	_, err = b.send(b.roomID, content)
+	_, err = b.lp.Send(b.roomID, content)
 	if err != nil {
 		b.Error(b.roomID, "user %s tried to send a message from room %s, but creation of a thread failed: %v", evt.Sender, evt.RoomID, err)
 		b.Error(evt.RoomID, b.txt.Error)

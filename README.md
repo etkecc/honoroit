@@ -8,6 +8,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ## Features
 
+* End-to-End encryption
 * Get a message from any matrix user proxied to a specific room. Any message that user will send in his 1:1 room with Honoroit will be proxied as thread messages
 * Chat with that user through the honoroit bot in a thread inside your special room. Any member of that special room can participate in discussion
 * When request fulfilled - send a `!ho done` in that thread - thread topic will be renamed and "proxied user" will know that request was closed (bot will leave user's room with special notice)

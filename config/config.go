@@ -31,17 +31,6 @@ func New() *Config {
 			DSN:     env("db.dsn", defaultConfig.DB.DSN),
 			Dialect: env("db.dialect", defaultConfig.DB.Dialect),
 		},
-		Mail: Mail{
-			IMAPhost: env("mail.imap.host", defaultConfig.Mail.IMAPhost),
-			IMAPport: env("mail.imap.port", defaultConfig.Mail.IMAPport),
-			SMTPhost: env("mail.smtp.host", defaultConfig.Mail.SMTPhost),
-			SMTPport: env("mail.smtp.port", defaultConfig.Mail.SMTPport),
-			Login:    env("mail.login", defaultConfig.Mail.Login),
-			Password: env("mail.password", defaultConfig.Mail.Password),
-			Email:    env("mail.email", defaultConfig.Mail.Email),
-			Mailbox:  env("mail.mailbox", defaultConfig.Mail.Mailbox),
-			Sentbox:  env("mail.sentbox", defaultConfig.Mail.Sentbox),
-		},
 		Text: Text{
 			Greetings: env("text.greetings", defaultConfig.Text.Greetings),
 			Error:     env("text.error", defaultConfig.Text.Error),

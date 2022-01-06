@@ -45,7 +45,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ## TODO
 
-* Email<->Matrix helpdesk
+* Unit tests
 
 ## Commands
 
@@ -67,27 +67,15 @@ env vars
 * **HONOROIT_PASSWORD** - user password
 * **HONOROIT_ROOMID** - room ID where threads will be created, eg: `!test:example.com`
 
-<!--
-* **HONOROIT_MAIL_SMTP_HOST** - SMTP host
-* **HONOROIT_MAIL_SMTP_PORT** - SMTP port
-* **HONOROIT_MAIL_IMAP_HOST** - IMAP host
-* **HONOROIT_MAIL_IMAP_PORT** - IMAP port
-* **HONOROIT_MAIL_LOGIN** - smtp/imap login (usually the same as email)
-* **HONOROIT_MAIL_PASSWORD** - smtp/imap password
-* **HONOROIT_MAIL_EMAIL** - "human-readable" email address (usually the same as login, but depends on provider)
--->
-
 ### optional
 
 * **HONOROIT_PREFIX** - command prefix
 * **HONOROIT_SENTRY** - sentry DSN
 * **HONOROIT_LOGLEVEL** - log level
+
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
-<!--
-* **HONOROIT_MAIL_MAILBOX** - inbox mailbox name
-* **HONOROIT_MAIL_SENTBOX** - Sent mailbox name
--->
+
 * **HONOROIT_TEXT_GREETINGS** - a message sent to customer on first contact
 * **HONOROIT_TEXT_ERROR** - a message sent to customer if something goes wrong
 * **HONOROIT_TEXT_EMPTYROOM** - a message sent to backoffice/threads room when customer left his room

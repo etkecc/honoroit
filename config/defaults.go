@@ -7,12 +7,6 @@ var defaultConfig = &Config{
 		DSN:     "/tmp/honoroit.db",
 		Dialect: "sqlite3",
 	},
-	Mail: Mail{
-		SMTPport: "587",
-		IMAPport: "993",
-		Mailbox:  "INBOX",
-		Sentbox:  "Sent",
-	},
 	Text: Text{
 		Greetings: "Hello\nyour message was sent to developers. Please, keep calm and wait for answer, usually it takes 1-2 days.",
 		Error:     "Something is wrong.\nI already notified developers, they're fixing the issue.\n\nPlease, try again later or use any other contact method.",

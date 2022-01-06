@@ -14,17 +14,12 @@ import (
 
 	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/logger"
-	"gitlab.com/etke.cc/honoroit/mail"
 	"gitlab.com/etke.cc/honoroit/matrix"
 )
-
-// Email switch. That functionality is WIP.
-const Email = false
 
 var (
 	version = "development"
 	bot     *matrix.Bot
-	email   *mail.Client
 	log     *logger.Logger
 )
 
@@ -41,7 +36,6 @@ func main() {
 	log.Info("#############################")
 
 	initBot(cfg)
-	initMail(cfg)
 	initShutdown()
 
 	log.Debug("starting bot...")
@@ -88,29 +82,6 @@ func initBot(cfg *config.Config) {
 		log.Fatal("cannot create the matrix bot: %v", err)
 	}
 	log.Debug("bot has been created")
-}
-
-func initMail(cfg *config.Config) {
-	if !Email {
-		return
-	}
-	email = mail.New(&mail.Config{
-		IMAPhost: cfg.Mail.IMAPhost,
-		IMAPPort: cfg.Mail.IMAPport,
-		Login:    cfg.Mail.Login,
-		Password: cfg.Mail.Password,
-		Mailbox:  cfg.Mail.Mailbox,
-		Sentbox:  cfg.Mail.Sentbox,
-		LogLevel: cfg.LogLevel,
-	})
-	defer email.Stop()
-
-	go func(email *mail.Client) {
-		err := email.Start()
-		if err != nil {
-			log.Fatal("cannot start email: %v", err)
-		}
-	}(email)
 }
 
 func initShutdown() {

@@ -22,6 +22,8 @@ docker:
   services:
     - docker:dind
   image: jdrouet/docker-with-buildx:stable
+  before_script:
+    - apk --no-cache add make
   script:
     - make login docker
   tags:

@@ -21,10 +21,8 @@ docker:
   only: ['main', 'tags']
   services:
     - docker:dind
-  image: docker:stable
-  before_script:
-    - apk --no-cache add make
+  image: registry.gitlab.com/etke.cc/base
   script:
-    - make login docker publish
+    - make login docker
   tags:
     - docker

@@ -21,7 +21,7 @@ docker:
   only: ['main', 'tags']
   services:
     - docker:dind
-  image: registry.gitlab.com/etke.cc/base
+  image: jdrouet/docker-with-buildx:stable
   script:
     - make login docker
   tags:

@@ -16,6 +16,7 @@ endif
 update:
 	go get ./cmd
 	go mod tidy
+	go mod vendor
 
 mock:
 	-@rm -rf mocks

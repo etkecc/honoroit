@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"fmt"
+	"strings"
 	"unsafe"
 
 	"maunium.net/go/mautrix/event"
@@ -108,6 +109,22 @@ func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body str
 	return err
 }
 
+// clearReply removes quotation of previous message in reply message, because it may contain sensitive info
+func (b *Bot) clearReply(content *event.MessageEventContent) {
+	index := strings.Index(content.Body, "> <@")
+	formattedIndex := strings.Index(content.FormattedBody, "</mx-reply>")
+	if index >= 0 {
+		index = strings.Index(content.Body, "\n\n")
+		// 2 is length of "\n\n"
+		content.Body = content.Body[index+2:]
+	}
+
+	if formattedIndex >= 0 {
+		// 11 is length of "</mx-reply>"
+		content.FormattedBody = content.FormattedBody[formattedIndex+11:]
+	}
+}
+
 func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error) {
 	b.log.Debug("starting new thread for %s request from %s", userID, roomID)
 	eventID, err := b.findEventID(roomID)
@@ -145,8 +162,13 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 		b.Error(evt.RoomID, "the message doesn't relate to any thread, so I don't know where to forward it.")
 		return
 	}
+	threadID, err := b.findThread(evt)
+	if err != nil {
+		b.Error(evt.RoomID, "cannot find a thread: %v", err)
+		return
+	}
 
-	roomID, err := b.findRoomID(relation.EventID)
+	roomID, err := b.findRoomID(threadID)
 	if err != nil {
 		b.Error(evt.RoomID, err.Error())
 		return
@@ -156,6 +178,7 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 	defer b.typing(roomID, false)
 
 	content.RelatesTo = nil
+	b.clearReply(content)
 	_, err = b.lp.Send(roomID, content)
 	if err != nil {
 		b.Error(evt.RoomID, err.Error())

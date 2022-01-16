@@ -3,11 +3,44 @@ package matrix
 import (
 	"errors"
 
+	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
 
 // errNotMapped returned if roomID or eventID doesn't exist in room<->event map (yet)
 var errNotMapped = errors.New("cannot find appropriate mapping")
+
+// errNotRelated returned if a message doesn't have relation (even recursive) to a thread
+var errNotRelated = errors.New("cannot find appropriate thread")
+
+func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
+	err := evt.Content.ParseRaw(event.EventMessage)
+	if err != nil && err != event.ContentAlreadyParsed {
+		return "", err
+	}
+
+	relation := evt.Content.AsMessage().RelatesTo
+	// if relation is empty, consider that message as a thread root
+	if relation == nil {
+		return evt.ID, nil
+	}
+
+	// If message relates to a thread - return thread root event ID
+	if relation.Type == ThreadRelation {
+		return relation.EventID, nil
+	}
+
+	// If message is a reply-to, try to find a thread root
+	if relation.Type == event.RelReply {
+		evt, err = b.lp.GetClient().GetEvent(evt.RoomID, relation.EventID)
+		if err != nil {
+			return "", err
+		}
+		return b.findThread(evt)
+	}
+
+	return "", errNotRelated
+}
 
 // findRoomID by eventID
 func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {

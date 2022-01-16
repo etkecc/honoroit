@@ -13,6 +13,21 @@ The main idea of that bot is to give you the same abilities as with website chat
 * Chat with that user through the honoroit bot in a thread inside your special room. Any member of that special room can participate in discussion
 * When request fulfilled - send a `!ho done` in that thread - thread topic will be renamed and "proxied user" will know that request was closed (bot will leave user's room with special notice)
 
+## Warning
+
+Honoroit utilizes [MSC 3440: Threading](https://github.com/matrix-org/matrix-doc/pull/3440/) which is:
+
+* not stable yet
+* not part of the protocol specification yet
+* requires a compatible client app (e.g. Element with `Threads` enabled in `Labs`)
+
+Of course, there is fallback mode with reply-to (supported by any matrix server and client):
+honoroit will try to find mappings, going recursively through reply-to chain,
+but that mode considered as workaround and it's perfomance is poor.
+
+Honoroit used as support service in the [etke.cc](https://etke.cc) and works pretty good in daily operations,
+so just keep in mind the limitations above.
+
 ## How it looks like
 
 <details>

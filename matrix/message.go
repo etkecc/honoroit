@@ -82,6 +82,7 @@ func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body str
 		return err
 	}
 	content := evt.Content.AsMessage()
+	b.clearPrefix(content)
 	if body == "" {
 		body = content.Body
 	}
@@ -107,6 +108,19 @@ func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body str
 	b.log.Debug("replacing thread topic event")
 	_, err = b.lp.Send(b.roomID, content)
 	return err
+}
+
+func (b *Bot) clearPrefix(content *event.MessageEventContent) {
+	for _, prefix := range b.prefixes {
+		index := strings.Index(content.Body, prefix)
+		formattedIndex := strings.Index(content.FormattedBody, prefix)
+		if index > -1 {
+			content.Body = strings.Replace(content.Body, prefix, "", 1)
+		}
+		if formattedIndex > -1 {
+			content.FormattedBody = strings.Replace(content.FormattedBody, prefix, "", 1)
+		}
+	}
 }
 
 // clearReply removes quotation of previous message in reply message, because it may contain sensitive info
@@ -141,7 +155,7 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID) (id.EventID, error
 
 	content := &event.MessageEventContent{
 		MsgType: event.MsgText,
-		Body:    "Request by " + userID.String() + " in " + roomID.String(),
+		Body:    b.txt.PrefixOpen + " Request by " + userID.String() + " in " + roomID.String(),
 	}
 
 	eventID, err = b.lp.Send(b.roomID, content)

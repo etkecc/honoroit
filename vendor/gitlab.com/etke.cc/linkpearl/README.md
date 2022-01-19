@@ -1,4 +1,4 @@
-# linkpearl [![Buy me a Coffee](https://shields.io/badge/donate-buy%20me%20a%20coffee-green?logo=buy-me-a-coffee&style=for-the-badge)](https://buymeacoffee.com/etkecc)[![Go Report Card](https://goreportcard.com/badge/gitlab.com/etke.cc/linkpearl)](https://goreportcard.com/report/gitlab.com/etke.cc/linkpearl) [![Go Reference](https://pkg.go.dev/badge/gitlab.com/etke.cc/linkpearl.svg)](https://pkg.go.dev/gitlab.com/etke.cc/linkpearl)
+# linkpearl [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/etkecc) [![Go Report Card](https://goreportcard.com/badge/gitlab.com/etke.cc/linkpearl)](https://goreportcard.com/report/gitlab.com/etke.cc/linkpearl) [![Go Reference](https://pkg.go.dev/badge/gitlab.com/etke.cc/linkpearl.svg)](https://pkg.go.dev/gitlab.com/etke.cc/linkpearl)
 
 > [more about that name](https://ffxiv.gamerescape.com/wiki/Linkpearl)
 
@@ -23,7 +23,6 @@ go lp.Start()
 
 ## TODO
 
-* Integrate with [Honoroit](https://gitlab.com/etke.cc/honoroit)
 * Unit tests
 
 ## Features

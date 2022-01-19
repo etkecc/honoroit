@@ -44,16 +44,16 @@ github.com/tidwall/pretty
 # github.com/tidwall/sjson v1.2.3
 ## explicit; go 1.14
 github.com/tidwall/sjson
-# gitlab.com/etke.cc/linkpearl v0.0.0-20220105220643-3168fc8be682
+# gitlab.com/etke.cc/linkpearl v0.0.0-20220117210040-2e05360b937e
 ## explicit; go 1.17
 gitlab.com/etke.cc/linkpearl
 gitlab.com/etke.cc/linkpearl/config
 gitlab.com/etke.cc/linkpearl/store
-# golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
+# golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
 ## explicit; go 1.17
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
+# golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -70,7 +70,7 @@ gopkg.in/yaml.v3
 # maunium.net/go/maulogger/v2 v2.3.2
 ## explicit; go 1.11
 maunium.net/go/maulogger/v2
-# maunium.net/go/mautrix v0.10.9
+# maunium.net/go/mautrix v0.10.10
 ## explicit; go 1.14
 maunium.net/go/mautrix
 maunium.net/go/mautrix/appservice

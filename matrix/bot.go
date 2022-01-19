@@ -21,11 +21,12 @@ const (
 
 // Bot represents matrix bot
 type Bot struct {
-	txt    *Text
-	log    *logger.Logger
-	lp     *linkpearl.Linkpearl
-	prefix string
-	roomID id.RoomID
+	txt      *Text
+	log      *logger.Logger
+	lp       *linkpearl.Linkpearl
+	prefix   string
+	prefixes []string
+	roomID   id.RoomID
 }
 
 // Config represents matrix config
@@ -54,6 +55,11 @@ type Config struct {
 
 // Text messages
 type Text struct {
+	// PrefixOpen is a prefix added to new thread topics
+	PrefixOpen string
+	// PrefixDone is a prefix added to threads marked as done/closed
+	PrefixDone string
+
 	// Greetings message sent to customer on first contact
 	Greetings string
 	// Error message sent to customer if something goes wrong
@@ -83,11 +89,12 @@ func NewBot(cfg *Config) (*Bot, error) {
 	}
 
 	bot := &Bot{
-		lp:     lp,
-		log:    log,
-		txt:    cfg.Text,
-		prefix: cfg.Prefix,
-		roomID: id.RoomID(cfg.RoomID),
+		lp:       lp,
+		log:      log,
+		txt:      cfg.Text,
+		prefix:   cfg.Prefix,
+		prefixes: []string{cfg.Text.PrefixOpen, cfg.Text.PrefixDone},
+		roomID:   id.RoomID(cfg.RoomID),
 	}
 
 	return bot, nil

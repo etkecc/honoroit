@@ -88,10 +88,8 @@ env vars
 * **HONOROIT_PREFIX** - command prefix
 * **HONOROIT_SENTRY** - sentry DSN
 * **HONOROIT_LOGLEVEL** - log level
-
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
-
 * **HONOROIT_TEXT_GREETINGS** - a message sent to customer on first contact
 * **HONOROIT_TEXT_ERROR** - a message sent to customer if something goes wrong
 * **HONOROIT_TEXT_EMPTYROOM** - a message sent to backoffice/threads room when customer left his room

@@ -29,6 +29,14 @@ type RoomAvatarEventContent struct {
 	URL id.ContentURI `json:"url"`
 }
 
+// ServerACLEventContent represents the content of a m.room.server_acl state event.
+// https://spec.matrix.org/v1.1/client-server-api/#server-access-control-lists-acls-for-rooms
+type ServerACLEventContent struct {
+	Allow           []string `json:"allow,omitempty"`
+	AllowIPLiterals bool     `json:"allow_ip_literals"`
+	Deny            []string `json:"deny,omitempty"`
+}
+
 // TopicEventContent represents the content of a m.room.topic state event.
 // https://matrix.org/docs/spec/client_server/r0.6.0#m-room-topic
 type TopicEventContent struct {
@@ -135,4 +143,12 @@ type SpaceChildEventContent struct {
 type SpaceParentEventContent struct {
 	Via       []string `json:"via,omitempty"`
 	Canonical bool     `json:"canonical,omitempty"`
+}
+
+// ModPolicyContent represents the content of a m.room.rule.user, m.room.rule.room, and m.room.rule.server state event.
+// https://spec.matrix.org/v1.1/client-server-api/#moderation-policy-lists
+type ModPolicyContent struct {
+	Entity         string `json:"entity"`
+	Reason         string `json:"reason"`
+	Recommendation string `json:"recommendation"`
 }

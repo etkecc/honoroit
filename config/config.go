@@ -32,10 +32,12 @@ func New() *Config {
 			Dialect: env("db.dialect", defaultConfig.DB.Dialect),
 		},
 		Text: Text{
-			Greetings: env("text.greetings", defaultConfig.Text.Greetings),
-			Error:     env("text.error", defaultConfig.Text.Error),
-			EmptyRoom: env("text.emptyroom", defaultConfig.Text.EmptyRoom),
-			Done:      env("text.done", defaultConfig.Text.Done),
+			PrefixOpen: env("text.prefix.open", defaultConfig.Text.PrefixOpen),
+			PrefixDone: env("text.prefix.done", defaultConfig.Text.PrefixDone),
+			Greetings:  env("text.greetings", defaultConfig.Text.Greetings),
+			Error:      env("text.error", defaultConfig.Text.Error),
+			EmptyRoom:  env("text.emptyroom", defaultConfig.Text.EmptyRoom),
+			Done:       env("text.done", defaultConfig.Text.Done),
 		},
 	}
 }

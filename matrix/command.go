@@ -10,12 +10,14 @@ import (
 
 func (b *Bot) parseCommand(message string) []string {
 	command := []string{}
+
 	// ignore not prefixied commands
-	if !strings.HasPrefix(message, b.prefix) {
+	index := strings.LastIndex(message, b.prefix)
+	if index < 0 {
 		return command
 	}
-
-	message = strings.TrimSpace(message[len(b.prefix)+1:])
+	offset := index + len(b.prefix) + 1
+	message = strings.TrimSpace(message[offset:])
 	b.log.Debug("received a command: %s", message)
 
 	command = strings.Split(message, " ")
@@ -51,6 +53,11 @@ func (b *Bot) renameRequest(evt *event.Event) {
 		b.Error(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I rename your request.")
 		return
 	}
+	threadID, err := b.findThread(evt)
+	if err != nil {
+		b.Error(evt.RoomID, "cannot find a thread: %v", err)
+		return
+	}
 
 	command := ""
 	commandSlice := b.parseCommand(content.Body)
@@ -63,9 +70,9 @@ func (b *Bot) renameRequest(evt *event.Event) {
 		commandFormatted = strings.Join(commandSliceFormatted[1:], " ")
 	}
 
-	err := b.replace(relation.EventID, "", "", command, commandFormatted)
+	err = b.replace(threadID, "", "", command, commandFormatted)
 	if err != nil {
-		b.Error(b.roomID, "cannot replace thread %s topic: %v", relation.EventID, err)
+		b.Error(b.roomID, "cannot replace thread %s topic: %v", threadID, err)
 	}
 }
 
@@ -77,8 +84,13 @@ func (b *Bot) closeRequest(evt *event.Event) {
 		b.Error(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I close your request.")
 		return
 	}
+	threadID, err := b.findThread(evt)
+	if err != nil {
+		b.Error(evt.RoomID, "cannot find a thread: %v", err)
+		return
+	}
 
-	roomID, err := b.findRoomID(relation.EventID)
+	roomID, err := b.findRoomID(threadID)
 	if err != nil {
 		b.Error(evt.RoomID, err.Error())
 		return
@@ -92,9 +104,9 @@ func (b *Bot) closeRequest(evt *event.Event) {
 		b.Error(evt.RoomID, err.Error())
 	}
 	timestamp := time.Now().UTC().Format("2006/01/02 15:04:05 MST")
-	err = b.replace(relation.EventID, "[DONE] ", " ("+timestamp+")", "", "")
+	err = b.replace(threadID, b.txt.PrefixDone+" ", " ("+timestamp+")", "", "")
 	if err != nil {
-		b.Error(b.roomID, "cannot replace thread %s topic: %v", relation.EventID, err)
+		b.Error(b.roomID, "cannot replace thread %s topic: %v", threadID, err)
 	}
 
 	b.log.Debug("leaving room %s", roomID)
@@ -105,7 +117,7 @@ func (b *Bot) closeRequest(evt *event.Event) {
 			b.Error(evt.RoomID, "cannot leave the room %s after marking request as done: %v", roomID, err)
 		}
 	}
-	b.removeMapping("event_id", relation.EventID.String())
+	b.removeMapping("event_id", threadID.String())
 }
 
 func (b *Bot) inviteRequest(evt *event.Event) {
@@ -116,8 +128,13 @@ func (b *Bot) inviteRequest(evt *event.Event) {
 		b.Error(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I invite you.")
 		return
 	}
+	threadID, err := b.findThread(evt)
+	if err != nil {
+		b.Error(evt.RoomID, "cannot find a thread: %v", err)
+		return
+	}
 
-	roomID, err := b.findRoomID(relation.EventID)
+	roomID, err := b.findRoomID(threadID)
 	if err != nil {
 		b.Error(evt.RoomID, err.Error())
 		return

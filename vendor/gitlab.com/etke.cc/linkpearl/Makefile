@@ -1,6 +1,6 @@
 # update go dependencies
 update:
-	go get ./cmd
+	go get .
 	go mod tidy
 
 mock:

@@ -107,9 +107,9 @@ func (et *Type) IsCustom() bool {
 func (et *Type) GuessClass() TypeClass {
 	switch et.Type {
 	case StateAliases.Type, StateCanonicalAlias.Type, StateCreate.Type, StateJoinRules.Type, StateMember.Type,
-		StatePowerLevels.Type, StateRoomName.Type, StateRoomAvatar.Type, StateTopic.Type, StatePinnedEvents.Type,
-		StateTombstone.Type, StateEncryption.Type, StateBridge.Type, StateHalfShotBridge.Type, StateSpaceParent.Type,
-		StateSpaceChild.Type:
+		StatePowerLevels.Type, StateRoomName.Type, StateRoomAvatar.Type, StateServerACL.Type, StateTopic.Type,
+		StatePinnedEvents.Type, StateTombstone.Type, StateEncryption.Type, StateBridge.Type, StateHalfShotBridge.Type,
+		StateSpaceParent.Type, StateSpaceChild.Type, StatePolicyRoom.Type, StatePolicyServer.Type, StatePolicyUser.Type:
 		return StateEventType
 	case EphemeralEventReceipt.Type, EphemeralEventTyping.Type, EphemeralEventPresence.Type:
 		return EphemeralEventType
@@ -175,7 +175,11 @@ var (
 	StateTopic             = Type{"m.room.topic", StateEventType}
 	StateRoomAvatar        = Type{"m.room.avatar", StateEventType}
 	StatePinnedEvents      = Type{"m.room.pinned_events", StateEventType}
+	StateServerACL         = Type{"m.room.server_acl", StateEventType}
 	StateTombstone         = Type{"m.room.tombstone", StateEventType}
+	StatePolicyRoom        = Type{"m.policy.rule.room", StateEventType}
+	StatePolicyServer      = Type{"m.policy.rule.server", StateEventType}
+	StatePolicyUser        = Type{"m.policy.rule.user", StateEventType}
 	StateEncryption        = Type{"m.room.encryption", StateEventType}
 	StateBridge            = Type{"m.bridge", StateEventType}
 	StateHalfShotBridge    = Type{"uk.half-shot.bridge", StateEventType}

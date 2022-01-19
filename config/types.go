@@ -35,6 +35,11 @@ type DB struct {
 
 // Text messages
 type Text struct {
+	// PrefixOpen is a prefix added to new thread topics
+	PrefixOpen string
+	// PrefixDone is a prefix added to threads marked as done/closed
+	PrefixDone string
+
 	// Greetings message sent to customer on first contact
 	Greetings string
 	// Error message sent to customer if something goes wrong

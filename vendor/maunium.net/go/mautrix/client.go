@@ -620,11 +620,11 @@ func (cli *Client) FullSyncRequest(req ReqSync) (resp *RespSync, err error) {
 	_, err = cli.MakeFullRequest(fullReq)
 	duration := time.Now().Sub(start)
 	timeout := time.Duration(req.Timeout) * time.Millisecond
-	buffer := 5 * time.Second
+	buffer := 10 * time.Second
 	if req.Since == "" {
 		buffer = 1 * time.Minute
 	}
-	if duration > timeout+buffer {
+	if err == nil && duration > timeout+buffer {
 		cli.logWarning("Sync request (%s) took %s with timeout %s", req.Since, duration, timeout)
 	}
 	return
@@ -1014,9 +1014,15 @@ func (cli *Client) CreateRoom(req *ReqCreateRoom) (resp *RespCreateRoom, err err
 }
 
 // LeaveRoom leaves the given room. See http://matrix.org/docs/spec/client_server/r0.2.0.html#post-matrix-client-r0-rooms-roomid-leave
-func (cli *Client) LeaveRoom(roomID id.RoomID) (resp *RespLeaveRoom, err error) {
+func (cli *Client) LeaveRoom(roomID id.RoomID, optionalReq ...*ReqLeave) (resp *RespLeaveRoom, err error) {
+	req := &ReqLeave{}
+	if len(optionalReq) == 1 {
+		req = optionalReq[0]
+	} else if len(optionalReq) > 1 {
+		panic("invalid number of arguments to LeaveRoom")
+	}
 	u := cli.BuildURL("rooms", roomID, "leave")
-	_, err = cli.MakeRequest("POST", u, struct{}{}, &resp)
+	_, err = cli.MakeRequest("POST", u, req, &resp)
 	return
 }
 

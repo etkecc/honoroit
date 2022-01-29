@@ -25,21 +25,44 @@ func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 		return evt.ID, nil
 	}
 
+	if threadID := b.getCache(relation.EventID); threadID != "" {
+		return threadID, nil
+	}
+
 	// If message relates to a thread - return thread root event ID
 	if relation.Type == ThreadRelation {
+		b.setCache(evt.ID, relation.EventID)
 		return relation.EventID, nil
 	}
 
 	// If message is a reply-to, try to find a thread root
 	if relation.Type == event.RelReply {
-		evt, err = b.lp.GetClient().GetEvent(evt.RoomID, relation.EventID)
-		if err != nil {
-			return "", err
-		}
-		return b.findThread(evt)
+		return b.walkReplies(evt)
 	}
 
 	return "", errNotRelated
+}
+
+func (b *Bot) walkReplies(evt *event.Event) (id.EventID, error) {
+	var err error
+	relation := evt.Content.AsMessage().RelatesTo
+	threadID := b.getCache(relation.EventID)
+	if threadID != "" {
+		return threadID, nil
+	}
+
+	evt, err = b.lp.GetClient().GetEvent(evt.RoomID, relation.EventID)
+	if err != nil {
+		return "", err
+	}
+
+	threadID, err = b.findThread(evt)
+	if err != nil {
+		return "", errNotRelated
+	}
+
+	b.setCache(evt.ID, threadID)
+	return threadID, nil
 }
 
 // findRoomID by eventID

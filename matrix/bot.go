@@ -3,6 +3,7 @@ package matrix
 import (
 	"database/sql"
 
+	"git.sr.ht/~xn/cache"
 	"gitlab.com/etke.cc/linkpearl"
 	"gitlab.com/etke.cc/linkpearl/config"
 	"maunium.net/go/mautrix/id"
@@ -24,6 +25,7 @@ type Bot struct {
 	txt      *Text
 	log      *logger.Logger
 	lp       *linkpearl.Linkpearl
+	cache    cache.Cache
 	prefix   string
 	prefixes []string
 	roomID   id.RoomID
@@ -51,6 +53,9 @@ type Config struct {
 	DB *sql.DB
 	// Dialect of the DB: postgres, sqlite3
 	Dialect string
+
+	// Cache client
+	Cache cache.Cache
 }
 
 // Text messages
@@ -92,6 +97,7 @@ func NewBot(cfg *Config) (*Bot, error) {
 		lp:       lp,
 		log:      log,
 		txt:      cfg.Text,
+		cache:    cfg.Cache,
 		prefix:   cfg.Prefix,
 		prefixes: []string{cfg.Text.PrefixOpen, cfg.Text.PrefixDone},
 		roomID:   id.RoomID(cfg.RoomID),

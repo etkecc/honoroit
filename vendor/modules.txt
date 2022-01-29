@@ -1,3 +1,9 @@
+# git.sr.ht/~xn/cache v1.0.0
+## explicit; go 1.17
+git.sr.ht/~xn/cache
+git.sr.ht/~xn/cache/lfu
+git.sr.ht/~xn/cache/lru
+git.sr.ht/~xn/cache/tlru
 # github.com/btcsuite/btcutil v1.0.2
 ## explicit; go 1.13
 github.com/btcsuite/btcutil/base58

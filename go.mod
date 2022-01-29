@@ -5,6 +5,7 @@ go 1.17
 // replace gitlab.com/etke.cc/linkpearl => ../linkpearl
 
 require (
+	git.sr.ht/~xn/cache v1.0.0
 	github.com/getsentry/sentry-go v0.12.0
 	github.com/lib/pq v1.10.4
 	github.com/mattn/go-sqlite3 v1.14.10

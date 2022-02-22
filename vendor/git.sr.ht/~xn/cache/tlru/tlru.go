@@ -15,6 +15,7 @@ type TLRU struct {
 
 type item struct {
 	v       interface{}
+	used    int64
 	expires int64
 }
 
@@ -28,23 +29,8 @@ func New(size int, ttl time.Duration) *TLRU {
 		ttl:  ttl,
 		data: make(map[interface{}]*item, size),
 	}
-	go tlru.cleanup()
 
 	return tlru
-}
-
-func (c *TLRU) cleanup() {
-	ticker := time.NewTicker(c.ttl / 2)
-	for range ticker.C {
-		c.Lock()
-		now := time.Now().UnixMicro() + c.ttl.Microseconds()
-		for k, v := range c.data {
-			if now >= v.expires {
-				delete(c.data, k)
-			}
-		}
-		c.Unlock()
-	}
 }
 
 // removeLRU removes least recently used item
@@ -52,9 +38,9 @@ func (c *TLRU) removeLRU() {
 	var key interface{}
 	lru := time.Now().UnixMicro()
 	for k, v := range c.data {
-		if v.expires < lru {
+		if v.used < lru {
 			key = k
-			lru = v.expires
+			lru = v.used
 		}
 	}
 	delete(c.data, key)
@@ -64,28 +50,42 @@ func (c *TLRU) removeLRU() {
 func (c *TLRU) Set(key interface{}, value interface{}) {
 	c.Lock()
 	defer c.Unlock()
-	if len(c.data) == c.max {
+
+	if len(c.data) >= c.max {
 		c.removeLRU()
 	}
-	c.data[key] = &item{v: value, expires: time.Now().UnixMicro()}
+	now := time.Now().UnixMicro()
+	c.data[key] = &item{v: value, expires: now + c.ttl.Microseconds(), used: now - 100}
 }
 
 // Has check if an item exists in cache, without useness update
 func (c *TLRU) Has(key interface{}) bool {
+	c.RLock()
+	defer c.RUnlock()
+
 	_, has := c.data[key]
 	return has
 }
 
 // Get an item from cache
 func (c *TLRU) Get(key interface{}) interface{} {
+	c.RLock()
 	v, has := c.data[key]
+	c.RUnlock()
 	if !has {
+		return nil
+	}
+
+	if time.Now().UnixMicro() > v.expires {
+		c.Lock()
+		delete(c.data, key)
+		c.Unlock()
 		return nil
 	}
 
 	c.Lock()
 	defer c.Unlock()
-	c.data[key].expires = time.Now().UnixMicro()
+	c.data[key].used = time.Now().UnixMicro()
 
 	return v.v
 }
@@ -94,6 +94,7 @@ func (c *TLRU) Get(key interface{}) interface{} {
 func (c *TLRU) Remove(key interface{}) {
 	c.Lock()
 	defer c.Unlock()
+
 	if len(c.data) == 0 {
 		return
 	}

@@ -1,6 +1,8 @@
-# cache [![Go Report Card](https://goreportcard.com/badge/git.sr.ht/~xn/cache)](https://goreportcard.com/report/git.sr.ht/~xn/cache)[![Go Reference](https://pkg.go.dev/badge/git.sr.ht/~xn/cache.svg)](https://pkg.go.dev/git.sr.ht/~xn/cache)
+# cache [![Go Report Card](https://goreportcard.com/badge/git.sr.ht/~xn/cache)](https://goreportcard.com/report/git.sr.ht/~xn/cache)[![Go Reference](https://pkg.go.dev/badge/git.sr.ht/~xn/cache.svg)](https://pkg.go.dev/git.sr.ht/~xn/cache)[![Go Documentation](https://godocs.io/git.sr.ht/~xn/cache?status.svg)](https://godocs.io/git.sr.ht/~xn/cache)
 
-different cache algorithms implementation in golang
+Thread-safe implementation of different cache algorithms in golang
+
+[issues](https://todo.sr.ht/~xn/cache) | [lists](https://sr.ht/~xn/cache/lists)
 
 ```bash
 go get git.sr.ht/~xn/cache
@@ -28,39 +30,16 @@ lfuCache.Set(1, 10)
 
 ### implemented
 
-* [Least Frequently Used](https://en.wikipedia.org/wiki/Cache_replacement_policies#Least-frequently_used_(LFU)) - `cache.NewLFU`
+* `Null` - empty/stub cache client, when you want to disable cache, but your code require something that implements `cache.Cache` interface - `cache.NewNull()`
+* [Least Frequently Used](https://en.wikipedia.org/wiki/Cache_replacement_policies#Least-frequently_used_(LFU)) - `cache.NewLFU()`
 * [Least Recently Used](https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)) - `cache.NewLRU()`
-* [Time aware Least Recently Used](https://en.wikipedia.org/wiki/Cache_replacement_policies#Time_aware_least_recently_used_(TLRU)) - `cache.NewTLRU`
+* [Time aware Least Recently Used](https://en.wikipedia.org/wiki/Cache_replacement_policies#Time_aware_least_recently_used_(TLRU)) - `cache.NewTLRU()`
+* [Memcached (distributed memory caching)](https://en.wikipedia.org/wiki/Memcached) - wrapper of [github.com/bradfitz/gomemcache](https://github.com/bradfitz/gomemcache) with `cache.Cache` interface - `cache.NewMemcached()`
 
 ### tests
 
 ```bash
-git.sr.ht/~xn/cache/cache.go:26:	NewLRU		100.0%
-git.sr.ht/~xn/cache/cache.go:31:	NewTLRU		100.0%
-git.sr.ht/~xn/cache/cache.go:36:	NewLFU		100.0%
-git.sr.ht/~xn/cache/lfu/lfu.go:21:	New		100.0%
-git.sr.ht/~xn/cache/lfu/lfu.go:32:	removeLFU	100.0%
-git.sr.ht/~xn/cache/lfu/lfu.go:45:	Set		100.0%
-git.sr.ht/~xn/cache/lfu/lfu.go:55:	Has		100.0%
-git.sr.ht/~xn/cache/lfu/lfu.go:61:	Get		100.0%
-git.sr.ht/~xn/cache/lfu/lfu.go:75:	Remove		100.0%
-git.sr.ht/~xn/cache/lfu/lfu.go:85:	Purge		100.0%
-git.sr.ht/~xn/cache/lru/lru.go:21:	New		100.0%
-git.sr.ht/~xn/cache/lru/lru.go:32:	removeLRU	100.0%
-git.sr.ht/~xn/cache/lru/lru.go:45:	Set		100.0%
-git.sr.ht/~xn/cache/lru/lru.go:55:	Has		100.0%
-git.sr.ht/~xn/cache/lru/lru.go:61:	Get		100.0%
-git.sr.ht/~xn/cache/lru/lru.go:75:	Remove		100.0%
-git.sr.ht/~xn/cache/lru/lru.go:85:	Purge		100.0%
-git.sr.ht/~xn/cache/tlru/tlru.go:22:	New		100.0%
-git.sr.ht/~xn/cache/tlru/tlru.go:36:	cleanup		100.0%
-git.sr.ht/~xn/cache/tlru/tlru.go:51:	removeLRU	100.0%
-git.sr.ht/~xn/cache/tlru/tlru.go:64:	Set		100.0%
-git.sr.ht/~xn/cache/tlru/tlru.go:74:	Has		100.0%
-git.sr.ht/~xn/cache/tlru/tlru.go:80:	Get		100.0%
-git.sr.ht/~xn/cache/tlru/tlru.go:94:	Remove		100.0%
-git.sr.ht/~xn/cache/tlru/tlru.go:104:	Purge		100.0%
-total:					(statements)	100.0%
+total:						(statements)	96.2%
 ```
 
 ### benchmarks
@@ -70,12 +49,12 @@ goos: linux
 goarch: amd64
 pkg: git.sr.ht/~xn/cache/lfu
 cpu: Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz
-BenchmarkSet-8      	5137729	         293.8 ns/op	     47 B/op	      2 allocs/op
-BenchmarkSetX2-8    	  36928	        120980 ns/op	     51 B/op	      3 allocs/op
-BenchmarkGet-8      	8728536	         152.3 ns/op	      0 B/op	      0 allocs/op
-BenchmarkHas-8         17306770          89.02 ns/op	      0 B/op	      0 allocs/op
-BenchmarkRemove-8   	9493314	         233.2 ns/op	      0 B/op	      0 allocs/op
-BenchmarkPurge-8    	  14232	        175344 ns/op	 909389 B/op	      3 allocs/op
+BenchmarkSet-8      	4637701	      222.0 ns/op	     47 B/op	      2 allocs/op
+BenchmarkSetX2-8    	  36528	     121528 ns/op	     50 B/op	      3 allocs/op
+BenchmarkGet-8      	7890040	      157.2 ns/op	      0 B/op	      0 allocs/op
+BenchmarkHas-8      	8764112	      154.3 ns/op	      0 B/op	      0 allocs/op
+BenchmarkRemove-8   	8780908	      146.5 ns/op	      0 B/op	      0 allocs/op
+BenchmarkPurge-8    	  14826	     199172 ns/op	 909389 B/op	      3 allocs/op
 ```
 
 ```bash
@@ -83,12 +62,12 @@ goos: linux
 goarch: amd64
 pkg: git.sr.ht/~xn/cache/lru
 cpu: Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz
-BenchmarkSet-8      	 4158920	       297.3 ns/op	      47 B/op	       2 allocs/op
-BenchmarkSetX2-8    	   38054	      123251 ns/op	      50 B/op	       3 allocs/op
-BenchmarkGet-8      	 6358285	       223.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkHas-8      	16789678	       85.98 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRemove-8   	 9418458	       228.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPurge-8    	   14974	      234563 ns/op	  909389 B/op	       3 allocs/op
+BenchmarkSet-8      	4089240	      300.2 ns/op	     47 B/op	      2 allocs/op
+BenchmarkSetX2-8    	  37603	     120438 ns/op	     50 B/op	      3 allocs/op
+BenchmarkGet-8      	5671987	      248.3 ns/op	      0 B/op	      0 allocs/op
+BenchmarkHas-8      	8222047	      158.3 ns/op	      0 B/op	      0 allocs/op
+BenchmarkRemove-8   	8205411	      142.4 ns/op	      0 B/op	      0 allocs/op
+BenchmarkPurge-8    	  10000	     152320 ns/op	 458828 B/op	      3 allocs/op
 ```
 
 ```bash
@@ -96,10 +75,16 @@ goos: linux
 goarch: amd64
 pkg: git.sr.ht/~xn/cache/tlru
 cpu: Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz
-BenchmarkSet-8      	3922689	         316.2 ns/op	     47 B/op	      2 allocs/op
-BenchmarkSetX2-8    	  38558	        124703 ns/op	     50 B/op	      3 allocs/op
-BenchmarkGet-8      	5020369	         232.1 ns/op	      0 B/op	      0 allocs/op
-BenchmarkHas-8         14243359          95.20 ns/op	      0 B/op	      0 allocs/op
-BenchmarkRemove-8   	8639568	         143.2 ns/op	      0 B/op	      0 allocs/op
-BenchmarkPurge-8    	  10000	        186508 ns/op	 458824 B/op	      3 allocs/op
+BenchmarkSet-8      	4036375	      315.4 ns/op	     55 B/op	      2 allocs/op
+BenchmarkSetX2-8    	  36310	     117559 ns/op	     57 B/op	      3 allocs/op
+BenchmarkGet-8      	4849862	      259.5 ns/op	      0 B/op	      0 allocs/op
+BenchmarkHas-8         10223767	      155.3 ns/op	      0 B/op	      0 allocs/op
+BenchmarkRemove-8   	9375744	      141.9 ns/op	      0 B/op	      0 allocs/op
+BenchmarkPurge-8    	  15564	     173270 ns/op	 909389 B/op	      3 allocs/op
 ```
+
+### v2 todo
+
+* generics
+* `key` arg type change from `interface{}` to `string`
+* [request more changes](https://todo.sr.ht/~xn/cache)

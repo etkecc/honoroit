@@ -45,6 +45,7 @@ func (c *LRU) removeLRU() {
 func (c *LRU) Set(key interface{}, value interface{}) {
 	c.Lock()
 	defer c.Unlock()
+
 	if len(c.data) == c.max {
 		c.removeLRU()
 	}
@@ -53,13 +54,18 @@ func (c *LRU) Set(key interface{}, value interface{}) {
 
 // Has check if an item exists in cache, without useness update
 func (c *LRU) Has(key interface{}) bool {
+	c.RLock()
+	defer c.RUnlock()
+
 	_, has := c.data[key]
 	return has
 }
 
 // Get an item from cache
 func (c *LRU) Get(key interface{}) interface{} {
+	c.RLock()
 	v, has := c.data[key]
+	c.RUnlock()
 	if !has {
 		return nil
 	}
@@ -75,6 +81,7 @@ func (c *LRU) Get(key interface{}) interface{} {
 func (c *LRU) Remove(key interface{}) {
 	c.Lock()
 	defer c.Unlock()
+
 	if len(c.data) == 0 {
 		return
 	}

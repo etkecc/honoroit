@@ -1,6 +1,7 @@
 # update go dependencies
 update:
 	go get .
+	go get -u maunium.net/go/mautrix
 	go mod tidy
 
 mock:

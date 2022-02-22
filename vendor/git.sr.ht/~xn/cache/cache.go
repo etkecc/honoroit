@@ -5,6 +5,8 @@ import (
 
 	"git.sr.ht/~xn/cache/lfu"
 	"git.sr.ht/~xn/cache/lru"
+	"git.sr.ht/~xn/cache/memcached"
+	"git.sr.ht/~xn/cache/null"
 	"git.sr.ht/~xn/cache/tlru"
 )
 
@@ -22,6 +24,11 @@ type Cache interface {
 	Purge()
 }
 
+// NewNull creates an empty cache client, usable for testing
+func NewNull() Cache {
+	return null.New()
+}
+
 // NewLRU creates new Least Recently Used cache
 func NewLRU(size int) Cache {
 	return lru.New(size)
@@ -35,4 +42,9 @@ func NewTLRU(size int, ttl time.Duration) Cache {
 // NewLFU creates new Least Frequently Used cache
 func NewLFU(size int) Cache {
 	return lfu.New(size)
+}
+
+// NewMemcached creates new Memcached client
+func NewMemcached(ttl int32, servers ...string) Cache {
+	return memcached.New(ttl, servers...)
 }

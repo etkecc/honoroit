@@ -108,7 +108,7 @@ func recovery(roomID string) {
 
 	// try to send that error to matrix and log, if available
 	if bot != nil {
-		bot.Error(id.RoomID(roomID), "recovery(): %v", err)
+		bot.Error(id.RoomID(roomID), sentry.CurrentHub(), "recovery(): %v", err)
 	}
 
 	sentry.CurrentHub().Recover(err)

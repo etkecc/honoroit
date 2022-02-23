@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"github.com/getsentry/sentry-go"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 )
@@ -27,6 +28,16 @@ func (b *Bot) initSync() {
 }
 
 func (b *Bot) onEmpty(evt *event.Event) {
+	hub := sentry.CurrentHub().Clone()
+	hub.ConfigureScope(func(scope *sentry.Scope) {
+		scope.SetUser(sentry.User{ID: evt.Sender.String()})
+		scope.SetContext("event", map[string]string{
+			"id":     evt.ID.String(),
+			"room":   evt.RoomID.String(),
+			"sender": evt.Sender.String(),
+		})
+	})
+
 	members := b.lp.GetStore().GetRoomMembers(evt.RoomID)
 	if len(members) >= 1 && members[0] != b.lp.GetClient().UserID {
 		return
@@ -52,7 +63,7 @@ func (b *Bot) onEmpty(evt *event.Event) {
 
 	_, err = b.lp.Send(b.roomID, content)
 	if err != nil {
-		b.Error(b.roomID, "cannot send a notice about empty room %s: %v", evt.RoomID, err)
+		b.Error(b.roomID, hub, "cannot send a notice about empty room %s: %v", evt.RoomID, err)
 	}
 }
 
@@ -62,7 +73,17 @@ func (b *Bot) onMessage(_ mautrix.EventSource, evt *event.Event) {
 		return
 	}
 
-	b.handle(evt)
+	hub := sentry.CurrentHub().Clone()
+	hub.ConfigureScope(func(scope *sentry.Scope) {
+		scope.SetUser(sentry.User{ID: evt.Sender.String()})
+		scope.SetContext("event", map[string]string{
+			"id":     evt.ID.String(),
+			"room":   evt.RoomID.String(),
+			"sender": evt.Sender.String(),
+		})
+	})
+
+	b.handle(evt, hub)
 }
 
 func (b *Bot) onEncryptedMessage(_ mautrix.EventSource, evt *event.Event) {
@@ -71,12 +92,22 @@ func (b *Bot) onEncryptedMessage(_ mautrix.EventSource, evt *event.Event) {
 		return
 	}
 
+	hub := sentry.CurrentHub().Clone()
+	hub.ConfigureScope(func(scope *sentry.Scope) {
+		scope.SetUser(sentry.User{ID: evt.Sender.String()})
+		scope.SetContext("event", map[string]string{
+			"id":     evt.ID.String(),
+			"room":   evt.RoomID.String(),
+			"sender": evt.Sender.String(),
+		})
+	})
+
 	decrypted, err := b.lp.GetMachine().DecryptMegolmEvent(evt)
 	if err != nil {
-		b.Error(b.roomID, "cannot decrypt a message by %s in %s: %v", evt.Sender, evt.RoomID, err)
-		b.Error(evt.RoomID, b.txt.Error)
+		b.Error(b.roomID, hub, "cannot decrypt a message by %s in %s: %v", evt.Sender, evt.RoomID, err)
+		b.Error(evt.RoomID, hub, b.txt.Error)
 		return
 	}
 
-	b.handle(decrypted)
+	b.handle(decrypted, hub)
 }

@@ -14,6 +14,8 @@ type Config struct {
 	Prefix string
 	// LogLevel for logger
 	LogLevel string
+	// CacheSize max amount of items in cache
+	CacheSize int
 
 	// Text messages
 	Text Text

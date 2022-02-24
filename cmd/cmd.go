@@ -66,7 +66,7 @@ func initBot(cfg *config.Config) {
 	if err != nil {
 		log.Fatal("cannot initialize SQL database: %v", err)
 	}
-	tlru := cache.NewTLRU(2000, 1*time.Hour)
+	lru := cache.NewLRU(cfg.CacheSize)
 	botConfig := &matrix.Config{
 		Homeserver: cfg.Homeserver,
 		Login:      cfg.Login,
@@ -77,7 +77,7 @@ func initBot(cfg *config.Config) {
 		Text:       (*matrix.Text)(&cfg.Text),
 		DB:         db,
 		Dialect:    cfg.DB.Dialect,
-		Cache:      tlru,
+		Cache:      lru,
 	}
 	bot, err = matrix.NewBot(botConfig)
 	if err != nil {

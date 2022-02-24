@@ -1,4 +1,4 @@
-# git.sr.ht/~xn/cache v1.2.1
+# git.sr.ht/~xn/cache v1.2.2
 ## explicit; go 1.17
 git.sr.ht/~xn/cache
 git.sr.ht/~xn/cache/lfu

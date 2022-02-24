@@ -1,6 +1,10 @@
 package matrix
 
-import "maunium.net/go/mautrix/id"
+import (
+	"database/sql"
+
+	"maunium.net/go/mautrix/id"
+)
 
 var migrations = []string{
 	`
@@ -78,7 +82,8 @@ func (b *Bot) loadMapping(field, value string) (id.RoomID, string, id.EventID) {
 	var roomID id.RoomID
 	var email string
 	var eventID id.EventID
-	if err := row.Scan(&roomID, &email, &eventID); err != nil {
+	err := row.Scan(&roomID, &email, &eventID)
+	if err != nil && err != sql.ErrNoRows {
 		b.log.Error("cannot load mapping: %v", err)
 		return "", "", ""
 	}

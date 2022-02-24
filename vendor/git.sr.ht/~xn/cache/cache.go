@@ -35,8 +35,12 @@ func NewLRU(size int) Cache {
 }
 
 // NewTLRU cerates new Time aware Least Recently Used cache
-func NewTLRU(size int, ttl time.Duration) Cache {
-	return tlru.New(size, ttl)
+// Arguments:
+// size - max amount if items in cache
+// ttl - cached item expiration duration
+// stale - if true, stale cached item will be returned instead of nil, but only once
+func NewTLRU(size int, ttl time.Duration, stale bool) Cache {
+	return tlru.New(size, ttl, stale)
 }
 
 // NewLFU creates new Least Frequently Used cache

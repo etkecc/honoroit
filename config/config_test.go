@@ -17,8 +17,9 @@ var values = map[string]string{
 	"HONOROIT_PASSWORD":   "password",
 	"HONOROIT_ROOMID":     "!test:example.com",
 
-	"HONOROIT_PREFIX":   "!hohoho",
-	"HONOROIT_LOGLEVEL": "DEBUG",
+	"HONOROIT_PREFIX":    "!hohoho",
+	"HONOROIT_LOGLEVEL":  "DEBUG",
+	"HONOROIT_CACHESIZE": "100",
 
 	"HONOROIT_DB_DIALECT": "sqlite3",
 	"HONOROIT_DB_DSN":     "/tmp/test.db",
@@ -51,6 +52,7 @@ func (s *configSuite) TestNew() {
 	s.Equal("password", config.Password)
 	s.Equal("!test:example.com", config.RoomID)
 	s.Equal("DEBUG", config.LogLevel)
+	s.Equal(100, config.CacheSize)
 	s.Equal("!hohoho", config.Prefix)
 	s.Equal("sqlite3", config.DB.Dialect)
 	s.Equal("/tmp/test.db", config.DB.DSN)

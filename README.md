@@ -88,6 +88,7 @@ env vars
 * **HONOROIT_PREFIX** - command prefix
 * **HONOROIT_SENTRY** - sentry DSN
 * **HONOROIT_LOGLEVEL** - log level
+* **HONOROIT_CACHESIZE** - max allowed mappings in cache
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
 * **HONOROIT_TEXT_PREFIX_OPEN** - prefix of a new thread topic

@@ -8,9 +8,10 @@ import (
 // TLRU - Time aware Least Recently Used cache
 type TLRU struct {
 	sync.RWMutex
-	max  int
-	ttl  time.Duration
-	data map[interface{}]*item
+	max   int
+	ttl   time.Duration
+	data  map[interface{}]*item
+	stale bool
 }
 
 type item struct {
@@ -20,14 +21,15 @@ type item struct {
 }
 
 // New TLRU cache
-func New(size int, ttl time.Duration) *TLRU {
+func New(size int, ttl time.Duration, stale bool) *TLRU {
 	if size <= 0 {
 		size = 1
 	}
 	tlru := &TLRU{
-		max:  size,
-		ttl:  ttl,
-		data: make(map[interface{}]*item, size),
+		max:   size,
+		ttl:   ttl,
+		stale: stale,
+		data:  make(map[interface{}]*item, size),
 	}
 
 	return tlru
@@ -76,18 +78,23 @@ func (c *TLRU) Get(key interface{}) interface{} {
 		return nil
 	}
 
-	if time.Now().UnixMicro() > v.expires {
+	// normal way
+	if time.Now().UnixMicro() < v.expires {
 		c.Lock()
-		delete(c.data, key)
-		c.Unlock()
-		return nil
+		defer c.Unlock()
+		c.data[key].used = time.Now().UnixMicro()
+
+		return v.v
 	}
 
+	// stale cache
 	c.Lock()
-	defer c.Unlock()
-	c.data[key].used = time.Now().UnixMicro()
-
-	return v.v
+	delete(c.data, key)
+	c.Unlock()
+	if c.stale {
+		return v.v
+	}
+	return nil
 }
 
 // Remove an item from cache

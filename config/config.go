@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -17,6 +18,20 @@ func env(shortkey string, defaultValue string) string {
 	return value
 }
 
+func envInt(shortkey string, defaultValue int) int {
+	str := env(shortkey, "")
+	if str == "" {
+		return defaultValue
+	}
+
+	val, err := strconv.Atoi(str)
+	if err != nil {
+		return defaultValue
+	}
+
+	return val
+}
+
 // New config
 func New() *Config {
 	return &Config{
@@ -26,6 +41,7 @@ func New() *Config {
 		Password:   env("password", defaultConfig.Password),
 		Sentry:     env("sentry", defaultConfig.Sentry),
 		LogLevel:   env("loglevel", defaultConfig.LogLevel),
+		CacheSize:  envInt("cachesize", defaultConfig.CacheSize),
 		Prefix:     env("prefix", defaultConfig.Prefix),
 		DB: DB{
 			DSN:     env("db.dsn", defaultConfig.DB.DSN),

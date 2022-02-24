@@ -8,15 +8,25 @@ const (
 )
 
 func (b *Bot) getCache(eventID id.EventID) id.EventID {
-	keys := []string{cacheEventPrefix + string(eventID), cacheThreadPrefix + string(eventID)}
+	var ok bool
 	var threadID id.EventID
+	keys := []string{cacheEventPrefix + string(eventID), cacheThreadPrefix + string(eventID)}
 
 	for _, key := range keys {
 		if !b.cache.Has(key) {
 			continue
 		}
 
-		threadID = b.cache.Get(key).(id.EventID)
+		value := b.cache.Get(key)
+		if value == nil {
+			continue
+		}
+
+		threadID, ok = value.(id.EventID)
+		if threadID == "" || !ok {
+			continue
+		}
+
 		b.log.Debug("threadID %s found in cache", threadID)
 		break
 	}
@@ -26,10 +36,6 @@ func (b *Bot) getCache(eventID id.EventID) id.EventID {
 func (b *Bot) setCache(eventID id.EventID, value id.EventID) {
 	keys := []string{cacheEventPrefix + string(eventID), cacheThreadPrefix + string(value)}
 	for _, key := range keys {
-		if b.cache.Has(key) {
-			continue
-		}
-
 		b.log.Debug("saving cache for %s = %s", key, value)
 		b.cache.Set(key, value)
 	}

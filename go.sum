@@ -1,5 +1,5 @@
-git.sr.ht/~xn/cache v1.2.1 h1:3U9fVE/3JlBtrKc/rY6lZQIOE2EM7XW6YgKTbG73mj0=
-git.sr.ht/~xn/cache v1.2.1/go.mod h1:zMAWCUNvBiArqGvyMK2+CyS7+PQiOx8Soi2ZHR8Iqic=
+git.sr.ht/~xn/cache v1.2.2 h1:6tpAyTzQK6HNayauDlEeO3M9PJuqj3Rj7x6AG5pDNFg=
+git.sr.ht/~xn/cache v1.2.2/go.mod h1:zMAWCUNvBiArqGvyMK2+CyS7+PQiOx8Soi2ZHR8Iqic=
 github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9/go.mod h1:bOvUY6CB00SOBii9/FifXqc0awNKxLFCL/+pkDPuyl8=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53/go.mod h1:+3IMCy2vIlbG1XG/0ggNQv0SvxCAIpPM5b1nCz56Xno=

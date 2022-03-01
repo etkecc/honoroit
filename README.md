@@ -97,6 +97,7 @@ env vars
 * **HONOROIT_TEXT_GREETINGS** - a message sent to customer on first contact
 * **HONOROIT_TEXT_ERROR** - a message sent to customer if something goes wrong
 * **HONOROIT_TEXT_EMPTYROOM** - a message sent to backoffice/threads room when customer left his room
+* **HONOROIT_TEXT_START** - a message sent to thread when using `start` command
 * **HONOROIT_TEXT_DONE** - a message sent to customer when request marked as done in the threads room
 
 You can find default values in [config/defaults.go](config/defaults.go)

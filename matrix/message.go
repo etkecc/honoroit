@@ -154,7 +154,7 @@ func (b *Bot) clearReply(content *event.MessageEventContent) {
 	}
 }
 
-func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, hub *sentry.Hub) (id.EventID, error) {
+func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, hub *sentry.Hub, greet bool) (id.EventID, error) {
 	b.log.Debug("starting new thread for %s request from %s", userID, roomID)
 	eventID, err := b.findEventID(roomID)
 	if err != nil && err != errNotMapped {
@@ -180,7 +180,9 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, hub *sentry.Hub) (
 	}
 
 	b.saveMapping(roomID, "", eventID)
-	b.greetings(roomID, userID, hub)
+	if greet {
+		b.greetings(roomID, userID, hub)
+	}
 	return eventID, nil
 }
 
@@ -216,7 +218,7 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 
 func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventContent, hub *sentry.Hub) {
 	b.log.Debug("forwaring a message from customer to the threads rooms")
-	eventID, err := b.startThread(evt.RoomID, evt.Sender, hub)
+	eventID, err := b.startThread(evt.RoomID, evt.Sender, hub, false)
 	if err != nil {
 		b.Error(evt.RoomID, hub, b.txt.Error)
 		return

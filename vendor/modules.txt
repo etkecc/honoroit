@@ -52,7 +52,7 @@ github.com/tidwall/pretty
 # github.com/tidwall/sjson v1.2.4
 ## explicit; go 1.14
 github.com/tidwall/sjson
-# gitlab.com/etke.cc/linkpearl v0.0.0-20220119160435-84b1eb03410a
+# gitlab.com/etke.cc/linkpearl v0.0.0-20220301184535-005fbf11a308
 ## explicit; go 1.17
 gitlab.com/etke.cc/linkpearl
 gitlab.com/etke.cc/linkpearl/config
@@ -61,7 +61,7 @@ gitlab.com/etke.cc/linkpearl/store
 ## explicit; go 1.17
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+# golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom

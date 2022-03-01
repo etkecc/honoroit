@@ -20,6 +20,8 @@ type Linkpearl struct {
 	api   *mautrix.Client
 	olm   *crypto.OlmMachine
 	store *store.Store
+
+	autoleave bool
 }
 
 // New linkpearl
@@ -30,9 +32,10 @@ func New(cfg *config.Config) (*Linkpearl, error) {
 	}
 	api.Logger = cfg.APILogger
 	lp := &Linkpearl{
-		db:  cfg.DB,
-		api: api,
-		log: cfg.LPLogger,
+		db:        cfg.DB,
+		api:       api,
+		log:       cfg.LPLogger,
+		autoleave: cfg.AutoLeave,
 	}
 
 	storer := store.New(cfg.DB, cfg.Dialect, cfg.StoreLogger)

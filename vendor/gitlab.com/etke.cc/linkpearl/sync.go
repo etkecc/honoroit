@@ -60,6 +60,10 @@ func (l *Linkpearl) onInvite(evt *event.Event) {
 }
 
 func (l *Linkpearl) onEmpty(evt *event.Event) {
+	if !l.autoleave {
+		return
+	}
+
 	members := l.store.GetRoomMembers(evt.RoomID)
 	if len(members) >= 1 && members[0] != l.api.UserID {
 		return

@@ -10,7 +10,7 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/mattn/go-sqlite3 v1.14.11
 	github.com/stretchr/testify v1.7.0
-	gitlab.com/etke.cc/linkpearl v0.0.0-20220119160435-84b1eb03410a
+	gitlab.com/etke.cc/linkpearl v0.0.0-20220301184535-005fbf11a308
 	maunium.net/go/mautrix v0.10.11
 )
 
@@ -25,7 +25,7 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.4 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect

@@ -7,6 +7,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
+	"maunium.net/go/mautrix/id"
 )
 
 func (b *Bot) parseCommand(message string) []string {
@@ -41,6 +42,8 @@ func (b *Bot) runCommand(command string, evt *event.Event, hub *sentry.Hub) {
 		b.renameRequest(evt, hub)
 	case "invite":
 		b.inviteRequest(evt, hub)
+	case "start":
+		b.startRequest(evt, hub)
 	default:
 		b.help(hub)
 	}
@@ -148,6 +151,55 @@ func (b *Bot) inviteRequest(evt *event.Event, hub *sentry.Hub) {
 	if err != nil {
 		b.Error(evt.RoomID, hub, "cannot invite the operator (%s) into customer room %s: %v", evt.Sender, roomID, err)
 	}
+}
+
+func (b *Bot) startRequest(evt *event.Event, hub *sentry.Hub) {
+	command := b.parseCommand(evt.Content.AsMessage().Body)
+	if len(command) < 2 {
+		b.Error(b.roomID, hub, "cannot start a new matrix room - MXID is not specified")
+		return
+	}
+	userID := id.UserID(command[1])
+
+	resp, err := b.lp.GetClient().CreateRoom(&mautrix.ReqCreateRoom{
+		Invite: []id.UserID{userID},
+		Preset: "trusted_private_chat",
+		InitialState: []*event.Event{
+			{
+				Type: event.StateEncryption,
+				Content: event.Content{
+					Parsed: event.EncryptionEventContent{
+						Algorithm: "m.megolm.v1.aes-sha2",
+					},
+				},
+			},
+		},
+		IsDirect: true,
+	})
+	if err != nil {
+		b.Error(b.roomID, hub, "cannot create a new room: %v", err)
+		return
+	}
+	roomID := resp.RoomID
+	eventID, err := b.startThread(roomID, userID, hub, false)
+	if err != nil {
+		// log handled in the startThread
+		return
+	}
+
+	err = b.replace(eventID, hub, b.txt.PrefixOpen, "", " request by operator to "+command[1]+" in "+roomID.String(), "")
+	if err != nil {
+		return
+	}
+	newEvent := &event.Event{
+		Sender: evt.Sender,
+		RoomID: roomID,
+	}
+	newContent := &event.MessageEventContent{
+		Body:    b.txt.Start,
+		MsgType: event.MsgNotice,
+	}
+	b.forwardToThread(newEvent, newContent, hub)
 }
 
 func (b *Bot) help(hub *sentry.Hub) {

@@ -53,6 +53,7 @@ func New() *Config {
 			Greetings:  env("text.greetings", defaultConfig.Text.Greetings),
 			Error:      env("text.error", defaultConfig.Text.Error),
 			EmptyRoom:  env("text.emptyroom", defaultConfig.Text.EmptyRoom),
+			Start:      env("text.start", defaultConfig.Text.Start),
 			Done:       env("text.done", defaultConfig.Text.Done),
 		},
 	}

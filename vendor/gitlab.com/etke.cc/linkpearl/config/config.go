@@ -17,6 +17,9 @@ type Config struct {
 	// Password for login/password auth only
 	Password string
 
+	// AutoLeave if true, linkpearl will automatically leave empty rooms
+	AutoLeave bool
+
 	// LPLogger used for linkpearl's glue code
 	LPLogger Logger
 	// APILogger used for matrix CS API calls

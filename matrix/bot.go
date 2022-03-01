@@ -71,6 +71,8 @@ type Text struct {
 	Error string
 	// EmptyRoom message sent to backoffice/threads room when customer left his room
 	EmptyRoom string
+	// Start message that sent into the read as result of the "start" command
+	Start string
 	// Done message sent to customer when request marked as done in the threads room
 	Done string
 }

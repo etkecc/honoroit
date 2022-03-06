@@ -70,7 +70,7 @@ available commands in the threads. Note that all commands should be called with 
 * `done` - close the current request and mark is as done. Customer will receive special message and honoroit bot will leave 1:1 chat with customer. Any new message to the thread will not work and return error.
 * `rename` - rename the thread topic title, when you want to change the standard message to something different
 * `invite` - invite yourself into the customer 1:1 room
-* `start MXID` - start a conversation with a MXID from the honoroit (like a new thread, but initialized by operator), eg: `!ho start user@example.com`
+* `start MXID` - start a conversation with a MXID from the honoroit (like a new thread, but initialized by operator), eg: `!ho start @user:example.com`
 
 
 ## Configuration

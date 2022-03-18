@@ -24,7 +24,7 @@ linters-settings:
   gci:
     local-prefixes: gitlab.com/etke.cc/honoroit
   gocognit:
-    min-complexity: 10
+    min-complexity: 15
   nestif:
     min-complexity: 4
   gocritic:

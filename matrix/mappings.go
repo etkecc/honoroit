@@ -15,7 +15,7 @@ var errNotRelated = errors.New("cannot find appropriate thread")
 
 func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 	err := evt.Content.ParseRaw(event.EventMessage)
-	if err != nil && err != event.ContentAlreadyParsed {
+	if err != nil && err != event.ErrContentAlreadyParsed {
 		return "", err
 	}
 
@@ -25,12 +25,13 @@ func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 		return evt.ID, nil
 	}
 
-	if threadID := b.getCache(relation.EventID); threadID != "" {
+	threadID := b.getCache(relation.EventID)
+	if threadID != "" {
 		return threadID, nil
 	}
 
 	// If message relates to a thread - return thread root event ID
-	if relation.Type == ThreadRelation {
+	if relation.Type == ThreadRelation || relation.Type == ThreadRelationOld {
 		b.setCache(evt.ID, relation.EventID)
 		return relation.EventID, nil
 	}

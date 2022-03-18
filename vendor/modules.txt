@@ -29,13 +29,13 @@ github.com/gorilla/websocket
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
-# github.com/mattn/go-sqlite3 v1.14.11
+# github.com/mattn/go-sqlite3 v1.14.12
 ## explicit; go 1.12
 github.com/mattn/go-sqlite3
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/stretchr/testify v1.7.0
+# github.com/stretchr/testify v1.7.1
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
@@ -52,12 +52,12 @@ github.com/tidwall/pretty
 # github.com/tidwall/sjson v1.2.4
 ## explicit; go 1.14
 github.com/tidwall/sjson
-# gitlab.com/etke.cc/linkpearl v0.0.0-20220301184535-005fbf11a308
+# gitlab.com/etke.cc/linkpearl v0.0.0-20220318212535-8b9bbca94845
 ## explicit; go 1.17
 gitlab.com/etke.cc/linkpearl
 gitlab.com/etke.cc/linkpearl/config
 gitlab.com/etke.cc/linkpearl/store
-# golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+# golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 ## explicit; go 1.17
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
@@ -78,7 +78,7 @@ gopkg.in/yaml.v3
 # maunium.net/go/maulogger/v2 v2.3.2
 ## explicit; go 1.11
 maunium.net/go/maulogger/v2
-# maunium.net/go/mautrix v0.10.11
+# maunium.net/go/mautrix v0.10.12
 ## explicit; go 1.14
 maunium.net/go/mautrix
 maunium.net/go/mautrix/appservice

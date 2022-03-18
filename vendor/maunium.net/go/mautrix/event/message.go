@@ -77,7 +77,7 @@ func (content *ReactionEventContent) SetRelatesTo(rel *RelatesTo) {
 // https://matrix.org/docs/spec/client_server/r0.6.0#m-room-message
 type MessageEventContent struct {
 	// Base m.room.message fields
-	MsgType MessageType `json:"msgtype"`
+	MsgType MessageType `json:"msgtype,omitempty"`
 	Body    string      `json:"body"`
 
 	// Extra fields for text types
@@ -204,12 +204,13 @@ func (sfi *serializableFileInfo) CopyFrom(fileInfo *FileInfo) *serializableFileI
 
 func (sfi *serializableFileInfo) CopyTo(fileInfo *FileInfo) {
 	*fileInfo = FileInfo{
-		Width:        numberToInt(sfi.Width),
-		Height:       numberToInt(sfi.Height),
-		Size:         numberToInt(sfi.Size),
-		Duration:     numberToInt(sfi.Duration),
-		MimeType:     sfi.MimeType,
-		ThumbnailURL: sfi.ThumbnailURL,
+		Width:         numberToInt(sfi.Width),
+		Height:        numberToInt(sfi.Height),
+		Size:          numberToInt(sfi.Size),
+		Duration:      numberToInt(sfi.Duration),
+		MimeType:      sfi.MimeType,
+		ThumbnailURL:  sfi.ThumbnailURL,
+		ThumbnailFile: sfi.ThumbnailFile,
 	}
 	if sfi.ThumbnailInfo != nil {
 		fileInfo.ThumbnailInfo = &FileInfo{}

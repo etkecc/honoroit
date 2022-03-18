@@ -8,10 +8,10 @@ require (
 	git.sr.ht/~xn/cache v1.2.2
 	github.com/getsentry/sentry-go v0.12.0
 	github.com/lib/pq v1.10.4
-	github.com/mattn/go-sqlite3 v1.14.11
-	github.com/stretchr/testify v1.7.0
-	gitlab.com/etke.cc/linkpearl v0.0.0-20220301184535-005fbf11a308
-	maunium.net/go/mautrix v0.10.11
+	github.com/mattn/go-sqlite3 v1.14.12
+	github.com/stretchr/testify v1.7.1
+	gitlab.com/etke.cc/linkpearl v0.0.0-20220318212535-8b9bbca94845
+	maunium.net/go/mautrix v0.10.12
 )
 
 require (
@@ -24,7 +24,7 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.4 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

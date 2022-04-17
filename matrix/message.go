@@ -187,7 +187,7 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, hub *sentry.Hub, g
 }
 
 func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventContent, hub *sentry.Hub) {
-	b.log.Debug("forwaring the message to a customer room")
+	b.log.Debug("forwarding the message to a customer room")
 	relation := content.RelatesTo
 	if relation == nil {
 		b.Error(evt.RoomID, hub, "the message doesn't relate to any thread, so I don't know where to forward it.")

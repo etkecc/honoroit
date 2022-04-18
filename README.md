@@ -13,21 +13,6 @@ The main idea of that bot is to give you the same abilities as with website chat
 * Chat with that user through the honoroit bot in a thread inside your special room. Any member of that special room can participate in discussion
 * When request fulfilled - send a `!ho done` in that thread - thread topic will be renamed and "proxied user" will know that request was closed (bot will leave user's room with special notice)
 
-## Warning
-
-Honoroit utilizes [MSC 3440: Threading](https://github.com/matrix-org/matrix-doc/pull/3440/) which is:
-
-* not stable yet
-* not part of the protocol specification yet
-* requires a compatible client app (e.g. Element with `Threads` enabled in `Labs`)
-
-Of course, there is fallback mode with reply-to (supported by any matrix server and client):
-honoroit will try to find mappings, going recursively through reply-to chain,
-but that mode considered as workaround and it's perfomance is poor.
-
-Honoroit used as support service in the [etke.cc](https://etke.cc) and works pretty good in daily operations,
-so just keep in mind the limitations above.
-
 ## How it looks like
 
 <details>
@@ -86,17 +71,25 @@ env vars
 
 ### optional
 
+#### honoroit internals
+
 * **HONOROIT_PREFIX** - command prefix
 * **HONOROIT_SENTRY** - sentry DSN
 * **HONOROIT_LOGLEVEL** - log level
 * **HONOROIT_CACHESIZE** - max allowed mappings in cache
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
+
+#### text messages
+
 * **HONOROIT_TEXT_PREFIX_OPEN** - prefix of a new thread topic
 * **HONOROIT_TEXT_PREFIX_DONE** - prefix of a closed thread topic
 * **HONOROIT_TEXT_GREETINGS** - a message sent to customer on first contact
+* **HONOROIT_TEXT_JOIN** - a message sent to backoffice/threads room when a customer joins a room
+* **HONOROIT_TEXT_INVITE** - a message sent to backoffice/threads room when a customer invites another user
+* **HONOROIT_TEXT_LEAVE** - a message sent to backoffice/threads room when a customer leaves a room
 * **HONOROIT_TEXT_ERROR** - a message sent to customer if something goes wrong
-* **HONOROIT_TEXT_EMPTYROOM** - a message sent to backoffice/threads room when customer left his room
+* **HONOROIT_TEXT_EMPTYROOM** - a message sent to backoffice/threads room when the last customer left a room
 * **HONOROIT_TEXT_START** - a message sent to thread when using `start` command
 * **HONOROIT_TEXT_DONE** - a message sent to customer when request marked as done in the threads room
 

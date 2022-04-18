@@ -7,6 +7,13 @@ import (
 	"maunium.net/go/mautrix/id"
 )
 
+var acceptedMembershipTypes = []event.Membership{
+	event.MembershipJoin,
+	event.MembershipInvite,
+	event.MembershipBan,
+	event.MembershipLeave,
+}
+
 // IsEncrypted returns whether a room is encrypted.
 func (s *Store) IsEncrypted(roomID id.RoomID) bool {
 	s.log.Debug("checking if room %s is encrypted", roomID)
@@ -77,8 +84,11 @@ func (s *Store) SetMembership(evt *event.Event) {
 	}
 	del := "DELETE FROM room_members WHERE room_id = $1 AND user_id = $2"
 
-	membershipEvent := evt.Content.AsMember()
-	if membershipEvent.Membership.IsInviteOrJoin() {
+	membership := evt.Content.AsMember().Membership
+	if s.shouldIgnoreMembership(membership) {
+		return
+	}
+	if membership.IsInviteOrJoin() {
 		_, err := tx.Exec(insert, evt.RoomID, evt.GetStateKey())
 		if err != nil {
 			s.log.Error("cannot insert membership event: %v", err)
@@ -175,4 +185,14 @@ func (s *Store) LoadSession() (id.UserID, id.DeviceID, string) {
 		return "", "", ""
 	}
 	return userID, deviceID, accessToken
+}
+
+func (s *Store) shouldIgnoreMembership(membership event.Membership) bool {
+	for _, mtype := range acceptedMembershipTypes {
+		if membership == mtype {
+			return false
+		}
+	}
+
+	return true
 }

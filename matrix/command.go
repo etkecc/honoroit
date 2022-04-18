@@ -94,6 +94,12 @@ func (b *Bot) closeRequest(evt *event.Event, hub *sentry.Hub) {
 		return
 	}
 
+	threadEvt, err := b.lp.GetClient().GetEvent(b.roomID, threadID)
+	if err != nil {
+		b.Error(b.roomID, hub, "cannot find thread event %s: %v", threadID, err)
+		return
+	}
+
 	roomID, err := b.findRoomID(threadID)
 	if err != nil {
 		b.Error(evt.RoomID, hub, err.Error())
@@ -107,8 +113,13 @@ func (b *Bot) closeRequest(evt *event.Event, hub *sentry.Hub) {
 	if err != nil {
 		b.Error(evt.RoomID, hub, err.Error())
 	}
+
+	var oldbody string
+	if threadEvt.Content.AsMessage() != nil {
+		oldbody = strings.Replace(threadEvt.Content.AsMessage().Body, b.txt.PrefixOpen, "", 1)
+	}
 	timestamp := time.Now().UTC().Format("2006/01/02 15:04:05 MST")
-	err = b.replace(threadID, hub, b.txt.PrefixDone+" ", " ("+timestamp+")", "", "")
+	err = b.replace(threadID, hub, b.txt.PrefixDone+" ", oldbody+" ("+timestamp+")", "", "")
 	if err != nil {
 		b.Error(b.roomID, hub, "cannot replace thread %s topic: %v", threadID, err)
 	}
@@ -181,14 +192,9 @@ func (b *Bot) startRequest(evt *event.Event, hub *sentry.Hub) {
 		return
 	}
 	roomID := resp.RoomID
-	eventID, err := b.startThread(roomID, userID, hub, false)
+	_, err = b.startThread(roomID, userID, hub, false)
 	if err != nil {
 		// log handled in the startThread
-		return
-	}
-
-	err = b.replace(eventID, hub, b.txt.PrefixOpen, "", " request by operator to "+command[1]+" in "+roomID.String(), "")
-	if err != nil {
 		return
 	}
 	newEvent := &event.Event{

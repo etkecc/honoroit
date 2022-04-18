@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"encoding/json"
 
 	"maunium.net/go/mautrix/event"
@@ -17,7 +18,8 @@ func (s *Store) GetEncryptionEvent(roomID id.RoomID) *event.EncryptionEventConte
 	row := s.db.QueryRow(query, roomID)
 
 	var encryptionEventJSON []byte
-	if err := row.Scan(&encryptionEventJSON); err != nil {
+	err := row.Scan(&encryptionEventJSON)
+	if err != nil && err != sql.ErrNoRows {
 		s.log.Error("cannot find encryption event: %v", err)
 		return nil
 	}

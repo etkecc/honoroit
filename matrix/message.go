@@ -156,6 +156,10 @@ func (b *Bot) clearReply(content *event.MessageEventContent) {
 
 func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, hub *sentry.Hub, greet bool) (id.EventID, error) {
 	b.log.Debug("starting new thread for %s request from %s", userID, roomID)
+	mukey := "start_thread_" + roomID.String()
+	b.lock(mukey)
+	defer b.unlock(mukey)
+
 	eventID, err := b.findEventID(roomID)
 	if err != nil && err != errNotMapped {
 		b.Error(b.roomID, hub, "user %s tried to send a message from room %s, but account data operation returned a error: %v", userID, roomID, err)

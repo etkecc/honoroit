@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"database/sql"
+	"sync"
 
 	"git.sr.ht/~xn/cache"
 	"gitlab.com/etke.cc/linkpearl"
@@ -27,6 +28,7 @@ type Bot struct {
 	txt      *Text
 	log      *logger.Logger
 	lp       *linkpearl.Linkpearl
+	mu       map[string]*sync.Mutex
 	cache    cache.Cache
 	prefix   string
 	prefixes []string
@@ -105,6 +107,7 @@ func NewBot(cfg *Config) (*Bot, error) {
 
 	bot := &Bot{
 		lp:       lp,
+		mu:       make(map[string]*sync.Mutex),
 		log:      log,
 		txt:      cfg.Text,
 		cache:    cfg.Cache,

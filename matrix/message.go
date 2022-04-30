@@ -39,13 +39,6 @@ func (b *Bot) greetings(roomID id.RoomID, userID id.UserID, hub *sentry.Hub) {
 	}
 }
 
-func (b *Bot) typing(roomID id.RoomID, typing bool, hub *sentry.Hub) {
-	_, err := b.lp.GetClient().UserTyping(roomID, typing, TypingTimeout)
-	if err != nil {
-		b.Error(b.roomID, hub, "cannot send typing = %t status to the room %s: %v", typing, roomID, err)
-	}
-}
-
 func (b *Bot) handle(evt *event.Event, hub *sentry.Hub) {
 	err := b.lp.GetClient().MarkRead(evt.RoomID, evt.ID)
 	if err != nil {
@@ -209,9 +202,6 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 		return
 	}
 
-	b.typing(roomID, true, hub)
-	defer b.typing(roomID, false, hub)
-
 	content.RelatesTo = nil
 	b.clearReply(content)
 	_, err = b.lp.Send(roomID, content)
@@ -222,7 +212,7 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 
 func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventContent, hub *sentry.Hub) {
 	b.log.Debug("forwaring a message from customer to the threads rooms")
-	eventID, err := b.startThread(evt.RoomID, evt.Sender, hub, false)
+	eventID, err := b.startThread(evt.RoomID, evt.Sender, hub, true)
 	if err != nil {
 		b.Error(evt.RoomID, hub, b.txt.Error)
 		return

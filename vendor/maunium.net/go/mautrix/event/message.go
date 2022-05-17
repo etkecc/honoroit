@@ -9,13 +9,16 @@ package event
 import (
 	"encoding/json"
 	"strconv"
+	"strings"
+
+	"golang.org/x/net/html"
 
 	"maunium.net/go/mautrix/crypto/attachment"
 	"maunium.net/go/mautrix/id"
 )
 
 // MessageType is the sub-type of a m.room.message event.
-// https://matrix.org/docs/spec/client_server/r0.6.0#m-room-message-msgtypes
+// https://spec.matrix.org/v1.2/client-server-api/#mroommessage-msgtypes
 type MessageType string
 
 // Msgtypes
@@ -33,7 +36,7 @@ const (
 )
 
 // Format specifies the format of the formatted_body in m.room.message events.
-// https://matrix.org/docs/spec/client_server/r0.6.0#m-room-message-msgtypes
+// https://spec.matrix.org/v1.2/client-server-api/#mroommessage-msgtypes
 type Format string
 
 // Message formats
@@ -46,7 +49,7 @@ const (
 // The redacted event ID is still at the top level, but will move in a future room version.
 // See https://github.com/matrix-org/matrix-doc/pull/2244 and https://github.com/matrix-org/matrix-doc/pull/2174
 //
-// https://matrix.org/docs/spec/client_server/r0.6.0#m-room-redaction
+// https://spec.matrix.org/v1.2/client-server-api/#mroomredaction
 type RedactionEventContent struct {
 	Reason string `json:"reason,omitempty"`
 }
@@ -69,12 +72,12 @@ func (content *ReactionEventContent) SetRelatesTo(rel *RelatesTo) {
 	content.RelatesTo = *rel
 }
 
-// MssageEventContent represents the content of a m.room.message event.
+// MessageEventContent represents the content of a m.room.message event.
 //
 // It is also used to represent m.sticker events, as they are equivalent to m.room.message
 // with the exception of the msgtype field.
 //
-// https://matrix.org/docs/spec/client_server/r0.6.0#m-room-message
+// https://spec.matrix.org/v1.2/client-server-api/#mroommessage
 type MessageEventContent struct {
 	// Base m.room.message fields
 	MsgType MessageType `json:"msgtype,omitempty"`
@@ -131,6 +134,13 @@ func (content *MessageEventContent) SetEdit(original id.EventID) {
 		if content.Format == FormatHTML && len(content.FormattedBody) > 0 {
 			content.FormattedBody = "* " + content.FormattedBody
 		}
+	}
+}
+
+func (content *MessageEventContent) EnsureHasHTML() {
+	if len(content.FormattedBody) == 0 || content.Format != FormatHTML {
+		content.FormattedBody = strings.ReplaceAll(html.EscapeString(content.Body), "\n", "<br/>")
+		content.Format = FormatHTML
 	}
 }
 

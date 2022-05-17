@@ -296,6 +296,7 @@ func (intent *IntentAPI) SendText(roomID id.RoomID, text string) (*mautrix.RespS
 	return intent.Client.SendText(roomID, text)
 }
 
+// Deprecated: This does not allow setting image metadata, you should prefer SendMessageEvent with a properly filled &event.MessageEventContent
 func (intent *IntentAPI) SendImage(roomID id.RoomID, body string, url id.ContentURI) (*mautrix.RespSendEvent, error) {
 	if err := intent.EnsureJoined(roomID); err != nil {
 		return nil, err
@@ -303,6 +304,7 @@ func (intent *IntentAPI) SendImage(roomID id.RoomID, body string, url id.Content
 	return intent.Client.SendImage(roomID, body, url)
 }
 
+// Deprecated: This does not allow setting video metadata, you should prefer SendMessageEvent with a properly filled &event.MessageEventContent
 func (intent *IntentAPI) SendVideo(roomID id.RoomID, body string, url id.ContentURI) (*mautrix.RespSendEvent, error) {
 	if err := intent.EnsureJoined(roomID); err != nil {
 		return nil, err
@@ -346,12 +348,26 @@ func (intent *IntentAPI) SetDisplayName(displayName string) error {
 	if err := intent.EnsureRegistered(); err != nil {
 		return err
 	}
+	resp, err := intent.Client.GetOwnDisplayName()
+	if err != nil {
+		return fmt.Errorf("failed to check current displayname: %w", err)
+	} else if resp.DisplayName == displayName {
+		// No need to update
+		return nil
+	}
 	return intent.Client.SetDisplayName(displayName)
 }
 
 func (intent *IntentAPI) SetAvatarURL(avatarURL id.ContentURI) error {
 	if err := intent.EnsureRegistered(); err != nil {
 		return err
+	}
+	resp, err := intent.Client.GetOwnAvatarURL()
+	if err != nil {
+		return fmt.Errorf("failed to check current avatar URL: %w", err)
+	} else if resp.FileID == avatarURL.FileID && resp.Homeserver == avatarURL.Homeserver {
+		// No need to update
+		return nil
 	}
 	return intent.Client.SetAvatarURL(avatarURL)
 }

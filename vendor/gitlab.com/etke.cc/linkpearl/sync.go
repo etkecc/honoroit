@@ -1,6 +1,8 @@
 package linkpearl
 
 import (
+	"time"
+
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 )
@@ -43,18 +45,23 @@ func (l *Linkpearl) onMembership(_ mautrix.EventSource, evt *event.Event) {
 	l.store.SetMembership(evt)
 
 	// autoaccept invites
-	l.onInvite(evt)
+	l.onInvite(evt, 0)
 	// autoleave empty rooms
 	l.onEmpty(evt)
 }
 
-func (l *Linkpearl) onInvite(evt *event.Event) {
+func (l *Linkpearl) onInvite(evt *event.Event, retry int) {
 	userID := l.api.UserID.String()
 	invite := evt.Content.AsMember().Membership == event.MembershipInvite
 	if invite && evt.GetStateKey() == userID {
 		_, err := l.api.JoinRoomByID(evt.RoomID)
 		if err != nil {
 			l.log.Error("cannot join the room %s: %v", evt.RoomID, err)
+			if retry < l.maxretries {
+				time.Sleep(5 * time.Second)
+				l.log.Debug("trying to join again (%d/%d)", retry+1, l.maxretries)
+				l.onInvite(evt, retry+1)
+			}
 		}
 	}
 }

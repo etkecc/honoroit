@@ -20,6 +20,9 @@ type Config struct {
 	// AutoLeave if true, linkpearl will automatically leave empty rooms
 	AutoLeave bool
 
+	// MaxRetries for operations like auto join
+	MaxRetries int
+
 	// LPLogger used for linkpearl's glue code
 	LPLogger Logger
 	// APILogger used for matrix CS API calls

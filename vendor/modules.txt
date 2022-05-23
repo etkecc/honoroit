@@ -18,32 +18,23 @@ github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/internal/crypto/randutil
 github.com/getsentry/sentry-go/internal/debug
 github.com/getsentry/sentry-go/internal/ratelimit
-# github.com/google/uuid v1.3.0
-## explicit
-github.com/google/uuid
 # github.com/gorilla/mux v1.8.0
 ## explicit; go 1.12
 github.com/gorilla/mux
 # github.com/gorilla/websocket v1.5.0
 ## explicit; go 1.12
 github.com/gorilla/websocket
-# github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
-## explicit
-github.com/kballard/go-shellquote
 # github.com/lib/pq v1.10.4
 ## explicit; go 1.13
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
-# github.com/mattn/go-isatty v0.0.14
+# github.com/mattn/go-sqlite3 v1.14.13
 ## explicit; go 1.12
-github.com/mattn/go-isatty
+github.com/mattn/go-sqlite3
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0
-## explicit; go 1.12
-github.com/remyoudompheng/bigfft
 # github.com/stretchr/testify v1.7.1
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
@@ -61,54 +52,31 @@ github.com/tidwall/pretty
 # github.com/tidwall/sjson v1.2.4
 ## explicit; go 1.14
 github.com/tidwall/sjson
-# gitlab.com/etke.cc/linkpearl v0.0.0-20220516212827-5004de7f2657
+# gitlab.com/etke.cc/linkpearl v0.0.0-20220529155505-b74d5ef96042
 ## explicit; go 1.17
 gitlab.com/etke.cc/linkpearl
 gitlab.com/etke.cc/linkpearl/config
 gitlab.com/etke.cc/linkpearl/store
-# golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
+# golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 ## explicit; go 1.17
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/mod v0.3.0
-## explicit; go 1.12
-golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20220517181318-183a9ca12b87
+# golang.org/x/net v0.0.0-20220526153639-5463443f8c37
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/publicsuffix
-# golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
+# golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 ## explicit; go 1.17
 golang.org/x/sys/execabs
-golang.org/x/sys/internal/unsafeheader
-golang.org/x/sys/unix
-# golang.org/x/tools v0.0.0-20201124115921-2c860bdd6e78
-## explicit; go 1.12
-golang.org/x/tools/go/gcexportdata
-golang.org/x/tools/go/internal/gcimporter
-golang.org/x/tools/go/internal/packagesdriver
-golang.org/x/tools/go/packages
-golang.org/x/tools/internal/event
-golang.org/x/tools/internal/event/core
-golang.org/x/tools/internal/event/keys
-golang.org/x/tools/internal/event/label
-golang.org/x/tools/internal/gocommand
-golang.org/x/tools/internal/packagesinternal
-golang.org/x/tools/internal/typesinternal
 # golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 ## explicit; go 1.11
-golang.org/x/xerrors
-golang.org/x/xerrors/internal
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit; go 1.15
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 ## explicit
 gopkg.in/yaml.v3
-# lukechampine.com/uint128 v1.1.1
-## explicit; go 1.12
-lukechampine.com/uint128
 # maunium.net/go/maulogger/v2 v2.3.2
 ## explicit; go 1.11
 maunium.net/go/maulogger/v2
@@ -128,56 +96,3 @@ maunium.net/go/mautrix/id
 maunium.net/go/mautrix/pushrules
 maunium.net/go/mautrix/pushrules/glob
 maunium.net/go/mautrix/util/base58
-# modernc.org/cc/v3 v3.36.0
-## explicit; go 1.15
-modernc.org/cc/v3
-# modernc.org/ccgo/v3 v3.16.6
-## explicit; go 1.16
-modernc.org/ccgo/v3/lib
-# modernc.org/libc v1.16.7
-## explicit; go 1.16
-modernc.org/libc
-modernc.org/libc/errno
-modernc.org/libc/fcntl
-modernc.org/libc/fts
-modernc.org/libc/grp
-modernc.org/libc/honnef.co/go/netdb
-modernc.org/libc/langinfo
-modernc.org/libc/limits
-modernc.org/libc/netdb
-modernc.org/libc/netinet/in
-modernc.org/libc/poll
-modernc.org/libc/pthread
-modernc.org/libc/pwd
-modernc.org/libc/signal
-modernc.org/libc/stdio
-modernc.org/libc/stdlib
-modernc.org/libc/sys/socket
-modernc.org/libc/sys/stat
-modernc.org/libc/sys/types
-modernc.org/libc/termios
-modernc.org/libc/time
-modernc.org/libc/unistd
-modernc.org/libc/utime
-modernc.org/libc/uuid
-modernc.org/libc/uuid/uuid
-modernc.org/libc/wctype
-# modernc.org/mathutil v1.4.1
-## explicit; go 1.13
-modernc.org/mathutil
-# modernc.org/memory v1.1.1
-## explicit; go 1.16
-modernc.org/memory
-# modernc.org/opt v0.1.1
-## explicit; go 1.13
-modernc.org/opt
-# modernc.org/sqlite v1.17.3
-## explicit; go 1.16
-modernc.org/sqlite
-modernc.org/sqlite/lib
-# modernc.org/strutil v1.1.1
-## explicit; go 1.15
-modernc.org/strutil
-# modernc.org/token v1.0.0
-## explicit
-modernc.org/token

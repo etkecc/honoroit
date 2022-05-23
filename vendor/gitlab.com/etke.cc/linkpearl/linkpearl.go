@@ -13,6 +13,9 @@ import (
 	"gitlab.com/etke.cc/linkpearl/store"
 )
 
+// DefaultMaxRetries for operations like autojoin
+const DefaultMaxRetries = 10
+
 // Linkpearl object
 type Linkpearl struct {
 	db    *sql.DB
@@ -21,21 +24,26 @@ type Linkpearl struct {
 	olm   *crypto.OlmMachine
 	store *store.Store
 
-	autoleave bool
+	autoleave  bool
+	maxretries int
 }
 
 // New linkpearl
 func New(cfg *config.Config) (*Linkpearl, error) {
+	if cfg.MaxRetries == 0 {
+		cfg.MaxRetries = DefaultMaxRetries
+	}
 	api, err := mautrix.NewClient(cfg.Homeserver, "", "")
 	if err != nil {
 		return nil, err
 	}
 	api.Logger = cfg.APILogger
 	lp := &Linkpearl{
-		db:        cfg.DB,
-		api:       api,
-		log:       cfg.LPLogger,
-		autoleave: cfg.AutoLeave,
+		db:         cfg.DB,
+		api:        api,
+		log:        cfg.LPLogger,
+		autoleave:  cfg.AutoLeave,
+		maxretries: cfg.MaxRetries,
 	}
 
 	storer := store.New(cfg.DB, cfg.Dialect, cfg.StoreLogger)

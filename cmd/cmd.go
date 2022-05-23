@@ -10,8 +10,8 @@ import (
 	"git.sr.ht/~xn/cache"
 	"github.com/getsentry/sentry-go"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"maunium.net/go/mautrix/id"
-	_ "modernc.org/sqlite"
 
 	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/logger"
@@ -62,11 +62,7 @@ func initSentry(cfg *config.Config) {
 }
 
 func initBot(cfg *config.Config) {
-	dialect := cfg.DB.Dialect
-	if dialect == "sqlite3" {
-		dialect = "sqlite"
-	}
-	db, err := sql.Open(dialect, cfg.DB.DSN)
+	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
 	if err != nil {
 		log.Fatal("cannot initialize SQL database: %v", err)
 	}

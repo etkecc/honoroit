@@ -169,7 +169,11 @@ func (b *Bot) onEncryptedMessage(evt *event.Event) {
 	decrypted, err := b.lp.GetMachine().DecryptMegolmEvent(evt)
 	if err != nil {
 		b.Error(b.roomID, hub, "cannot decrypt a message by %s in %s: %v", evt.Sender, evt.RoomID, err)
-		b.Error(evt.RoomID, hub, b.txt.Error)
+		// nolint // if something goes wrong here nobody can help...
+		b.lp.Send(evt.RoomID, &event.MessageEventContent{
+			MsgType: event.MsgNotice,
+			Body:    b.txt.Error,
+		})
 		return
 	}
 

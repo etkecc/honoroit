@@ -11,7 +11,7 @@ require (
 	github.com/stretchr/testify v1.7.1
 	gitlab.com/etke.cc/linkpearl v0.0.0-20220516212827-5004de7f2657
 	maunium.net/go/mautrix v0.11.0
-	modernc.org/sqlite v1.17.2
+	modernc.org/sqlite v1.17.3
 )
 
 require (

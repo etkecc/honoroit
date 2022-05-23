@@ -171,7 +171,7 @@ modernc.org/memory
 # modernc.org/opt v0.1.1
 ## explicit; go 1.13
 modernc.org/opt
-# modernc.org/sqlite v1.17.2
+# modernc.org/sqlite v1.17.3
 ## explicit; go 1.16
 modernc.org/sqlite
 modernc.org/sqlite/lib

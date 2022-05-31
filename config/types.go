@@ -17,6 +17,9 @@ type Config struct {
 	// CacheSize max amount of items in cache
 	CacheSize int
 
+	// NoEncryption disabled matrix e2e encryption support
+	NoEncryption bool
+
 	// Text messages
 	Text Text
 

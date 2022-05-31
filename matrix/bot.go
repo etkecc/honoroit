@@ -49,6 +49,8 @@ type Config struct {
 	Prefix string
 	// LogLevel for logger
 	LogLevel string
+	// NoEncryption disabled matrix e2e encryption
+	NoEncryption bool
 
 	// Text messages
 	Text *Text
@@ -100,6 +102,7 @@ func NewBot(cfg *Config) (*Bot, error) {
 		APILogger:    logger.New("api.", cfg.LogLevel),
 		StoreLogger:  logger.New("store.", cfg.LogLevel),
 		CryptoLogger: logger.New("olm.", cfg.LogLevel),
+		NoEncryption: cfg.NoEncryption,
 	})
 	if err != nil {
 		return nil, err

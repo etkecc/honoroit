@@ -164,8 +164,8 @@ github.com/yudai/gojsondiff v1.0.0/go.mod h1:AY32+k2cwILAkW1fbgxQ5mUmMiZFgLIV+FB
 github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82/go.mod h1:lgjkn3NuSvDfVJdfcVVdX+jpBxNmX4rDAzaS45IcYoM=
 github.com/yudai/pp v2.0.1+incompatible/go.mod h1:PuxR/8QJ7cyCkFp/aUDS+JY727OFEZkTdatxwunjIkc=
 github.com/yuin/goldmark v1.4.12/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
-gitlab.com/etke.cc/linkpearl v0.0.0-20220529155505-b74d5ef96042 h1:FAhrWEA24efydLHP25asOvjhoyC/q76aqTDx5sVizT0=
-gitlab.com/etke.cc/linkpearl v0.0.0-20220529155505-b74d5ef96042/go.mod h1:pzl2iAhZJgjoziUJkwXhQT7c5uCsl9vs5xtTjG2gnGA=
+gitlab.com/etke.cc/linkpearl v0.0.0-20220531091432-f61370b94f6b h1:fyQtJoD7guVQejTsvJxi30g0owNu2DCSmY+J/WEca+Q=
+gitlab.com/etke.cc/linkpearl v0.0.0-20220531091432-f61370b94f6b/go.mod h1:pzl2iAhZJgjoziUJkwXhQT7c5uCsl9vs5xtTjG2gnGA=
 golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=

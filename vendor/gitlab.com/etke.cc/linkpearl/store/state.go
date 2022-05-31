@@ -13,6 +13,9 @@ import (
 
 // GetEncryptionEvent returns the encryption event's content for an encrypted room.
 func (s *Store) GetEncryptionEvent(roomID id.RoomID) *event.EncryptionEventContent {
+	if !s.encryption {
+		return nil
+	}
 	s.log.Debug("finding encryption event of %s", roomID)
 	query := "SELECT encryption_event FROM rooms WHERE room_id = $1"
 	row := s.db.QueryRow(query, roomID)
@@ -34,6 +37,9 @@ func (s *Store) GetEncryptionEvent(roomID id.RoomID) *event.EncryptionEventConte
 
 // FindSharedRooms returns the encrypted rooms that another user is also in for a user ID.
 func (s *Store) FindSharedRooms(userID id.UserID) []id.RoomID {
+	if !s.encryption {
+		return nil
+	}
 	s.log.Debug("loading shared rooms for %s", userID)
 	query := "SELECT room_id FROM room_members WHERE user_id = $1"
 	rows, queryErr := s.db.Query(query, userID)

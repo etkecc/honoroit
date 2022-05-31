@@ -57,12 +57,14 @@ func New(cfg *config.Config) (*Linkpearl, error) {
 		return nil, err
 	}
 
-	if err = lp.store.WithCrypto(lp.api.UserID, lp.api.DeviceID, cfg.StoreLogger); err != nil {
-		return nil, err
-	}
-	lp.olm = crypto.NewOlmMachine(lp.api, cfg.CryptoLogger, lp.store, lp.store)
-	if err = lp.olm.Load(); err != nil {
-		return nil, err
+	if !cfg.NoEncryption {
+		if err = lp.store.WithCrypto(lp.api.UserID, lp.api.DeviceID, cfg.StoreLogger); err != nil {
+			return nil, err
+		}
+		lp.olm = crypto.NewOlmMachine(lp.api, cfg.CryptoLogger, lp.store, lp.store)
+		if err = lp.olm.Load(); err != nil {
+			return nil, err
+		}
 	}
 
 	return lp, nil

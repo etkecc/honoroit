@@ -12,10 +12,11 @@ import (
 
 // Store for the matrix
 type Store struct {
-	db      *sql.DB
-	dialect string
-	log     config.Logger
-	s       *crypto.SQLCryptoStore
+	db         *sql.DB
+	dialect    string
+	log        config.Logger
+	encryption bool
+	s          *crypto.SQLCryptoStore
 }
 
 // New store
@@ -30,6 +31,7 @@ func New(db *sql.DB, dialect string, log config.Logger) *Store {
 // WithCrypto adds crypto store support
 func (s *Store) WithCrypto(userID id.UserID, deviceID id.DeviceID, logger config.Logger) error {
 	s.log.Debug("crypto store enabled")
+	s.encryption = true
 	s.s = crypto.NewSQLCryptoStore(
 		s.db,
 		s.dialect,

@@ -23,6 +23,9 @@ type Config struct {
 	// MaxRetries for operations like auto join
 	MaxRetries int
 
+	// NoEncryption disabled encryption support
+	NoEncryption bool
+
 	// LPLogger used for linkpearl's glue code
 	LPLogger Logger
 	// APILogger used for matrix CS API calls

@@ -77,6 +77,7 @@ env vars
 * **HONOROIT_SENTRY** - sentry DSN
 * **HONOROIT_LOGLEVEL** - log level
 * **HONOROIT_CACHESIZE** - max allowed mappings in cache
+* **HONOROIT_NOENCRYPTION** - disable e2e encryption support
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
 

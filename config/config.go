@@ -32,17 +32,24 @@ func envInt(shortkey string, defaultValue int) int {
 	return val
 }
 
+func envBool(shortkey string) bool {
+	key := strings.ToUpper(prefix + "_" + strings.ReplaceAll(shortkey, ".", "_"))
+	value := strings.TrimSpace(os.Getenv(key))
+	return (value == "1" || value == "true" || value == "yes")
+}
+
 // New config
 func New() *Config {
 	return &Config{
-		Homeserver: env("homeserver", defaultConfig.Homeserver),
-		RoomID:     env("roomid", defaultConfig.RoomID),
-		Login:      env("login", defaultConfig.Login),
-		Password:   env("password", defaultConfig.Password),
-		Sentry:     env("sentry", defaultConfig.Sentry),
-		LogLevel:   env("loglevel", defaultConfig.LogLevel),
-		CacheSize:  envInt("cachesize", defaultConfig.CacheSize),
-		Prefix:     env("prefix", defaultConfig.Prefix),
+		Homeserver:   env("homeserver", defaultConfig.Homeserver),
+		RoomID:       env("roomid", defaultConfig.RoomID),
+		Login:        env("login", defaultConfig.Login),
+		Password:     env("password", defaultConfig.Password),
+		Sentry:       env("sentry", defaultConfig.Sentry),
+		LogLevel:     env("loglevel", defaultConfig.LogLevel),
+		CacheSize:    envInt("cachesize", defaultConfig.CacheSize),
+		NoEncryption: envBool("noencryption"),
+		Prefix:       env("prefix", defaultConfig.Prefix),
 		DB: DB{
 			DSN:     env("db.dsn", defaultConfig.DB.DSN),
 			Dialect: env("db.dialect", defaultConfig.DB.Dialect),

@@ -52,7 +52,7 @@ github.com/tidwall/pretty
 # github.com/tidwall/sjson v1.2.4
 ## explicit; go 1.14
 github.com/tidwall/sjson
-# gitlab.com/etke.cc/linkpearl v0.0.0-20220529155505-b74d5ef96042
+# gitlab.com/etke.cc/linkpearl v0.0.0-20220531091432-f61370b94f6b
 ## explicit; go 1.17
 gitlab.com/etke.cc/linkpearl
 gitlab.com/etke.cc/linkpearl/config

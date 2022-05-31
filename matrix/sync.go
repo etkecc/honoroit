@@ -22,12 +22,14 @@ func (b *Bot) initSync() {
 			go b.onMessage(evt)
 		},
 	)
-	b.lp.OnEventType(
-		event.EventEncrypted,
-		func(_ mautrix.EventSource, evt *event.Event) {
-			go b.onEncryptedMessage(evt)
-		},
-	)
+	if b.lp.GetMachine() != nil {
+		b.lp.OnEventType(
+			event.EventEncrypted,
+			func(_ mautrix.EventSource, evt *event.Event) {
+				go b.onEncryptedMessage(evt)
+			},
+		)
+	}
 }
 
 func (b *Bot) onJoin(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {

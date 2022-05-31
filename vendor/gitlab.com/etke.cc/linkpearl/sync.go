@@ -24,13 +24,15 @@ func (l *Linkpearl) OnEvent(callback mautrix.EventHandler) {
 }
 
 func (l *Linkpearl) initSync() {
-	l.api.Syncer.(*mautrix.DefaultSyncer).OnSync(l.olm.ProcessSyncResponse)
-	l.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(
-		event.StateEncryption,
-		func(source mautrix.EventSource, evt *event.Event) {
-			go l.onEncryption(source, evt)
-		},
-	)
+	if l.olm != nil {
+		l.api.Syncer.(*mautrix.DefaultSyncer).OnSync(l.olm.ProcessSyncResponse)
+		l.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(
+			event.StateEncryption,
+			func(source mautrix.EventSource, evt *event.Event) {
+				go l.onEncryption(source, evt)
+			},
+		)
+	}
 
 	l.api.Syncer.(*mautrix.DefaultSyncer).OnEventType(
 		event.StateMember,
@@ -41,7 +43,9 @@ func (l *Linkpearl) initSync() {
 }
 
 func (l *Linkpearl) onMembership(_ mautrix.EventSource, evt *event.Event) {
-	l.olm.HandleMemberEvent(evt)
+	if l.olm != nil {
+		l.olm.HandleMemberEvent(evt)
+	}
 	l.store.SetMembership(evt)
 
 	// autoaccept invites

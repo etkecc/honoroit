@@ -16,12 +16,19 @@ var acceptedMembershipTypes = []event.Membership{
 
 // IsEncrypted returns whether a room is encrypted.
 func (s *Store) IsEncrypted(roomID id.RoomID) bool {
+	if !s.encryption {
+		return false
+	}
+
 	s.log.Debug("checking if room %s is encrypted", roomID)
 	return s.GetEncryptionEvent(roomID) != nil
 }
 
 // SetEncryptionEvent creates or updates room's encryption event info
 func (s *Store) SetEncryptionEvent(evt *event.Event) {
+	if !s.encryption {
+		return
+	}
 	tx, err := s.db.Begin()
 	if err != nil {
 		s.log.Error("cannot begin transaction: %v", err)

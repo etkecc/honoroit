@@ -171,11 +171,13 @@ func (b *Bot) startRequest(evt *event.Event, hub *sentry.Hub) {
 		return
 	}
 	userID := id.UserID(command[1])
-
-	resp, err := b.lp.GetClient().CreateRoom(&mautrix.ReqCreateRoom{
-		Invite: []id.UserID{userID},
-		Preset: "trusted_private_chat",
-		InitialState: []*event.Event{
+	req := &mautrix.ReqCreateRoom{
+		Invite:   []id.UserID{userID},
+		Preset:   "trusted_private_chat",
+		IsDirect: true,
+	}
+	if b.lp.GetMachine() != nil {
+		req.InitialState = []*event.Event{
 			{
 				Type: event.StateEncryption,
 				Content: event.Content{
@@ -184,9 +186,10 @@ func (b *Bot) startRequest(evt *event.Event, hub *sentry.Hub) {
 					},
 				},
 			},
-		},
-		IsDirect: true,
-	})
+		}
+	}
+
+	resp, err := b.lp.GetClient().CreateRoom(req)
 	if err != nil {
 		b.Error(b.roomID, hub, "cannot create a new room: %v", err)
 		return

@@ -6,10 +6,11 @@ go 1.17
 
 require (
 	git.sr.ht/~xn/cache v1.2.2
-	github.com/getsentry/sentry-go v0.12.0
+	github.com/getsentry/sentry-go v0.13.0
 	github.com/lib/pq v1.10.4
 	github.com/mattn/go-sqlite3 v1.14.13
 	github.com/stretchr/testify v1.7.1
+	gitlab.com/etke.cc/go/logger v1.0.0
 	gitlab.com/etke.cc/linkpearl v0.0.0-20220531091432-f61370b94f6b
 	maunium.net/go/mautrix v0.11.0
 )

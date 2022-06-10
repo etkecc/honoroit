@@ -12,8 +12,8 @@ github.com/bradfitz/gomemcache/memcache
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/getsentry/sentry-go v0.12.0
-## explicit; go 1.15
+# github.com/getsentry/sentry-go v0.13.0
+## explicit; go 1.17
 github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/internal/crypto/randutil
 github.com/getsentry/sentry-go/internal/debug
@@ -52,6 +52,9 @@ github.com/tidwall/pretty
 # github.com/tidwall/sjson v1.2.4
 ## explicit; go 1.14
 github.com/tidwall/sjson
+# gitlab.com/etke.cc/go/logger v1.0.0
+## explicit; go 1.18
+gitlab.com/etke.cc/go/logger
 # gitlab.com/etke.cc/linkpearl v0.0.0-20220531091432-f61370b94f6b
 ## explicit; go 1.17
 gitlab.com/etke.cc/linkpearl

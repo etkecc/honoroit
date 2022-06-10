@@ -5,11 +5,10 @@ import (
 	"sync"
 
 	"git.sr.ht/~xn/cache"
+	"gitlab.com/etke.cc/go/logger"
 	"gitlab.com/etke.cc/linkpearl"
 	"gitlab.com/etke.cc/linkpearl/config"
 	"maunium.net/go/mautrix/id"
-
-	"gitlab.com/etke.cc/honoroit/logger"
 )
 
 const (

@@ -11,10 +11,10 @@ import (
 	"github.com/getsentry/sentry-go"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"gitlab.com/etke.cc/go/logger"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/config"
-	"gitlab.com/etke.cc/honoroit/logger"
 	"gitlab.com/etke.cc/honoroit/matrix"
 )
 

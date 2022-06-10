@@ -52,6 +52,9 @@ github.com/tidwall/pretty
 # github.com/tidwall/sjson v1.2.4
 ## explicit; go 1.14
 github.com/tidwall/sjson
+# gitlab.com/etke.cc/go/env v1.0.0
+## explicit; go 1.18
+gitlab.com/etke.cc/go/env
 # gitlab.com/etke.cc/go/logger v1.0.0
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/logger

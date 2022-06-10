@@ -159,6 +159,8 @@ github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0/go.mod h1:/LWChgwKmv
 github.com/yudai/gojsondiff v1.0.0/go.mod h1:AY32+k2cwILAkW1fbgxQ5mUmMiZFgLIV+FBNExI05xg=
 github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82/go.mod h1:lgjkn3NuSvDfVJdfcVVdX+jpBxNmX4rDAzaS45IcYoM=
 github.com/yuin/goldmark v1.4.12/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+gitlab.com/etke.cc/go/env v1.0.0 h1:J98BwzOuELnjsVPFvz5wa79L7IoRV9CmrS41xLYXtSw=
+gitlab.com/etke.cc/go/env v1.0.0/go.mod h1:e1l4RM5MA1sc0R1w/RBDAESWRwgo5cOG9gx8BKUn2C4=
 gitlab.com/etke.cc/go/logger v1.0.0 h1:vp8omRMhYn+/peIlHFf9AK7GlTnQQurDCIall3N88b0=
 gitlab.com/etke.cc/go/logger v1.0.0/go.mod h1:8Vw5HFXlZQ5XeqvUs5zan+GnhrQyYtm/xe+yj8H/0zk=
 gitlab.com/etke.cc/linkpearl v0.0.0-20220531091432-f61370b94f6b h1:fyQtJoD7guVQejTsvJxi30g0owNu2DCSmY+J/WEca+Q=

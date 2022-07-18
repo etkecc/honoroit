@@ -37,5 +37,10 @@ If you think that it's not done yet, please start another 1:1 chat with me to op
 
 [RU] Оператор отметил Ваш запрос как решенный.
 Если Вы считаете что он еще не решен, пожалуйста, начните еще один 1:1 чат со мной для открытия нового запроса.`,
+		NoEncryption: `[EN] Unfortunately, encryption is disabled to prevent common decryption issues among customers.
+Please, start a new un-encrypted chat with me.
+
+[RU] К сожалению, шифрование отключено чтобы предотвратить частые ошибки с дешифровкой у клиентов.
+Пожалуйста, начните новый, незашифрованный чат со мной.`,
 	},
 }

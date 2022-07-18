@@ -22,14 +22,12 @@ func (b *Bot) initSync() {
 			go b.onMessage(evt)
 		},
 	)
-	if b.lp.GetMachine() != nil {
-		b.lp.OnEventType(
-			event.EventEncrypted,
-			func(_ mautrix.EventSource, evt *event.Event) {
-				go b.onEncryptedMessage(evt)
-			},
-		)
-	}
+	b.lp.OnEventType(
+		event.EventEncrypted,
+		func(_ mautrix.EventSource, evt *event.Event) {
+			go b.onEncryptedMessage(evt)
+		},
+	)
 }
 
 func (b *Bot) onJoin(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
@@ -167,6 +165,17 @@ func (b *Bot) onEncryptedMessage(evt *event.Event) {
 			"sender": evt.Sender.String(),
 		})
 	})
+
+	if b.lp.GetMachine() == nil {
+		_, err := b.lp.Send(evt.RoomID, &event.MessageEventContent{
+			MsgType: event.MsgNotice,
+			Body:    b.txt.NoEncryption,
+		})
+		if err != nil {
+			b.Error(b.roomID, hub, "cannot send message: %v", err)
+		}
+		return
+	}
 
 	decrypted, err := b.lp.GetMachine().DecryptMegolmEvent(evt)
 	if err != nil {

@@ -45,6 +45,8 @@ type Text struct {
 	// PrefixDone is a prefix added to threads marked as done/closed
 	PrefixDone string
 
+	// NoEncryption message sent to customer when encryption disabled and customer tries to use encrypted chat
+	NoEncryption string
 	// Greetings message sent to customer on first contact
 	Greetings string
 	// Join message sent to backoffice/threads room when customer joins a room

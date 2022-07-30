@@ -167,7 +167,7 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, hub *sentry.Hub, g
 
 	content := &event.MessageEventContent{
 		MsgType: event.MsgText,
-		Body:    b.txt.PrefixOpen + " Request by " + userID.String() + " in " + roomID.String(),
+		Body:    b.txt.PrefixOpen + " Request by " + b.getName(userID, hub) + " in " + roomID.String(),
 	}
 
 	eventID, err = b.lp.Send(b.roomID, content)
@@ -228,4 +228,23 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 		b.Error(b.roomID, hub, "user %s tried to send a message from room %s, but creation of a thread failed: %v", evt.Sender, evt.RoomID, err)
 		b.Error(evt.RoomID, hub, b.txt.Error)
 	}
+}
+
+func (b *Bot) getName(userID id.UserID, hub *sentry.Hub) string {
+	cachedName := b.getCachedName(userID)
+	if cachedName != "" {
+		return cachedName
+	}
+
+	name := userID.String()
+	dnresp, err := b.lp.GetClient().GetDisplayName(userID)
+	if err != nil {
+		b.Error(b.roomID, hub, "cannot get user %s display name: %v", userID, err)
+	}
+	if dnresp != nil {
+		name = dnresp.DisplayName + " (" + name + ")"
+	}
+
+	b.setCachedName(userID, name)
+	return name
 }

@@ -25,14 +25,14 @@ func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 		return evt.ID, nil
 	}
 
-	threadID := b.getCache(relation.EventID)
+	threadID := b.getCachedThreadID(relation.EventID)
 	if threadID != "" {
 		return threadID, nil
 	}
 
 	// If message relates to a thread - return thread root event ID
 	if relation.Type == ThreadRelation || relation.Type == ThreadRelationOld {
-		b.setCache(evt.ID, relation.EventID)
+		b.setCachedThreadID(evt.ID, relation.EventID)
 		return relation.EventID, nil
 	}
 
@@ -47,7 +47,7 @@ func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 func (b *Bot) walkReplies(evt *event.Event) (id.EventID, error) {
 	var err error
 	relation := evt.Content.AsMessage().RelatesTo
-	threadID := b.getCache(relation.EventID)
+	threadID := b.getCachedThreadID(relation.EventID)
 	if threadID != "" {
 		return threadID, nil
 	}
@@ -62,7 +62,7 @@ func (b *Bot) walkReplies(evt *event.Event) (id.EventID, error) {
 		return "", errNotRelated
 	}
 
-	b.setCache(evt.ID, threadID)
+	b.setCachedThreadID(evt.ID, threadID)
 	return threadID, nil
 }
 

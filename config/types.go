@@ -10,6 +10,8 @@ type Config struct {
 	Password string
 	// RoomID where threads will be created
 	RoomID string
+	// IgnoredRooms list of room IDs to ignore
+	IgnoredRooms []string
 	// Prefix for honoroit commands
 	Prefix string
 	// LogLevel for logger

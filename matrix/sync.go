@@ -33,7 +33,7 @@ func (b *Bot) initSync() {
 func (b *Bot) onJoin(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 	content := &event.MessageEventContent{
 		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.txt.Join, evt.Sender),
+		Body:    fmt.Sprintf(b.txt.Join, b.getName(evt.Sender, hub)),
 		RelatesTo: &event.RelatesTo{
 			Type:    ThreadRelation,
 			EventID: threadID,
@@ -49,7 +49,7 @@ func (b *Bot) onJoin(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 func (b *Bot) onInvite(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 	content := &event.MessageEventContent{
 		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.txt.Invite, evt.Sender, evt.GetStateKey()),
+		Body:    fmt.Sprintf(b.txt.Invite, b.getName(evt.Sender, hub), b.getName(id.UserID(evt.GetStateKey()), hub)),
 		RelatesTo: &event.RelatesTo{
 			Type:    ThreadRelation,
 			EventID: threadID,
@@ -65,7 +65,7 @@ func (b *Bot) onInvite(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 func (b *Bot) onLeave(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 	content := &event.MessageEventContent{
 		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.txt.Leave, evt.GetStateKey()),
+		Body:    fmt.Sprintf(b.txt.Leave, b.getName(id.UserID(evt.GetStateKey()), hub)),
 		RelatesTo: &event.RelatesTo{
 			Type:    ThreadRelation,
 			EventID: threadID,
@@ -99,6 +99,10 @@ func (b *Bot) onLeave(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 func (b *Bot) onMembership(evt *event.Event) {
 	// ignore own events
 	if evt.Sender == b.lp.GetClient().UserID {
+		return
+	}
+	// ignore any events in ignored rooms
+	if _, ok := b.ignoredRooms[evt.RoomID]; ok {
 		return
 	}
 	hub := sentry.CurrentHub().Clone()
@@ -136,6 +140,10 @@ func (b *Bot) onMessage(evt *event.Event) {
 	if evt.Sender == b.lp.GetClient().UserID {
 		return
 	}
+	// ignore any events in ignored rooms
+	if _, ok := b.ignoredRooms[evt.RoomID]; ok {
+		return
+	}
 
 	hub := sentry.CurrentHub().Clone()
 	hub.ConfigureScope(func(scope *sentry.Scope) {
@@ -153,6 +161,10 @@ func (b *Bot) onMessage(evt *event.Event) {
 func (b *Bot) onEncryptedMessage(evt *event.Event) {
 	// ignore own messages
 	if evt.Sender == b.lp.GetClient().UserID {
+		return
+	}
+	// ignore any events in ignored rooms
+	if _, ok := b.ignoredRooms[evt.RoomID]; ok {
 		return
 	}
 

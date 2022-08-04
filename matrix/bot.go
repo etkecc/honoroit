@@ -24,15 +24,16 @@ const (
 
 // Bot represents matrix bot
 type Bot struct {
-	txt          *Text
-	log          *logger.Logger
-	lp           *linkpearl.Linkpearl
-	mu           map[string]*sync.Mutex
-	cache        cache.Cache
-	prefix       string
-	prefixes     []string
-	roomID       id.RoomID
-	ignoredRooms map[id.RoomID]struct{}
+	txt            *Text
+	log            *logger.Logger
+	lp             *linkpearl.Linkpearl
+	mu             map[string]*sync.Mutex
+	cache          cache.Cache
+	prefix         string
+	prefixes       []string
+	roomID         id.RoomID
+	ignoredRooms   map[id.RoomID]struct{}
+	ignoreNoThread bool
 }
 
 // Config represents matrix config
@@ -47,6 +48,8 @@ type Config struct {
 	RoomID string
 	// IgnoredRooms list of room IDs to ignore
 	IgnoredRooms []string
+	// IgnoreNoThread mode completely ignores any messages sent outside of thread
+	IgnoreNoThread bool
 	// Prefix of commands
 	Prefix string
 	// LogLevel for logger
@@ -118,15 +121,16 @@ func NewBot(cfg *Config) (*Bot, error) {
 	}
 
 	bot := &Bot{
-		lp:           lp,
-		mu:           make(map[string]*sync.Mutex),
-		log:          log,
-		txt:          cfg.Text,
-		cache:        cfg.Cache,
-		prefix:       cfg.Prefix,
-		prefixes:     []string{cfg.Text.PrefixOpen, cfg.Text.PrefixDone},
-		roomID:       id.RoomID(cfg.RoomID),
-		ignoredRooms: ignoredRoomIDs,
+		lp:             lp,
+		mu:             make(map[string]*sync.Mutex),
+		log:            log,
+		txt:            cfg.Text,
+		cache:          cfg.Cache,
+		prefix:         cfg.Prefix,
+		prefixes:       []string{cfg.Text.PrefixOpen, cfg.Text.PrefixDone},
+		roomID:         id.RoomID(cfg.RoomID),
+		ignoredRooms:   ignoredRoomIDs,
+		ignoreNoThread: cfg.IgnoreNoThread,
 	}
 
 	return bot, nil

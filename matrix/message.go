@@ -187,6 +187,9 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 	b.log.Debug("forwarding the message to a customer room")
 	relation := content.RelatesTo
 	if relation == nil {
+		if b.ignoreNoThread {
+			return
+		}
 		b.Error(evt.RoomID, hub, "the message doesn't relate to any thread, so I don't know where to forward it.")
 		return
 	}

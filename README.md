@@ -50,10 +50,11 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ## Commands
 
-available commands in the threads. Note that all commands should be called with prefix, so `!ho done` will work, but simple `done` will not.
+Available commands in the threads. Note that all commands should be called with prefix, so `!ho done` will work, but simple `done` will not.
 
 * `done` - close the current request and mark is as done. Customer will receive special message and honoroit bot will leave 1:1 chat with customer. Any new message to the thread will not work and return error.
 * `rename` - rename the thread topic title, when you want to change the standard message to something different
+* `note` - a message prefixed with `!ho note` will **not** be sent anywhere, it's a safe place to keep notes for other operations in a thread with a customer, example: `!ho note @room need help with this one`
 * `invite` - invite yourself into the customer 1:1 room
 * `start MXID` - start a conversation with a MXID from the honoroit (like a new thread, but initialized by operator), eg: `!ho start @user:example.com`
 
@@ -79,6 +80,7 @@ env vars
 * **HONOROIT_CACHESIZE** - max allowed mappings in cache
 * **HONOROIT_NOENCRYPTION** - disable e2e encryption support
 * **HONOROIT_IGNOREDROOMS** - space separated list of roomIDs to ignore
+* **HONOROIT_IGNORENOTHREAD** - completely ignore messages outside of threads
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
 

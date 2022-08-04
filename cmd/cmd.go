@@ -68,18 +68,19 @@ func initBot(cfg *config.Config) {
 	}
 	lru := cache.NewLRU(cfg.CacheSize)
 	botConfig := &matrix.Config{
-		Homeserver:   cfg.Homeserver,
-		Login:        cfg.Login,
-		Password:     cfg.Password,
-		LogLevel:     cfg.LogLevel,
-		Prefix:       cfg.Prefix,
-		RoomID:       cfg.RoomID,
-		IgnoredRooms: cfg.IgnoredRooms,
-		Text:         (*matrix.Text)(&cfg.Text),
-		DB:           db,
-		Dialect:      cfg.DB.Dialect,
-		Cache:        lru,
-		NoEncryption: cfg.NoEncryption,
+		Homeserver:     cfg.Homeserver,
+		Login:          cfg.Login,
+		Password:       cfg.Password,
+		LogLevel:       cfg.LogLevel,
+		Prefix:         cfg.Prefix,
+		RoomID:         cfg.RoomID,
+		IgnoredRooms:   cfg.IgnoredRooms,
+		IgnoreNoThread: cfg.IgnoreNoThread,
+		Text:           (*matrix.Text)(&cfg.Text),
+		DB:             db,
+		Dialect:        cfg.DB.Dialect,
+		Cache:          lru,
+		NoEncryption:   cfg.NoEncryption,
 	}
 	bot, err = matrix.NewBot(botConfig)
 	if err != nil {

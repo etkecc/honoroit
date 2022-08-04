@@ -12,6 +12,8 @@ type Config struct {
 	RoomID string
 	// IgnoredRooms list of room IDs to ignore
 	IgnoredRooms []string
+	// IgnoreNoThread mode completely ignores any messages sent outside of thread
+	IgnoreNoThread bool
 	// Prefix for honoroit commands
 	Prefix string
 	// LogLevel for logger

@@ -44,6 +44,9 @@ func (b *Bot) runCommand(command string, evt *event.Event, hub *sentry.Hub) {
 		b.inviteRequest(evt, hub)
 	case "start":
 		b.startRequest(evt, hub)
+	case "note":
+		// do nothing
+		return
 	default:
 		b.help(hub)
 	}

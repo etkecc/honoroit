@@ -17,13 +17,13 @@ func (s *Store) Flush() error {
 }
 
 // PutNextBatch stores the next sync batch token for the current account.
-func (s *Store) PutNextBatch(nextBatch string) {
+func (s *Store) PutNextBatch(nextBatch string) error {
 	s.log.Debug("storing next batch token")
-	s.s.PutNextBatch(nextBatch)
+	return s.s.PutNextBatch(nextBatch)
 }
 
 // GetNextBatch retrieves the next sync batch token for the current account.
-func (s *Store) GetNextBatch() string {
+func (s *Store) GetNextBatch() (string, error) {
 	s.log.Debug("loading next batch token")
 	return s.s.GetNextBatch()
 }
@@ -136,43 +136,43 @@ func (s *Store) RemoveOutboundGroupSession(roomID id.RoomID) error {
 // ValidateMessageIndex returns whether the given event information match the ones stored in the database
 // for the given sender key, session ID and index.
 // If the event information was not yet stored, it's stored now.
-func (s *Store) ValidateMessageIndex(senderKey id.SenderKey, sessionID id.SessionID, eventID id.EventID, index uint, timestamp int64) bool {
+func (s *Store) ValidateMessageIndex(senderKey id.SenderKey, sessionID id.SessionID, eventID id.EventID, index uint, timestamp int64) (bool, error) {
 	s.log.Debug("validating message index")
 	return s.s.ValidateMessageIndex(senderKey, sessionID, eventID, index, timestamp)
 }
 
 // GetDevices returns a map of device IDs to device identities, including the identity and signing keys, for a given user ID.
-func (s *Store) GetDevices(userID id.UserID) (map[id.DeviceID]*crypto.DeviceIdentity, error) {
+func (s *Store) GetDevices(userID id.UserID) (map[id.DeviceID]*id.Device, error) {
 	s.log.Debug("loading devices of the %s", userID)
 	return s.s.GetDevices(userID)
 }
 
 // GetDevice returns the device dentity for a given user and device ID.
-func (s *Store) GetDevice(userID id.UserID, deviceID id.DeviceID) (*crypto.DeviceIdentity, error) {
+func (s *Store) GetDevice(userID id.UserID, deviceID id.DeviceID) (*id.Device, error) {
 	s.log.Debug("loading device %s for the %s", deviceID, userID)
 	return s.s.GetDevice(userID, deviceID)
 }
 
 // FindDeviceByKey finds a specific device by its sender key.
-func (s *Store) FindDeviceByKey(userID id.UserID, identityKey id.IdentityKey) (*crypto.DeviceIdentity, error) {
+func (s *Store) FindDeviceByKey(userID id.UserID, identityKey id.IdentityKey) (*id.Device, error) {
 	s.log.Debug("loading device of the %s by the key %s", userID, identityKey)
 	return s.s.FindDeviceByKey(userID, identityKey)
 }
 
 // PutDevice stores a single device for a user, replacing it if it exists already.
-func (s *Store) PutDevice(userID id.UserID, device *crypto.DeviceIdentity) error {
+func (s *Store) PutDevice(userID id.UserID, device *id.Device) error {
 	s.log.Debug("storing device of the %s", userID)
 	return s.s.PutDevice(userID, device)
 }
 
 // PutDevices stores the device identity information for the given user ID.
-func (s *Store) PutDevices(userID id.UserID, devices map[id.DeviceID]*crypto.DeviceIdentity) error {
+func (s *Store) PutDevices(userID id.UserID, devices map[id.DeviceID]*id.Device) error {
 	s.log.Debug("storing devices of the %s", userID)
 	return s.s.PutDevices(userID, devices)
 }
 
 // FilterTrackedUsers finds all of the user IDs out of the given ones for which the database contains identity information.
-func (s *Store) FilterTrackedUsers(users []id.UserID) []id.UserID {
+func (s *Store) FilterTrackedUsers(users []id.UserID) ([]id.UserID, error) {
 	s.log.Debug("filtering tracked users")
 	return s.s.FilterTrackedUsers(users)
 }
@@ -184,7 +184,7 @@ func (s *Store) PutCrossSigningKey(userID id.UserID, usage id.CrossSigningUsage,
 }
 
 // GetCrossSigningKeys retrieves a user's stored cross-signing keys.
-func (s *Store) GetCrossSigningKeys(userID id.UserID) (map[id.CrossSigningUsage]id.Ed25519, error) {
+func (s *Store) GetCrossSigningKeys(userID id.UserID) (map[id.CrossSigningUsage]id.CrossSigningKey, error) {
 	s.log.Debug("loading crosssigning keys of the %s", userID)
 	return s.s.GetCrossSigningKeys(userID)
 }

@@ -288,6 +288,7 @@ func (as *AppService) consumeWebsocket(stopFunc func(error), ws *websocket.Conn)
 			}
 			as.websocketRequestsLock.RUnlock()
 		} else {
+			as.Log.Debugfln("Received command request %s %d", msg.Command, msg.ReqID)
 			as.websocketHandlersLock.RLock()
 			handler, ok := as.websocketHandlers[msg.Command]
 			as.websocketHandlersLock.RUnlock()
@@ -366,6 +367,7 @@ func (as *AppService) StartWebsocket(baseURL string, onConnect func()) error {
 		as.ws = nil
 	}
 
+	_ = ws.SetWriteDeadline(time.Now().Add(3 * time.Second))
 	err = ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseGoingAway, ""))
 	if err != nil && !errors.Is(err, websocket.ErrCloseSent) {
 		as.Log.Warnln("Error writing close message to websocket:", err)

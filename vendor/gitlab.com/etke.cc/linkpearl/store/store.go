@@ -6,6 +6,7 @@ import (
 
 	"maunium.net/go/mautrix/crypto"
 	"maunium.net/go/mautrix/id"
+	"maunium.net/go/mautrix/util/dbutil"
 
 	"gitlab.com/etke.cc/linkpearl/config"
 )
@@ -32,16 +33,20 @@ func New(db *sql.DB, dialect string, log config.Logger) *Store {
 func (s *Store) WithCrypto(userID id.UserID, deviceID id.DeviceID, logger config.Logger) error {
 	s.log.Debug("crypto store enabled")
 	s.encryption = true
+	db, err := dbutil.NewWithDB(s.db, s.dialect)
+	if err != nil {
+		logger.Error("cannot init database: %v", err)
+		return err
+	}
 	s.s = crypto.NewSQLCryptoStore(
-		s.db,
-		s.dialect,
+		db,
+		dbutil.NoopLogger,
 		userID.String(),
 		deviceID,
 		[]byte(userID),
-		logger,
 	)
 
-	return s.s.CreateTables()
+	return s.s.Upgrade()
 }
 
 // GetDialect returns database dialect

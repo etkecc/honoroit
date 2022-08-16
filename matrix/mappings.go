@@ -30,14 +30,14 @@ func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 		return threadID, nil
 	}
 
-	// If message relates to a thread - return thread root event ID
-	if relation.Type == ThreadRelation || relation.Type == ThreadRelationOld {
+	threadID = relation.GetThreadParent()
+	if threadID != "" {
 		b.eventsCache.Set(string(evt.ID), relation.EventID)
 		return relation.EventID, nil
 	}
 
 	// If message is a reply-to, try to find a thread root
-	if relation.Type == event.RelReply {
+	if relation.GetReplyTo() != "" {
 		return b.walkReplies(evt)
 	}
 

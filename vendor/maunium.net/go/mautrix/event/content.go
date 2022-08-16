@@ -38,12 +38,15 @@ var TypeMap = map[Type]reflect.Type{
 	StateHalfShotBridge:    reflect.TypeOf(BridgeEventContent{}),
 	StateSpaceParent:       reflect.TypeOf(SpaceParentEventContent{}),
 	StateSpaceChild:        reflect.TypeOf(SpaceChildEventContent{}),
+	StateInsertionMarker:   reflect.TypeOf(InsertionMarkerContent{}),
 
 	EventMessage:   reflect.TypeOf(MessageEventContent{}),
 	EventSticker:   reflect.TypeOf(MessageEventContent{}),
 	EventEncrypted: reflect.TypeOf(EncryptedEventContent{}),
 	EventRedaction: reflect.TypeOf(RedactionEventContent{}),
 	EventReaction:  reflect.TypeOf(ReactionEventContent{}),
+
+	BeeperMessageStatus: reflect.TypeOf(BeeperMessageStatusEventContent{}),
 
 	AccountDataRoomTags:        reflect.TypeOf(TagEventContent{}),
 	AccountDataDirectChats:     reflect.TypeOf(DirectChatsEventContent{}),

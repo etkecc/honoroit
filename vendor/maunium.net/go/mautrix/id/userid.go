@@ -52,6 +52,16 @@ func (userID UserID) Parse() (localpart, homeserver string, err error) {
 	return
 }
 
+func (userID UserID) Localpart() string {
+	localpart, _, _ := userID.Parse()
+	return localpart
+}
+
+func (userID UserID) Homeserver() string {
+	_, homeserver, _ := userID.Parse()
+	return homeserver
+}
+
 // URI returns the user ID as a MatrixURI struct, which can then be stringified into a matrix: URI or a matrix.to URL.
 //
 // This does not parse or validate the user ID. Use the ParseAndValidate method if you want to ensure the user ID is valid first.
@@ -144,7 +154,8 @@ func isValidEscapedChar(b byte) bool {
 // are encoded using leading underscores ("_"). Characters outside the aforementioned ranges
 // (including literal underscores ("_") and equals ("=")) are encoded as UTF8 code points (NOT NCRs)
 // and converted to lower-case hex with a leading "=". For example:
-//   Alph@Bet_50up  => _alph=40_bet=5f50up
+//
+//	Alph@Bet_50up  => _alph=40_bet=5f50up
 func EncodeUserLocalpart(str string) string {
 	strBytes := []byte(str)
 	var outputBuffer bytes.Buffer
@@ -166,7 +177,9 @@ func EncodeUserLocalpart(str string) string {
 //
 // This decodes quoted-printable bytes back into UTF8, and unescapes casing. For
 // example:
-//  _alph=40_bet=5f50up  =>  Alph@Bet_50up
+//
+//	_alph=40_bet=5f50up  =>  Alph@Bet_50up
+//
 // Returns an error if the input string contains characters outside the
 // range "a-z0-9._=-", has an invalid quote-printable byte (e.g. not hex), or has
 // an invalid _ escaped byte (e.g. "_5").

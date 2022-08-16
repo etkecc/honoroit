@@ -100,18 +100,9 @@ func (b *Bot) replace(eventID id.EventID, hub *sentry.Hub, prefix string, suffix
 
 	body = prefix + body + suffix
 	formattedBody = prefix + formattedBody + suffix
-
-	content.Body = " * " + body
-	content.FormattedBody = " * " + formattedBody
-	content.NewContent = &event.MessageEventContent{
-		MsgType:       event.MsgText,
-		Body:          body,
-		FormattedBody: formattedBody,
-	}
-	content.RelatesTo = &event.RelatesTo{
-		EventID: eventID,
-		Type:    event.RelReplace,
-	}
+	content.Body = prefix + body + suffix
+	content.FormattedBody = prefix + formattedBody + suffix
+	content.SetEdit(eventID)
 
 	b.log.Debug("replacing thread topic event")
 	_, err = b.lp.Send(b.roomID, content)
@@ -221,10 +212,10 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 		return
 	}
 
-	content.RelatesTo = &event.RelatesTo{
+	content.SetRelatesTo(&event.RelatesTo{
 		Type:    ThreadRelation,
 		EventID: eventID,
-	}
+	})
 
 	_, err = b.lp.Send(b.roomID, content)
 	if err != nil {

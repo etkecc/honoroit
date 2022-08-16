@@ -3,34 +3,36 @@ package lfu
 import (
 	"sync"
 	"time"
+
+	"git.sr.ht/~xn/cache/v2/utils"
 )
 
 // LFU - Least Frequently Used cache
-type LFU struct {
+type LFU[V any] struct {
 	sync.RWMutex
 	max  int
-	data map[interface{}]*item
+	data map[string]*item[V]
 }
 
-type item struct {
-	v    interface{}
+type item[V any] struct {
+	v    V
 	used int64
 }
 
 // New LFU cache
-func New(size int) *LFU {
+func New[V any](size int) *LFU[V] {
 	if size <= 0 {
 		size = 1
 	}
-	return &LFU{
+	return &LFU[V]{
 		max:  size,
-		data: make(map[interface{}]*item, size),
+		data: make(map[string]*item[V], size),
 	}
 }
 
 // removeLFU removes least frequently used item
-func (c *LFU) removeLFU() {
-	var key interface{}
+func (c *LFU[V]) removeLFU() {
+	var key string
 	lfu := time.Now().UnixMicro()
 	for k, v := range c.data {
 		if v.used < lfu {
@@ -42,18 +44,18 @@ func (c *LFU) removeLFU() {
 }
 
 // Set an item to cache
-func (c *LFU) Set(key interface{}, value interface{}) {
+func (c *LFU[V]) Set(key string, value V) {
 	c.Lock()
 	defer c.Unlock()
 
 	if len(c.data) == c.max {
 		c.removeLFU()
 	}
-	c.data[key] = &item{v: value}
+	c.data[key] = &item[V]{v: value}
 }
 
 // Has check if an item exists in cache, without useness update
-func (c *LFU) Has(key interface{}) bool {
+func (c *LFU[V]) Has(key string) bool {
 	c.RLock()
 	defer c.RUnlock()
 
@@ -62,12 +64,12 @@ func (c *LFU) Has(key interface{}) bool {
 }
 
 // Get an item from cache
-func (c *LFU) Get(key interface{}) interface{} {
+func (c *LFU[V]) Get(key string) V {
 	c.RLock()
 	v, has := c.data[key]
 	c.RUnlock()
 	if !has {
-		return nil
+		return utils.Zero[V]()
 	}
 
 	c.Lock()
@@ -78,7 +80,7 @@ func (c *LFU) Get(key interface{}) interface{} {
 }
 
 // Remove an item from cache
-func (c *LFU) Remove(key interface{}) {
+func (c *LFU[V]) Remove(key string) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -89,9 +91,9 @@ func (c *LFU) Remove(key interface{}) {
 }
 
 // Purge cache
-func (c *LFU) Purge() {
+func (c *LFU[V]) Purge() {
 	c.Lock()
 	defer c.Unlock()
 
-	c.data = make(map[interface{}]*item, c.max)
+	c.data = make(map[string]*item[V], c.max)
 }

@@ -1,14 +1,11 @@
-# git.sr.ht/~xn/cache v1.2.2
-## explicit; go 1.17
-git.sr.ht/~xn/cache
-git.sr.ht/~xn/cache/lfu
-git.sr.ht/~xn/cache/lru
-git.sr.ht/~xn/cache/memcached
-git.sr.ht/~xn/cache/null
-git.sr.ht/~xn/cache/tlru
-# github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d
-## explicit; go 1.12
-github.com/bradfitz/gomemcache/memcache
+# git.sr.ht/~xn/cache/v2 v2.0.0
+## explicit; go 1.18
+git.sr.ht/~xn/cache/v2
+git.sr.ht/~xn/cache/v2/lfu
+git.sr.ht/~xn/cache/v2/lru
+git.sr.ht/~xn/cache/v2/null
+git.sr.ht/~xn/cache/v2/tlru
+git.sr.ht/~xn/cache/v2/utils
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew

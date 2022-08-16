@@ -3,41 +3,43 @@ package tlru
 import (
 	"sync"
 	"time"
+
+	"git.sr.ht/~xn/cache/v2/utils"
 )
 
 // TLRU - Time aware Least Recently Used cache
-type TLRU struct {
+type TLRU[V any] struct {
 	sync.RWMutex
 	max   int
 	ttl   time.Duration
-	data  map[interface{}]*item
+	data  map[string]*item[V]
 	stale bool
 }
 
-type item struct {
-	v       interface{}
+type item[V any] struct {
+	v       V
 	used    int64
 	expires int64
 }
 
 // New TLRU cache
-func New(size int, ttl time.Duration, stale bool) *TLRU {
+func New[V any](size int, ttl time.Duration, stale bool) *TLRU[V] {
 	if size <= 0 {
 		size = 1
 	}
-	tlru := &TLRU{
+	tlru := &TLRU[V]{
 		max:   size,
 		ttl:   ttl,
 		stale: stale,
-		data:  make(map[interface{}]*item, size),
+		data:  make(map[string]*item[V], size),
 	}
 
 	return tlru
 }
 
 // removeLRU removes least recently used item
-func (c *TLRU) removeLRU() {
-	var key interface{}
+func (c *TLRU[V]) removeLRU() {
+	var key string
 	lru := time.Now().UnixMicro()
 	for k, v := range c.data {
 		if v.used < lru {
@@ -49,7 +51,7 @@ func (c *TLRU) removeLRU() {
 }
 
 // Set an item to cache
-func (c *TLRU) Set(key interface{}, value interface{}) {
+func (c *TLRU[V]) Set(key string, value V) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -57,11 +59,11 @@ func (c *TLRU) Set(key interface{}, value interface{}) {
 		c.removeLRU()
 	}
 	now := time.Now().UnixMicro()
-	c.data[key] = &item{v: value, expires: now + c.ttl.Microseconds(), used: now - 100}
+	c.data[key] = &item[V]{v: value, expires: now + c.ttl.Microseconds(), used: now - 100}
 }
 
 // Has check if an item exists in cache, without useness update
-func (c *TLRU) Has(key interface{}) bool {
+func (c *TLRU[V]) Has(key string) bool {
 	c.RLock()
 	defer c.RUnlock()
 
@@ -70,12 +72,12 @@ func (c *TLRU) Has(key interface{}) bool {
 }
 
 // Get an item from cache
-func (c *TLRU) Get(key interface{}) interface{} {
+func (c *TLRU[V]) Get(key string) V {
 	c.RLock()
 	v, has := c.data[key]
 	c.RUnlock()
 	if !has {
-		return nil
+		return utils.Zero[V]()
 	}
 
 	// normal way
@@ -94,11 +96,11 @@ func (c *TLRU) Get(key interface{}) interface{} {
 	if c.stale {
 		return v.v
 	}
-	return nil
+	return utils.Zero[V]()
 }
 
 // Remove an item from cache
-func (c *TLRU) Remove(key interface{}) {
+func (c *TLRU[V]) Remove(key string) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -109,9 +111,9 @@ func (c *TLRU) Remove(key interface{}) {
 }
 
 // Purge cache
-func (c *TLRU) Purge() {
+func (c *TLRU[V]) Purge() {
 	c.Lock()
 	defer c.Unlock()
 
-	c.data = make(map[interface{}]*item, c.max)
+	c.data = make(map[string]*item[V], c.max)
 }

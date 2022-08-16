@@ -1,11 +1,11 @@
 module gitlab.com/etke.cc/honoroit
 
-go 1.17
+go 1.18
 
 // replace gitlab.com/etke.cc/linkpearl => ../linkpearl
 
 require (
-	git.sr.ht/~xn/cache v1.2.2
+	git.sr.ht/~xn/cache/v2 v2.0.0
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/lib/pq v1.10.6
 	github.com/mattn/go-sqlite3 v1.14.13
@@ -17,7 +17,6 @@ require (
 )
 
 require (
-	github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect

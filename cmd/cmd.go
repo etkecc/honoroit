@@ -7,7 +7,6 @@ import (
 	"syscall"
 	"time"
 
-	"git.sr.ht/~xn/cache"
 	"github.com/getsentry/sentry-go"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -66,7 +65,6 @@ func initBot(cfg *config.Config) {
 	if err != nil {
 		log.Fatal("cannot initialize SQL database: %v", err)
 	}
-	lru := cache.NewLRU(cfg.CacheSize)
 	botConfig := &matrix.Config{
 		Homeserver:     cfg.Homeserver,
 		Login:          cfg.Login,
@@ -79,7 +77,7 @@ func initBot(cfg *config.Config) {
 		Text:           (*matrix.Text)(&cfg.Text),
 		DB:             db,
 		Dialect:        cfg.DB.Dialect,
-		Cache:          lru,
+		CacheSize:      cfg.CacheSize,
 		NoEncryption:   cfg.NoEncryption,
 	}
 	bot, err = matrix.NewBot(botConfig)

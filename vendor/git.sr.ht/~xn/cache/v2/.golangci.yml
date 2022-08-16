@@ -27,15 +27,12 @@ linters-settings:
     min-complexity: 10
   nestif:
     min-complexity: 4
-  gocritic:
-    enabled-tags:
-      - performance
   gofumpt:
-    lang-version: "1.17"
+    lang-version: "1.18"
   goimports:
     local-prefixes: git.sr.ht/~xn/cache
   gosimple:
-    go: "1.17"
+    go: "1.18"
     checks: [ "all" ]
   govet:
     check-shadowing: true
@@ -45,14 +42,14 @@ linters-settings:
   misspell:
     locale: US
   staticcheck:
-    go: "1.17"
+    go: "1.18"
     checks: [ "all" ]
   stylecheck:
-    go: "1.17"
+    go: "1.18"
   unparam:
     check-exported: true
   unused:
-    go: "1.17"
+    go: "1.18"
 linters:
   disable-all: false
   enable:

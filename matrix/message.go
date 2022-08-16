@@ -234,11 +234,6 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 }
 
 func (b *Bot) getName(userID id.UserID, hub *sentry.Hub) string {
-	cachedName := b.getCachedName(userID)
-	if cachedName != "" {
-		return cachedName
-	}
-
 	name := userID.String()
 	dnresp, err := b.lp.GetClient().GetDisplayName(userID)
 	if err != nil {
@@ -248,6 +243,5 @@ func (b *Bot) getName(userID id.UserID, hub *sentry.Hub) string {
 		name = dnresp.DisplayName + " (" + name + ")"
 	}
 
-	b.setCachedName(userID, name)
 	return name
 }

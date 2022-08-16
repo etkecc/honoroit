@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"sync"
 
-	"git.sr.ht/~xn/cache"
+	"git.sr.ht/~xn/cache/v2"
 	"gitlab.com/etke.cc/go/logger"
 	"gitlab.com/etke.cc/linkpearl"
 	"gitlab.com/etke.cc/linkpearl/config"
@@ -28,7 +28,7 @@ type Bot struct {
 	log            *logger.Logger
 	lp             *linkpearl.Linkpearl
 	mu             map[string]*sync.Mutex
-	cache          cache.Cache
+	eventsCache    cache.Cache[id.EventID]
 	prefix         string
 	prefixes       []string
 	roomID         id.RoomID
@@ -65,8 +65,8 @@ type Config struct {
 	// Dialect of the DB: postgres, sqlite3
 	Dialect string
 
-	// Cache client
-	Cache cache.Cache
+	// Cache size
+	CacheSize int
 }
 
 // Text messages
@@ -125,7 +125,7 @@ func NewBot(cfg *Config) (*Bot, error) {
 		mu:             make(map[string]*sync.Mutex),
 		log:            log,
 		txt:            cfg.Text,
-		cache:          cfg.Cache,
+		eventsCache:    cache.NewLRU[id.EventID](cfg.CacheSize),
 		prefix:         cfg.Prefix,
 		prefixes:       []string{cfg.Text.PrefixOpen, cfg.Text.PrefixDone},
 		roomID:         id.RoomID(cfg.RoomID),

@@ -66,21 +66,21 @@ gitlab.com/etke.cc/go/env
 # gitlab.com/etke.cc/go/logger v1.0.0
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/logger
-# gitlab.com/etke.cc/linkpearl v0.0.0-20220816155856-8f4cd5cce574
+# gitlab.com/etke.cc/linkpearl v0.0.0-20220823124436-ff8541c79eee
 ## explicit; go 1.18
 gitlab.com/etke.cc/linkpearl
 gitlab.com/etke.cc/linkpearl/config
 gitlab.com/etke.cc/linkpearl/store
-# golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
+# golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8
 ## explicit; go 1.17
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/net v0.0.0-20220812174116-3211cb980234
+# golang.org/x/net v0.0.0-20220822230855-b0a4917ee28c
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/publicsuffix
-# golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab
+# golang.org/x/sys v0.0.0-20220818161305-2296e01440c6
 ## explicit; go 1.17
 golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader

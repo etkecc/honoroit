@@ -28,7 +28,7 @@ func (s *Store) GetEncryptionEvent(roomID id.RoomID) *event.EncryptionEventConte
 	}
 	var encryptionEvent event.EncryptionEventContent
 	if err := json.Unmarshal(encryptionEventJSON, &encryptionEvent); err != nil {
-		s.log.Error("cannot unmarshal encryption event: %s", err)
+		s.log.Debug("cannot unmarshal encryption event: %s", err)
 		return nil
 	}
 

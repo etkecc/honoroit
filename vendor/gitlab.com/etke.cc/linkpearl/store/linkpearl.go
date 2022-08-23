@@ -29,6 +29,17 @@ func (s *Store) SetEncryptionEvent(evt *event.Event) {
 	if !s.encryption {
 		return
 	}
+	if evt == nil {
+		return
+	}
+
+	var encryptionEventJSON []byte
+	encryptionEventJSON, err := json.Marshal(evt)
+	if err != nil {
+		s.log.Debug("cannot marshal encryption event: %v", err)
+		return
+	}
+
 	tx, err := s.db.Begin()
 	if err != nil {
 		s.log.Error("cannot begin transaction: %v", err)
@@ -43,13 +54,6 @@ func (s *Store) SetEncryptionEvent(evt *event.Event) {
 		insert = "INSERT INTO rooms VALUES ($1, $2) ON CONFLICT DO NOTHING"
 	}
 	update := "UPDATE rooms SET encryption_event = $1 WHERE room_id = $2"
-
-	var encryptionEventJSON []byte
-	encryptionEventJSON, err = json.Marshal(evt)
-	if err != nil {
-		s.log.Error("cannot marshal encryption event: %v", err)
-		encryptionEventJSON = nil
-	}
 
 	_, err = tx.Exec(update, encryptionEventJSON, evt.RoomID)
 	if err != nil {

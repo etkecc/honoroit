@@ -2,8 +2,6 @@ module gitlab.com/etke.cc/honoroit
 
 go 1.18
 
-// replace gitlab.com/etke.cc/linkpearl => ../linkpearl
-
 require (
 	git.sr.ht/~xn/cache/v2 v2.0.0
 	github.com/getsentry/sentry-go v0.13.0

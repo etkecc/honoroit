@@ -6,6 +6,7 @@ import (
 
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/crypto"
+	"maunium.net/go/mautrix/event"
 )
 
 // Config represents matrix config
@@ -16,6 +17,11 @@ type Config struct {
 	Login string
 	// Password for login/password auth only
 	Password string
+
+	// JoinPermit is a callback function that tells
+	// if linkpearl should respond to the given "invite" event
+	// and join the room
+	JoinPermit func(*event.Event) bool
 
 	// AutoLeave if true, linkpearl will automatically leave empty rooms
 	AutoLeave bool

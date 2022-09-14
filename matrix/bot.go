@@ -2,10 +2,12 @@ package matrix
 
 import (
 	"database/sql"
+	"regexp"
 	"sync"
 
 	"git.sr.ht/~xn/cache/v2"
 	"gitlab.com/etke.cc/go/logger"
+	"gitlab.com/etke.cc/go/mxidwc"
 	"gitlab.com/etke.cc/linkpearl"
 	"gitlab.com/etke.cc/linkpearl/config"
 	"maunium.net/go/mautrix/id"
@@ -32,6 +34,7 @@ type Bot struct {
 	prefix         string
 	prefixes       []string
 	roomID         id.RoomID
+	allowedUsers   []*regexp.Regexp
 	ignoredRooms   map[id.RoomID]struct{}
 	ignoreNoThread bool
 }
@@ -46,6 +49,8 @@ type Config struct {
 	Password string
 	// RoomID where threads will be created
 	RoomID string
+	// AllowedUsers is list of wildcard rules to allow requests only from specific users
+	AllowedUsers []string
 	// IgnoredRooms list of room IDs to ignore
 	IgnoredRooms []string
 	// IgnoreNoThread mode completely ignores any messages sent outside of thread
@@ -120,6 +125,11 @@ func NewBot(cfg *Config) (*Bot, error) {
 		ignoredRoomIDs[id.RoomID(room)] = struct{}{}
 	}
 
+	allowedUsers, uerr := parseMXIDpatterns(cfg.AllowedUsers, "@*:*")
+	if uerr != nil {
+		return nil, uerr
+	}
+
 	bot := &Bot{
 		lp:             lp,
 		mu:             make(map[string]*sync.Mutex),
@@ -129,6 +139,7 @@ func NewBot(cfg *Config) (*Bot, error) {
 		prefix:         cfg.Prefix,
 		prefixes:       []string{cfg.Text.PrefixOpen, cfg.Text.PrefixDone},
 		roomID:         id.RoomID(cfg.RoomID),
+		allowedUsers:   allowedUsers,
 		ignoredRooms:   ignoredRoomIDs,
 		ignoreNoThread: cfg.IgnoreNoThread,
 	}
@@ -149,4 +160,12 @@ func (b *Bot) Start() error {
 // Stop the bot
 func (b *Bot) Stop() {
 	b.lp.Stop()
+}
+
+func parseMXIDpatterns(patterns []string, defaultPattern string) ([]*regexp.Regexp, error) {
+	if len(patterns) == 0 && defaultPattern != "" {
+		patterns = []string{defaultPattern}
+	}
+
+	return mxidwc.ParsePatterns(patterns)
 }

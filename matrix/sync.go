@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"github.com/getsentry/sentry-go"
+	"gitlab.com/etke.cc/go/mxidwc"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
 
 func (b *Bot) initSync() {
+	b.lp.SetJoinPermit(b.joinPermit)
 	b.lp.OnEventType(
 		event.StateMember,
 		func(_ mautrix.EventSource, evt *event.Event) {
@@ -28,6 +30,16 @@ func (b *Bot) initSync() {
 			go b.onEncryptedMessage(evt)
 		},
 	)
+}
+
+// joinPermit is called by linkpearl when processing "invite" events and deciding if rooms should be auto-joined or not
+func (b *Bot) joinPermit(evt *event.Event) bool {
+	if !mxidwc.Match(evt.Sender.String(), b.allowedUsers) {
+		b.log.Debug("Rejecting room invitation from unallowed user: %s", evt.Sender)
+		return false
+	}
+
+	return true
 }
 
 func (b *Bot) onJoin(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {

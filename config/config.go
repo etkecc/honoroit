@@ -12,6 +12,7 @@ func New() *Config {
 	return &Config{
 		Homeserver:     env.String("homeserver", defaultConfig.Homeserver),
 		RoomID:         env.String("roomid", defaultConfig.RoomID),
+		AllowedUsers:   env.Slice("allowedusers"),
 		IgnoredRooms:   env.Slice("ignoredrooms"),
 		IgnoreNoThread: env.Bool("ignorenothread"),
 		Login:          env.String("login", defaultConfig.Login),

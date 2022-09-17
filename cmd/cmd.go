@@ -72,6 +72,7 @@ func initBot(cfg *config.Config) {
 		LogLevel:       cfg.LogLevel,
 		Prefix:         cfg.Prefix,
 		RoomID:         cfg.RoomID,
+		AllowedUsers:   cfg.AllowedUsers,
 		IgnoredRooms:   cfg.IgnoredRooms,
 		IgnoreNoThread: cfg.IgnoreNoThread,
 		Text:           (*matrix.Text)(&cfg.Text),

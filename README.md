@@ -79,6 +79,7 @@ env vars
 * **HONOROIT_LOGLEVEL** - log level
 * **HONOROIT_CACHESIZE** - max allowed mappings in cache
 * **HONOROIT_NOENCRYPTION** - disable e2e encryption support
+* **HONOROIT_ALLOWEDUSERS** - space separated list of allowed MXID patterns, where each pattern is like `@someone:example.com`, `@bot.*:example.com`, `@*:another.com`, or `@*:*` (the default one)
 * **HONOROIT_IGNOREDROOMS** - space separated list of roomIDs to ignore
 * **HONOROIT_IGNORENOTHREAD** - completely ignore messages outside of threads
 * **HONOROIT_DB_DSN** - database connection string

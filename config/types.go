@@ -10,6 +10,8 @@ type Config struct {
 	Password string
 	// RoomID where threads will be created
 	RoomID string
+	// AllowedUsers is list of wildcard rules to allow requests only from specific users
+	AllowedUsers []string
 	// IgnoredRooms list of room IDs to ignore
 	IgnoredRooms []string
 	// IgnoreNoThread mode completely ignores any messages sent outside of thread

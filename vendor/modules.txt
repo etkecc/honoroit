@@ -38,7 +38,7 @@ github.com/mattn/go-sqlite3
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/rs/zerolog v1.27.0
+# github.com/rs/zerolog v1.28.0
 ## explicit; go 1.15
 github.com/rs/zerolog
 github.com/rs/zerolog/internal/cbor
@@ -66,24 +66,26 @@ gitlab.com/etke.cc/go/env
 # gitlab.com/etke.cc/go/logger v1.0.0
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/logger
-# gitlab.com/etke.cc/linkpearl v0.0.0-20220823124436-ff8541c79eee
+# gitlab.com/etke.cc/go/mxidwc v1.0.0
+## explicit; go 1.19
+gitlab.com/etke.cc/go/mxidwc
+# gitlab.com/etke.cc/linkpearl v0.0.0-20220831124140-598117f26c77
 ## explicit; go 1.18
 gitlab.com/etke.cc/linkpearl
 gitlab.com/etke.cc/linkpearl/config
 gitlab.com/etke.cc/linkpearl/store
-# golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8
+# golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
 ## explicit; go 1.17
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/net v0.0.0-20220822230855-b0a4917ee28c
+# golang.org/x/net v0.0.0-20220909164309-bea034e7d591
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/publicsuffix
-# golang.org/x/sys v0.0.0-20220818161305-2296e01440c6
+# golang.org/x/sys v0.0.0-20220913175220-63ea55921009
 ## explicit; go 1.17
 golang.org/x/sys/execabs
-golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 # golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 ## explicit; go 1.11

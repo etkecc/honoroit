@@ -24,8 +24,14 @@ type Linkpearl struct {
 	olm   *crypto.OlmMachine
 	store *store.Store
 
+	joinPermit func(*event.Event) bool
 	autoleave  bool
 	maxretries int
+}
+
+type ReqPresence struct {
+	Presence  event.Presence `json:"presence"`
+	StatusMsg string         `json:"status_msg,omitempty"`
 }
 
 // New linkpearl
@@ -38,10 +44,18 @@ func New(cfg *config.Config) (*Linkpearl, error) {
 		return nil, err
 	}
 	api.Logger = cfg.APILogger
+
+	joinPermit := cfg.JoinPermit
+	if joinPermit == nil {
+		// By default, we approve all join requests
+		joinPermit = func(*event.Event) bool { return true }
+	}
+
 	lp := &Linkpearl{
 		db:         cfg.DB,
 		api:        api,
 		log:        cfg.LPLogger,
+		joinPermit: joinPermit,
 		autoleave:  cfg.AutoLeave,
 		maxretries: cfg.MaxRetries,
 	}
@@ -125,10 +139,29 @@ func (l *Linkpearl) Send(roomID id.RoomID, content interface{}) (id.EventID, err
 	return resp.EventID, err
 }
 
+// SetPresence (own). See https://spec.matrix.org/v1.3/client-server-api/#put_matrixclientv3presenceuseridstatus
+func (l *Linkpearl) SetPresence(presence event.Presence, message string) error {
+	req := ReqPresence{Presence: presence, StatusMsg: message}
+	u := l.GetClient().BuildClientURL("v3", "presence", l.GetClient().UserID, "status")
+	_, err := l.GetClient().MakeRequest("PUT", u, req, nil)
+
+	return err
+}
+
+// SetJoinPermit sets the the join permit callback function
+func (l *Linkpearl) SetJoinPermit(value func(*event.Event) bool) {
+	l.joinPermit = value
+}
+
 // Start performs matrix /sync
-func (l *Linkpearl) Start() error {
+func (l *Linkpearl) Start(optionalStatusMsg ...string) error {
 	l.initSync()
-	err := l.api.SetPresence(event.PresenceOnline)
+	var statusMsg string
+	if len(optionalStatusMsg) > 0 {
+		statusMsg = optionalStatusMsg[0]
+	}
+
+	err := l.SetPresence(event.PresenceOnline, statusMsg)
 	if err != nil {
 		return err
 	}

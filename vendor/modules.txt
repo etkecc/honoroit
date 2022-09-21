@@ -32,8 +32,8 @@ github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.16
 ## explicit; go 1.15
 github.com/mattn/go-isatty
-# github.com/mattn/go-sqlite3 v1.14.14
-## explicit; go 1.12
+# github.com/mattn/go-sqlite3 v1.14.15
+## explicit; go 1.16
 github.com/mattn/go-sqlite3
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
@@ -69,21 +69,21 @@ gitlab.com/etke.cc/go/logger
 # gitlab.com/etke.cc/go/mxidwc v1.0.0
 ## explicit; go 1.19
 gitlab.com/etke.cc/go/mxidwc
-# gitlab.com/etke.cc/linkpearl v0.0.0-20220831124140-598117f26c77
+# gitlab.com/etke.cc/linkpearl v0.0.0-20220921080011-9407dc599571
 ## explicit; go 1.18
 gitlab.com/etke.cc/linkpearl
 gitlab.com/etke.cc/linkpearl/config
 gitlab.com/etke.cc/linkpearl/store
-# golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
+# golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0
 ## explicit; go 1.17
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/net v0.0.0-20220909164309-bea034e7d591
+# golang.org/x/net v0.0.0-20220920203100-d0c6ba3f52d9
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/publicsuffix
-# golang.org/x/sys v0.0.0-20220913175220-63ea55921009
+# golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
 ## explicit; go 1.17
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
@@ -95,8 +95,8 @@ gopkg.in/yaml.v3
 # maunium.net/go/maulogger/v2 v2.3.2
 ## explicit; go 1.11
 maunium.net/go/maulogger/v2
-# maunium.net/go/mautrix v0.12.0
-## explicit; go 1.17
+# maunium.net/go/mautrix v0.12.1
+## explicit; go 1.18
 maunium.net/go/mautrix
 maunium.net/go/mautrix/appservice
 maunium.net/go/mautrix/bridge/bridgeconfig

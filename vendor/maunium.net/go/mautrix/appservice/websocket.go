@@ -39,7 +39,7 @@ type WebsocketCommand struct {
 }
 
 func (wsc *WebsocketCommand) MakeResponse(ok bool, data interface{}) *WebsocketRequest {
-	if wsc.ReqID == 0 {
+	if wsc.ReqID == 0 || wsc.Command == "response" || wsc.Command == "error" {
 		return nil
 	}
 	cmd := "response"
@@ -85,16 +85,26 @@ type WebsocketTransaction struct {
 	Transaction
 }
 
+type WebsocketTransactionResponse struct {
+	TxnID string `json:"txn_id"`
+}
+
 type WebsocketMessage struct {
 	WebsocketTransaction
 	WebsocketCommand
 }
+
+const (
+	WebsocketCloseConnReplaced       = 4001
+	WebsocketCloseTxnNotAcknowledged = 4002
+)
 
 type MeowWebsocketCloseCode string
 
 const (
 	MeowServerShuttingDown MeowWebsocketCloseCode = "server_shutting_down"
 	MeowConnectionReplaced MeowWebsocketCloseCode = "conn_replaced"
+	MeowTxnNotAcknowledged MeowWebsocketCloseCode = "transactions_not_acknowledged"
 )
 
 var (
@@ -112,6 +122,8 @@ func (mwcc MeowWebsocketCloseCode) String() string {
 		return "the server is shutting down"
 	case MeowConnectionReplaced:
 		return "the connection was replaced by another client"
+	case MeowTxnNotAcknowledged:
+		return "transactions were not acknowledged"
 	default:
 		return string(mwcc)
 	}
@@ -142,7 +154,7 @@ func parseCloseError(err error) error {
 		}
 	}
 	if len(closeCommand.Status) == 0 {
-		if closeCommand.Code == 4001 {
+		if closeCommand.Code == WebsocketCloseConnReplaced {
 			closeCommand.Status = MeowConnectionReplaced
 		} else if closeCommand.Code == websocket.CloseServiceRestart {
 			closeCommand.Status = MeowServerShuttingDown
@@ -267,7 +279,7 @@ func (as *AppService) consumeWebsocket(stopFunc func(error), ws *websocket.Conn)
 				as.Log.Debugfln("Ignoring duplicate transaction %s (%s)", msg.TxnID, msg.Transaction.ContentString())
 			}
 			go func() {
-				err = as.SendWebsocket(msg.MakeResponse(true, map[string]interface{}{"txn_id": msg.TxnID}))
+				err = as.SendWebsocket(msg.MakeResponse(true, &WebsocketTransactionResponse{TxnID: msg.TxnID}))
 				if err != nil {
 					as.Log.Warnfln("Failed to send response to %s %d: %v", msg.Command, msg.ReqID, err)
 				}

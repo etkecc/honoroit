@@ -163,7 +163,7 @@ func (l *Linkpearl) Start(optionalStatusMsg ...string) error {
 
 	err := l.SetPresence(event.PresenceOnline, statusMsg)
 	if err != nil {
-		return err
+		l.log.Error("cannot set presence: %v", err)
 	}
 	defer l.Stop()
 
@@ -176,7 +176,7 @@ func (l *Linkpearl) Stop() {
 	l.log.Debug("stopping the client")
 	err := l.api.SetPresence(event.PresenceOffline)
 	if err != nil {
-		l.log.Error("cannot set presence to offile: %v", err)
+		l.log.Error("cannot set presence: %v", err)
 	}
 	l.api.StopSync()
 	l.log.Info("client has been stopped")

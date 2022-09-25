@@ -19,6 +19,10 @@ func (b *Bot) parseCommand(message string) []string {
 		return command
 	}
 	offset := index + len(b.prefix) + 1
+	if len(message) <= offset {
+		return nil
+	}
+
 	message = strings.TrimSpace(message[offset:])
 	b.log.Debug("received a command: %s", message)
 
@@ -31,7 +35,7 @@ func (b *Bot) readCommand(message string) string {
 	if len(command) > 0 {
 		return command[0]
 	}
-	return ""
+	return "help"
 }
 
 func (b *Bot) runCommand(command string, evt *event.Event, hub *sentry.Hub) {

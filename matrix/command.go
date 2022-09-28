@@ -11,12 +11,10 @@ import (
 )
 
 func (b *Bot) parseCommand(message string) []string {
-	command := []string{}
-
 	// ignore not prefixied commands
 	index := strings.LastIndex(message, b.prefix)
 	if index < 0 {
-		return command
+		return nil
 	}
 	offset := index + len(b.prefix) + 1
 	if len(message) <= offset {
@@ -26,8 +24,7 @@ func (b *Bot) parseCommand(message string) []string {
 	message = strings.TrimSpace(message[offset:])
 	b.log.Debug("received a command: %s", message)
 
-	command = strings.Split(message, " ")
-	return command
+	return strings.Split(message, " ")
 }
 
 func (b *Bot) readCommand(message string) string {
@@ -35,7 +32,7 @@ func (b *Bot) readCommand(message string) string {
 	if len(command) > 0 {
 		return command[0]
 	}
-	return "help"
+	return ""
 }
 
 func (b *Bot) runCommand(command string, evt *event.Event, hub *sentry.Hub) {

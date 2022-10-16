@@ -79,7 +79,7 @@ type RespMessages struct {
 	Start string         `json:"start"`
 	Chunk []*event.Event `json:"chunk"`
 	State []*event.Event `json:"state"`
-	End   string         `json:"end"`
+	End   string         `json:"end,omitempty"`
 }
 
 // RespContext is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidcontexteventid
@@ -95,6 +95,11 @@ type RespContext struct {
 // RespSendEvent is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid
 type RespSendEvent struct {
 	EventID id.EventID `json:"event_id"`
+}
+
+// RespMediaConfig is the JSON response for https://spec.matrix.org/v1.4/client-server-api/#get_matrixmediav3config
+type RespMediaConfig struct {
+	UploadSize int64 `json:"m.upload.size,omitempty"`
 }
 
 // RespMediaUpload is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#post_matrixmediav3upload
@@ -152,6 +157,11 @@ func (r RespUserInteractive) HasSingleStageFlow(stageName AuthType) bool {
 // RespUserDisplayName is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuseriddisplayname
 type RespUserDisplayName struct {
 	DisplayName string `json:"displayname"`
+}
+
+// RespRegisterAvailable is the JSON response for https://spec.matrix.org/v1.4/client-server-api/#get_matrixclientv3registeravailable
+type RespRegisterAvailable struct {
+	Available bool `json:"available"`
 }
 
 // RespRegister is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3register
@@ -242,9 +252,9 @@ type RespSync struct {
 }
 
 type RespSyncRooms struct {
-	Leave  map[id.RoomID]SyncLeftRoom    `json:"leave,omitempty"`
-	Join   map[id.RoomID]SyncJoinedRoom  `json:"join,omitempty"`
-	Invite map[id.RoomID]SyncInvitedRoom `json:"invite,omitempty"`
+	Leave  map[id.RoomID]*SyncLeftRoom    `json:"leave,omitempty"`
+	Join   map[id.RoomID]*SyncJoinedRoom  `json:"join,omitempty"`
+	Invite map[id.RoomID]*SyncInvitedRoom `json:"invite,omitempty"`
 }
 
 type marshalableRespSync RespSync

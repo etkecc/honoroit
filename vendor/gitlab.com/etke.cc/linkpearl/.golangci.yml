@@ -31,11 +31,11 @@ linters-settings:
     enabled-tags:
       - performance
   gofumpt:
-    lang-version: "1.17"
+    lang-version: "1.19"
   goimports:
     local-prefixes: gitlab.com/etke.cc/linkpearl
   gosimple:
-    go: "1.17"
+    go: "1.19"
     checks: [ "all" ]
   govet:
     check-shadowing: true
@@ -45,14 +45,14 @@ linters-settings:
   misspell:
     locale: US
   staticcheck:
-    go: "1.17"
+    go: "1.19"
     checks: [ "all" ]
   stylecheck:
-    go: "1.17"
+    go: "1.19"
   unparam:
     check-exported: true
   unused:
-    go: "1.17"
+    go: "1.19"
 linters:
   disable-all: false
   enable:

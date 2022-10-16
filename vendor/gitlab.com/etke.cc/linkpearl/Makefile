@@ -16,6 +16,9 @@ lint:
 lintfix:
 	golangci-lint run --fix ./...
 
+vuln:
+	govulncheck ./...
+
 # run unit tests
 test:
 	@go test ${BUILDFLAGS} -coverprofile=cover.out ./...

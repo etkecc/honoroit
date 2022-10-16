@@ -26,6 +26,12 @@ type Config struct {
 	// AutoLeave if true, linkpearl will automatically leave empty rooms
 	AutoLeave bool
 
+	// AccountDataCache size
+	AccountDataCache int
+
+	// AccountDataSecret (Password) for encryption
+	AccountDataSecret string
+
 	// MaxRetries for operations like auto join
 	MaxRetries int
 

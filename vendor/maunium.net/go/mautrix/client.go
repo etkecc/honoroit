@@ -104,7 +104,7 @@ func DiscoverClientAPI(serverName string) (*ClientWellKnown, error) {
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", DefaultUserAgent+" .well-known fetcher")
+	req.Header.Set("User-Agent", DefaultUserAgent+" (.well-known fetcher)")
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
@@ -632,6 +632,37 @@ func (cli *Client) FullSyncRequest(req ReqSync) (resp *RespSync, err error) {
 	}
 	if err == nil && duration > timeout+buffer {
 		cli.logWarning("Sync request (%s) took %s with timeout %s", req.Since, duration, timeout)
+	}
+	return
+}
+
+// RegisterAvailable checks if a username is valid and available for registration on the server.
+//
+// See https://spec.matrix.org/v1.4/client-server-api/#get_matrixclientv3registeravailable for more details
+//
+// This will always return an error if the username isn't available, so checking the actual response struct is generally
+// not necessary. It is still returned for future-proofing. For a simple availability check, just check that the returned
+// error is nil. `errors.Is` can be used to find the exact reason why a username isn't available:
+//
+//	_, err := cli.RegisterAvailable("cat")
+//	if errors.Is(err, mautrix.MUserInUse) {
+//		// Username is taken
+//	} else if errors.Is(err, mautrix.MInvalidUsername) {
+//		// Username is not valid
+//	} else if errors.Is(err, mautrix.MExclusive) {
+//		// Username is reserved for an appservice
+//	} else if errors.Is(err, mautrix.MLimitExceeded) {
+//		// Too many requests
+//	} else if err != nil {
+//		// Unknown error
+//	} else {
+//		// Username is available
+//	}
+func (cli *Client) RegisterAvailable(username string) (resp *RespRegisterAvailable, err error) {
+	u := cli.BuildURLWithQuery(ClientURLPath{"v3", "register", "available"}, map[string]string{"username": username})
+	_, err = cli.MakeRequest(http.MethodGet, u, nil, &resp)
+	if err == nil && !resp.Available {
+		err = fmt.Errorf(`request returned OK status without "available": true`)
 	}
 	return
 }
@@ -1175,6 +1206,13 @@ func (cli *Client) State(roomID id.RoomID) (stateMap RoomStateMap, err error) {
 	return
 }
 
+// GetMediaConfig fetches the configuration of the content repository, such as upload limitations.
+func (cli *Client) GetMediaConfig() (resp *RespMediaConfig, err error) {
+	u := cli.BuildURL(MediaURLPath{"v3", "config"})
+	_, err = cli.MakeRequest("GET", u, nil, &resp)
+	return
+}
+
 // UploadLink uploads an HTTP URL and then returns an MXC URI.
 func (cli *Client) UploadLink(link string) (*RespMediaUpload, error) {
 	res, err := cli.Client.Get(link)
@@ -1198,6 +1236,8 @@ func (cli *Client) Download(mxcURL id.ContentURI) (io.ReadCloser, error) {
 func (cli *Client) DownloadContext(ctx context.Context, mxcURL id.ContentURI) (io.ReadCloser, error) {
 	if req, err := http.NewRequestWithContext(ctx, http.MethodGet, cli.GetDownloadURL(mxcURL), nil); err != nil {
 		return nil, err
+	} else if req.Header.Set("User-Agent", cli.UserAgent+" (media downloader)"); false {
+		panic("false is true")
 	} else if resp, err := cli.Client.Do(req); err != nil {
 		return nil, err
 	} else {
@@ -1306,25 +1346,26 @@ func (cli *Client) uploadMediaToURL(data ReqUploadMedia) (*RespMediaUpload, erro
 		// Tell the next retry to create a new reader from ContentBytes
 		data.Content = nil
 		req.Header.Set("Content-Type", data.ContentType)
+		req.Header.Set("User-Agent", cli.UserAgent+" (external media uploader)")
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return nil, err
-		} else if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			// Upload successful
-			break
-		}
-
-		if retries > 0 && cli.shouldRetry(resp) {
+			cli.Logger.Debugfln("Error uploading media to %s: %v, retrying", data.UploadURL, err)
+			retries--
+		} else if resp.StatusCode >= 400 || resp.StatusCode < 200 {
 			cli.Logger.Debugfln("Error uploading media to %s: HTTP %d, retrying", data.UploadURL, resp.StatusCode)
 			retries--
 		} else {
-			cli.Logger.Debugfln("Error uploading media to %s: HTTP %d, not retrying", data.UploadURL, resp.StatusCode)
-			return nil, err
+			break
 		}
 	}
 
-	notifyURL := cli.BuildURL(MediaURLPath{"unstable", "fi.mau.msc2246", "upload", data.UnstableMXC.Homeserver, data.UnstableMXC.FileID, "complete"})
+	query := map[string]string{}
+	if len(data.FileName) > 0 {
+		query["filename"] = data.FileName
+	}
+
+	notifyURL := cli.BuildURLWithQuery(MediaURLPath{"unstable", "fi.mau.msc2246", "upload", data.UnstableMXC.Homeserver, data.UnstableMXC.FileID, "complete"}, query)
 
 	var m *RespMediaUpload
 	_, err := cli.MakeFullRequest(FullRequest{

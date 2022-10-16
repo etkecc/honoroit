@@ -4,6 +4,7 @@ package linkpearl
 import (
 	"database/sql"
 
+	lru "github.com/hashicorp/golang-lru"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/crypto"
 	"maunium.net/go/mautrix/event"
@@ -13,12 +14,18 @@ import (
 	"gitlab.com/etke.cc/linkpearl/store"
 )
 
-// DefaultMaxRetries for operations like autojoin
-const DefaultMaxRetries = 10
+const (
+	// DefaultMaxRetries for operations like autojoin
+	DefaultMaxRetries = 10
+	// DefaultAccountDataCache size
+	DefaultAccountDataCache = 1000
+)
 
 // Linkpearl object
 type Linkpearl struct {
 	db    *sql.DB
+	acc   *lru.Cache
+	acr   *Crypter
 	log   config.Logger
 	api   *mautrix.Client
 	olm   *crypto.OlmMachine
@@ -34,28 +41,49 @@ type ReqPresence struct {
 	StatusMsg string         `json:"status_msg,omitempty"`
 }
 
-// New linkpearl
-func New(cfg *config.Config) (*Linkpearl, error) {
+func setDefaults(cfg *config.Config) {
 	if cfg.MaxRetries == 0 {
 		cfg.MaxRetries = DefaultMaxRetries
 	}
+	if cfg.AccountDataCache == 0 {
+		cfg.AccountDataCache = DefaultAccountDataCache
+	}
+	if cfg.JoinPermit == nil {
+		// By default, we approve all join requests
+		cfg.JoinPermit = func(*event.Event) bool { return true }
+	}
+}
+
+func initCrypter(secret string) (*Crypter, error) {
+	if secret == "" {
+		return nil, nil
+	}
+
+	return NewCrypter(secret)
+}
+
+// New linkpearl
+func New(cfg *config.Config) (*Linkpearl, error) {
+	setDefaults(cfg)
 	api, err := mautrix.NewClient(cfg.Homeserver, "", "")
 	if err != nil {
 		return nil, err
 	}
 	api.Logger = cfg.APILogger
 
-	joinPermit := cfg.JoinPermit
-	if joinPermit == nil {
-		// By default, we approve all join requests
-		joinPermit = func(*event.Event) bool { return true }
+	acc, _ := lru.New(cfg.AccountDataCache) //nolint:errcheck // addressed in setDefaults()
+	acr, err := initCrypter(cfg.AccountDataSecret)
+	if err != nil {
+		return nil, err
 	}
 
 	lp := &Linkpearl{
 		db:         cfg.DB,
+		acc:        acc,
+		acr:        acr,
 		api:        api,
 		log:        cfg.LPLogger,
-		joinPermit: joinPermit,
+		joinPermit: cfg.JoinPermit,
 		autoleave:  cfg.AutoLeave,
 		maxretries: cfg.MaxRetries,
 	}
@@ -104,6 +132,11 @@ func (l *Linkpearl) GetMachine() *crypto.OlmMachine {
 	return l.olm
 }
 
+// GetAccountDataCrypter returns crypter used for account data (if any)
+func (l *Linkpearl) GetAccountDataCrypter() *Crypter {
+	return l.acr
+}
+
 // Send a message to the roomID (automatically decide encrypted or not)
 func (l *Linkpearl) Send(roomID id.RoomID, content interface{}) (id.EventID, error) {
 	if !l.store.IsEncrypted(roomID) {
@@ -137,6 +170,26 @@ func (l *Linkpearl) Send(roomID id.RoomID, content interface{}) (id.EventID, err
 		return "", err
 	}
 	return resp.EventID, err
+}
+
+// SendFile to a matrix room
+func (l *Linkpearl) SendFile(roomID id.RoomID, req *mautrix.ReqUploadMedia, msgtype event.MessageType, relation *event.RelatesTo) error {
+	resp, err := l.GetClient().UploadMedia(*req)
+	if err != nil {
+		l.log.Error("cannot upload file %s: %v", req.FileName, err)
+		return err
+	}
+	_, err = l.Send(roomID, &event.MessageEventContent{
+		MsgType:   msgtype,
+		Body:      req.FileName,
+		URL:       resp.ContentURI.CUString(),
+		RelatesTo: relation,
+	})
+	if err != nil {
+		l.log.Error("cannot send uploaded file: %s: %v", req.FileName, err)
+	}
+
+	return err
 }
 
 // SetPresence (own). See https://spec.matrix.org/v1.3/client-server-api/#put_matrixclientv3presenceuseridstatus

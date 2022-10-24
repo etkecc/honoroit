@@ -1,5 +1,3 @@
-git.sr.ht/~xn/cache/v2 v2.0.0 h1:aYzwGDyVIzjCl2yqcxZjprnu++Q3BmUQeK2agqvcQt8=
-git.sr.ht/~xn/cache/v2 v2.0.0/go.mod h1:HIPSMiDudQ483tRDup586e0YZdwMySIZFWXMPwYMuV8=
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=
 github.com/coreos/go-systemd/v22 v22.3.3-0.20220203105225-a9a7ef127534/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

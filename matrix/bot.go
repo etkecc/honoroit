@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"sync"
 
-	"git.sr.ht/~xn/cache/v2"
+	lru "github.com/hashicorp/golang-lru"
 	"gitlab.com/etke.cc/go/logger"
 	"gitlab.com/etke.cc/go/mxidwc"
 	"gitlab.com/etke.cc/linkpearl"
@@ -30,7 +30,7 @@ type Bot struct {
 	log            *logger.Logger
 	lp             *linkpearl.Linkpearl
 	mu             map[string]*sync.Mutex
-	eventsCache    cache.Cache[id.EventID]
+	eventsCache    *lru.Cache
 	prefix         string
 	prefixes       []string
 	roomID         id.RoomID
@@ -129,13 +129,17 @@ func NewBot(cfg *Config) (*Bot, error) {
 	if uerr != nil {
 		return nil, uerr
 	}
+	cache, err := lru.New(cfg.CacheSize)
+	if err != nil {
+		return nil, err
+	}
 
 	bot := &Bot{
 		lp:             lp,
 		mu:             make(map[string]*sync.Mutex),
 		log:            log,
 		txt:            cfg.Text,
-		eventsCache:    cache.NewLRU[id.EventID](cfg.CacheSize),
+		eventsCache:    cache,
 		prefix:         cfg.Prefix,
 		prefixes:       []string{cfg.Text.PrefixOpen, cfg.Text.PrefixDone},
 		roomID:         id.RoomID(cfg.RoomID),

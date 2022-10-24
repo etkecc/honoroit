@@ -1,21 +1,16 @@
-FROM registry.gitlab.com/etke.cc/base AS builder
+FROM registry.gitlab.com/etke.cc/base/build AS builder
 
 WORKDIR /honoroit
 COPY . .
 RUN make build
 
-FROM alpine:latest
+FROM registry.gitlab.com/etke.cc/base/app
 
 ENV HONOROIT_DB_DSN /data/honoroit.db
 
-RUN apk --no-cache add ca-certificates tzdata olm && update-ca-certificates && \
-    adduser -D -g '' honoroit && \
-    mkdir /data && chown -R honoroit /data
+COPY --from=builder /honoroit/honoroit /bin/honoroit
 
-COPY --from=builder /honoroit/honoroit /opt/honoroit/honoroit
+USER app
 
-WORKDIR /opt/honoroit
-USER honoroit
-
-ENTRYPOINT ["/opt/honoroit/honoroit"]
+ENTRYPOINT ["/bin/honoroit"]
 

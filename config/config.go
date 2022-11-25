@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"gitlab.com/etke.cc/go/env"
 )
 
@@ -17,7 +19,6 @@ func New() *Config {
 		IgnoreNoThread: env.Bool("ignorenothread"),
 		Login:          env.String("login", defaultConfig.Login),
 		Password:       env.String("password", defaultConfig.Password),
-		Sentry:         env.String("sentry", defaultConfig.Sentry),
 		LogLevel:       env.String("loglevel", defaultConfig.LogLevel),
 		CacheSize:      env.Int("cachesize", defaultConfig.CacheSize),
 		NoEncryption:   env.Bool("noencryption"),
@@ -25,6 +26,12 @@ func New() *Config {
 		DB: DB{
 			DSN:     env.String("db.dsn", defaultConfig.DB.DSN),
 			Dialect: env.String("db.dialect", defaultConfig.DB.Dialect),
+		},
+		Monitoring: Monitoring{
+			SentryDSN:          env.String("monitoring.sentry.dsn", env.String("sentry", "")),
+			SentrySampleRate:   env.Int("monitoring.sentry.rate", env.Int("sentry.rate", 0)),
+			HealchecksUUID:     env.String("monitoring.healthchecks.uuid", ""),
+			HealthechsDuration: time.Duration(env.Int("monitoring.healthchecks.duration", int(defaultConfig.Monitoring.HealthechsDuration))) * time.Second,
 		},
 		Text: Text{
 			PrefixOpen:   env.String("text.prefix.open", defaultConfig.Text.PrefixOpen),

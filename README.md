@@ -75,7 +75,10 @@ env vars
 #### honoroit internals
 
 * **HONOROIT_PREFIX** - command prefix
-* **HONOROIT_SENTRY** - sentry DSN
+* **HONOROIT_MONITORING_SENTRY_DSN** - sentry DSN
+* **HONOROIT_MONITORING_SENTRY_RATE** - sentry sample rate, from 0 to 100 (default: 20)
+* **HONOROIT_MONITORING_HEALTHCHECKS_UUID** - healthchecks.io UUID
+* **HONOROIT_MONITORING_HEALTHCHECKS_DURATION** - heathchecks.io duration between pings in seconds (default: 5)
 * **HONOROIT_LOGLEVEL** - log level
 * **HONOROIT_CACHESIZE** - max allowed mappings in cache
 * **HONOROIT_NOENCRYPTION** - disable e2e encryption support

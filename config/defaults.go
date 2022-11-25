@@ -8,6 +8,10 @@ var defaultConfig = &Config{
 		DSN:     "/tmp/honoroit.db",
 		Dialect: "sqlite3",
 	},
+	Monitoring: Monitoring{
+		SentrySampleRate:   20,
+		HealthechsDuration: 5,
+	},
 	Text: Text{
 		PrefixOpen: "[OPEN]",
 		PrefixDone: "[DONE]",

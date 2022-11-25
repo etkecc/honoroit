@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // Config of Honoroit
 type Config struct {
 	// Homeserver url
@@ -32,8 +34,8 @@ type Config struct {
 	// DB config
 	DB DB
 
-	// Sentry DSN
-	Sentry string
+	// Monitoring config
+	Monitoring Monitoring
 }
 
 // DB config
@@ -42,6 +44,14 @@ type DB struct {
 	DSN string
 	// Dialect of the db, allowed values: postgres, sqlite3
 	Dialect string
+}
+
+// Monitoring config
+type Monitoring struct {
+	SentryDSN          string
+	SentrySampleRate   int
+	HealchecksUUID     string
+	HealthechsDuration time.Duration
 }
 
 // Text messages

@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/getsentry/sentry-go"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"gitlab.com/etke.cc/go/healthchecks"
 	"gitlab.com/etke.cc/go/logger"
 	"maunium.net/go/mautrix/id"
 
@@ -19,6 +21,7 @@ import (
 
 var (
 	version = "development"
+	hc      *healthchecks.Client
 	bot     *matrix.Bot
 	log     *logger.Logger
 )
@@ -28,6 +31,7 @@ func main() {
 	cfg := config.New()
 	log = logger.New("honoroit.", cfg.LogLevel)
 	initSentry(cfg)
+	initHealthchecks(cfg)
 	defer recovery(cfg.RoomID)
 
 	log.Info("#############################")
@@ -51,13 +55,26 @@ func initSentry(cfg *config.Config) {
 		env = "production"
 	}
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn:         cfg.Sentry,
-		Release:     "honoroit@" + version,
-		Environment: env,
+		Dsn:              cfg.Monitoring.SentryDSN,
+		Release:          "honoroit@" + version,
+		Environment:      env,
+		AttachStacktrace: true,
+		TracesSampleRate: float64(cfg.Monitoring.SentrySampleRate) / 100,
 	})
 	if err != nil {
 		log.Fatal("cannot initialize sentry: %v", err)
 	}
+}
+
+func initHealthchecks(cfg *config.Config) {
+	if cfg.Monitoring.HealchecksUUID == "" {
+		return
+	}
+	hc = healthchecks.New(cfg.Monitoring.HealchecksUUID, func(operation string, err error) {
+		log.Error("healthchecks operation %q failed: %v", operation, err)
+	})
+	hc.Start(strings.NewReader("starting honoroit"))
+	go hc.Auto(cfg.Monitoring.HealthechsDuration)
 }
 
 func initBot(cfg *config.Config) {
@@ -95,13 +112,17 @@ func initShutdown() {
 	go func() {
 		for range listener {
 			bot.Stop()
+			if hc != nil {
+				hc.Shutdown()
+				hc.ExitStatus(0, strings.NewReader("shutting down honoroit"))
+			}
 			os.Exit(0)
 		}
 	}()
 }
 
 func recovery(roomID string) {
-	defer sentry.Flush(2 * time.Second)
+	defer sentry.Flush(5 * time.Second)
 	err := recover()
 	// no problem just shutdown
 	if err == nil {

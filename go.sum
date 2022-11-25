@@ -8,6 +8,8 @@ github.com/getsentry/sentry-go v0.13.0/go.mod h1:EOsfu5ZdvKPfeHYV6pTVQnsjfp30+XA
 github.com/go-errors/errors v1.0.1 h1:LUHzmkK3GUKUrL/1gfBUxAHzcev3apQlezX/+O7ma6w=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/google/go-cmp v0.5.5 h1:Khx7svrCpmxxtHBq5j2mp/xVjsi8hQMfNLvJFAlrGgU=
+github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
+github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
 github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
@@ -49,6 +51,8 @@ github.com/tidwall/sjson v1.2.5 h1:kLy8mja+1c9jlljvWTlSazM7cKDRfJuR/bOJhcY5NcY=
 github.com/tidwall/sjson v1.2.5/go.mod h1:Fvgq9kS/6ociJEDnK0Fk1cpYF4FIW6ZF7LAe+6jwd28=
 gitlab.com/etke.cc/go/env v1.0.0 h1:J98BwzOuELnjsVPFvz5wa79L7IoRV9CmrS41xLYXtSw=
 gitlab.com/etke.cc/go/env v1.0.0/go.mod h1:e1l4RM5MA1sc0R1w/RBDAESWRwgo5cOG9gx8BKUn2C4=
+gitlab.com/etke.cc/go/healthchecks v1.0.1 h1:IxPB+r4KtEM6wf4K7MeQoH1XnuBITMGUqFaaRIgxeUY=
+gitlab.com/etke.cc/go/healthchecks v1.0.1/go.mod h1:EzQjwSawh8tQEX43Ls0dI9mND6iWd5NHtmapdO24fMI=
 gitlab.com/etke.cc/go/logger v1.0.0 h1:vp8omRMhYn+/peIlHFf9AK7GlTnQQurDCIall3N88b0=
 gitlab.com/etke.cc/go/logger v1.0.0/go.mod h1:8Vw5HFXlZQ5XeqvUs5zan+GnhrQyYtm/xe+yj8H/0zk=
 gitlab.com/etke.cc/go/mxidwc v1.0.0 h1:6EAlJXvs3nU4RaMegYq6iFlyVvLw7JZYnZmNCGMYQP0=

@@ -205,6 +205,9 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 }
 
 func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventContent, hub *sentry.Hub) {
+	b.lock(evt.RoomID.String())
+	defer b.unlock(evt.RoomID.String())
+
 	b.log.Debug("forwaring a message from customer to the threads rooms")
 	eventID, err := b.startThread(evt.RoomID, evt.Sender, hub, true)
 	if err != nil {

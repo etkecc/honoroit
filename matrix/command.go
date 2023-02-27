@@ -11,24 +11,21 @@ import (
 )
 
 func (b *Bot) parseCommand(message string) []string {
-	// ignore not prefixied commands
-	index := strings.LastIndex(message, b.prefix)
-	if index < 0 {
-		return nil
-	}
-	offset := index + len(b.prefix) + 1
-	if len(message) <= offset {
+	if message == "" {
 		return nil
 	}
 
-	message = strings.TrimSpace(message[offset:])
+	if !strings.HasPrefix(message, b.prefix) {
+		return nil
+	}
+
+	message = strings.Replace(message, b.prefix, "", 1)
 	b.log.Debug("received a command: %s", message)
-
-	return strings.Split(message, " ")
+	return strings.Split(strings.TrimSpace(message), " ")
 }
 
 func (b *Bot) readCommand(message string) string {
-	command := b.parseCommand(message)
+	command := b.parseCommand(strings.TrimSpace(message))
 	if len(command) > 0 {
 		return command[0]
 	}
@@ -49,7 +46,7 @@ func (b *Bot) runCommand(command string, evt *event.Event, hub *sentry.Hub) {
 		// do nothing
 		return
 	default:
-		b.help(hub)
+		b.help(evt, hub)
 	}
 }
 
@@ -58,12 +55,12 @@ func (b *Bot) renameRequest(evt *event.Event, hub *sentry.Hub) {
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
 	if relation == nil {
-		b.Error(evt.RoomID, hub, "the message doesn't relate to any thread, so I don't know how can I rename your request.")
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, "the message doesn't relate to any thread, so I don't know how can I rename your request.")
 		return
 	}
 	threadID, err := b.findThread(evt)
 	if err != nil {
-		b.Error(evt.RoomID, hub, "cannot find a thread: %v", err)
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, "cannot find a thread: %v", err)
 		return
 	}
 
@@ -80,7 +77,7 @@ func (b *Bot) renameRequest(evt *event.Event, hub *sentry.Hub) {
 
 	err = b.replace(threadID, hub, "", "", command, commandFormatted)
 	if err != nil {
-		b.Error(b.roomID, hub, "cannot replace thread %s topic: %v", threadID, err)
+		b.Error(b.roomID, b.getRelatesTo(evt), hub, "cannot replace thread %s topic: %v", threadID, err)
 	}
 }
 
@@ -89,24 +86,24 @@ func (b *Bot) closeRequest(evt *event.Event, hub *sentry.Hub) {
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
 	if relation == nil {
-		b.Error(evt.RoomID, hub, "the message doesn't relate to any thread, so I don't know how can I close your request.")
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, "the message doesn't relate to any thread, so I don't know how can I close your request.")
 		return
 	}
 	threadID, err := b.findThread(evt)
 	if err != nil {
-		b.Error(evt.RoomID, hub, "cannot find a thread: %v", err)
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, "cannot find a thread: %v", err)
 		return
 	}
 
 	threadEvt, err := b.lp.GetClient().GetEvent(b.roomID, threadID)
 	if err != nil {
-		b.Error(b.roomID, hub, "cannot find thread event %s: %v", threadID, err)
+		b.Error(b.roomID, b.getRelatesTo(evt), hub, "cannot find thread event %s: %v", threadID, err)
 		return
 	}
 
 	roomID, err := b.findRoomID(threadID)
 	if err != nil {
-		b.Error(evt.RoomID, hub, err.Error())
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, err.Error())
 		return
 	}
 
@@ -115,7 +112,7 @@ func (b *Bot) closeRequest(evt *event.Event, hub *sentry.Hub) {
 		Body:    b.txt.Done,
 	})
 	if err != nil {
-		b.Error(evt.RoomID, hub, err.Error())
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, err.Error())
 	}
 
 	var oldbody string
@@ -125,7 +122,7 @@ func (b *Bot) closeRequest(evt *event.Event, hub *sentry.Hub) {
 	timestamp := time.Now().UTC().Format("2006/01/02 15:04:05 MST")
 	err = b.replace(threadID, hub, b.txt.PrefixDone+" ", oldbody+" ("+timestamp+")", "", "")
 	if err != nil {
-		b.Error(b.roomID, hub, "cannot replace thread %s topic: %v", threadID, err)
+		b.Error(b.roomID, b.getRelatesTo(evt), hub, "cannot replace thread %s topic: %v", threadID, err)
 	}
 
 	b.log.Debug("leaving room %s", roomID)
@@ -133,7 +130,7 @@ func (b *Bot) closeRequest(evt *event.Event, hub *sentry.Hub) {
 	if err != nil {
 		// do not send a message when already left
 		if !strings.Contains(err.Error(), "M_FORBIDDEN") {
-			b.Error(evt.RoomID, hub, "cannot leave the room %s after marking request as done: %v", roomID, err)
+			b.Error(evt.RoomID, b.getRelatesTo(evt), hub, "cannot leave the room %s after marking request as done: %v", roomID, err)
 		}
 	}
 	b.removeMapping("event_id", threadID.String())
@@ -144,18 +141,18 @@ func (b *Bot) inviteRequest(evt *event.Event, hub *sentry.Hub) {
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
 	if relation == nil {
-		b.Error(evt.RoomID, hub, "the message doesn't relate to any thread, so I don't know how can I invite you.")
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, "the message doesn't relate to any thread, so I don't know how can I invite you.")
 		return
 	}
 	threadID, err := b.findThread(evt)
 	if err != nil {
-		b.Error(evt.RoomID, hub, "cannot find a thread: %v", err)
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, "cannot find a thread: %v", err)
 		return
 	}
 
 	roomID, err := b.findRoomID(threadID)
 	if err != nil {
-		b.Error(evt.RoomID, hub, err.Error())
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, err.Error())
 		return
 	}
 	_, err = b.lp.GetClient().InviteUser(roomID, &mautrix.ReqInviteUser{
@@ -164,14 +161,14 @@ func (b *Bot) inviteRequest(evt *event.Event, hub *sentry.Hub) {
 	})
 
 	if err != nil {
-		b.Error(evt.RoomID, hub, "cannot invite the operator (%s) into customer room %s: %v", evt.Sender, roomID, err)
+		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, "cannot invite the operator (%s) into customer room %s: %v", evt.Sender, roomID, err)
 	}
 }
 
 func (b *Bot) startRequest(evt *event.Event, hub *sentry.Hub) {
 	command := b.parseCommand(evt.Content.AsMessage().Body)
 	if len(command) < 2 {
-		b.Error(b.roomID, hub, "cannot start a new matrix room - MXID is not specified")
+		b.Error(b.roomID, b.getRelatesTo(evt), hub, "cannot start a new matrix room - MXID is not specified")
 		return
 	}
 	userID := id.UserID(command[1])
@@ -195,7 +192,7 @@ func (b *Bot) startRequest(evt *event.Event, hub *sentry.Hub) {
 
 	resp, err := b.lp.GetClient().CreateRoom(req)
 	if err != nil {
-		b.Error(b.roomID, hub, "cannot create a new room: %v", err)
+		b.Error(b.roomID, b.getRelatesTo(evt), hub, "cannot create a new room: %v", err)
 		return
 	}
 	roomID := resp.RoomID
@@ -215,7 +212,7 @@ func (b *Bot) startRequest(evt *event.Event, hub *sentry.Hub) {
 	b.forwardToThread(newEvent, newContent, hub)
 }
 
-func (b *Bot) help(hub *sentry.Hub) {
+func (b *Bot) help(evt *event.Event, hub *sentry.Hub) {
 	b.log.Debug("help request")
 	text := `Honoroit can perform following actions (note that all of them should be sent in a thread:
 
@@ -225,11 +222,22 @@ func (b *Bot) help(hub *sentry.Hub) {
 
 ` + b.prefix + ` invite - invite yourself into the customer's room
 `
-	_, err := b.lp.Send(b.roomID, &event.MessageEventContent{
-		MsgType: event.MsgText,
-		Body:    text,
-	})
-	if err != nil {
-		b.Error(b.roomID, hub, "cannot send help message: %v", err)
+	content := event.MessageEventContent{
+		MsgType:   event.MsgNotice,
+		Body:      text,
+		RelatesTo: b.getRelatesTo(evt),
 	}
+	_, err := b.lp.Send(b.roomID, &content)
+	if err != nil {
+		b.Error(b.roomID, b.getRelatesTo(evt), hub, "cannot send help message: %v", err)
+	}
+}
+
+func (b *Bot) getRelatesTo(evt *event.Event) *event.RelatesTo {
+	content := evt.Content.AsMessage()
+	if content == nil {
+		return nil
+	}
+
+	return content.RelatesTo
 }

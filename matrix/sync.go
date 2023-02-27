@@ -54,7 +54,7 @@ func (b *Bot) onJoin(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 
 	_, err := b.lp.Send(b.roomID, content)
 	if err != nil {
-		b.Error(b.roomID, hub, "cannot send a notice about joined customer in room %s: %v", evt.RoomID, err)
+		b.Error(b.roomID, content.RelatesTo, hub, "cannot send a notice about joined customer in room %s: %v", evt.RoomID, err)
 	}
 }
 
@@ -70,7 +70,7 @@ func (b *Bot) onInvite(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 
 	_, err := b.lp.Send(b.roomID, content)
 	if err != nil {
-		b.Error(b.roomID, hub, "cannot send a notice about joined customer in room %s: %v", evt.RoomID, err)
+		b.Error(b.roomID, content.RelatesTo, hub, "cannot send a notice about joined customer in room %s: %v", evt.RoomID, err)
 	}
 }
 
@@ -86,7 +86,7 @@ func (b *Bot) onLeave(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 
 	_, err := b.lp.Send(b.roomID, content)
 	if err != nil {
-		b.Error(b.roomID, hub, "cannot send a notice about joined customer in room %s: %v", evt.RoomID, err)
+		b.Error(b.roomID, content.RelatesTo, hub, "cannot send a notice about joined customer in room %s: %v", evt.RoomID, err)
 	}
 
 	members := b.lp.GetStore().GetRoomMembers(evt.RoomID)
@@ -103,7 +103,7 @@ func (b *Bot) onLeave(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 
 		_, err = b.lp.Send(b.roomID, content)
 		if err != nil {
-			b.Error(b.roomID, hub, "cannot send a notice about empty room %s: %v", evt.RoomID, err)
+			b.Error(b.roomID, content.RelatesTo, hub, "cannot send a notice about empty room %s: %v", evt.RoomID, err)
 		}
 	}
 }
@@ -196,14 +196,14 @@ func (b *Bot) onEncryptedMessage(evt *event.Event) {
 			Body:    b.txt.NoEncryption,
 		})
 		if err != nil {
-			b.Error(b.roomID, hub, "cannot send message: %v", err)
+			b.Error(b.roomID, nil, hub, "cannot send message: %v", err)
 		}
 		return
 	}
 
 	decrypted, err := b.lp.GetMachine().DecryptMegolmEvent(evt)
 	if err != nil {
-		b.Error(b.roomID, hub, "cannot decrypt a message by %s in %s: %v", evt.Sender, evt.RoomID, err)
+		b.Error(b.roomID, nil, hub, "cannot decrypt a message by %s in %s: %v", evt.Sender, evt.RoomID, err)
 		// nolint // if something goes wrong here nobody can help...
 		b.lp.Send(evt.RoomID, &event.MessageEventContent{
 			MsgType: event.MsgNotice,

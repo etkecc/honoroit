@@ -23,6 +23,7 @@ func New() *Config {
 		CacheSize:      env.Int("cachesize", defaultConfig.CacheSize),
 		NoEncryption:   env.Bool("noencryption"),
 		Prefix:         env.String("prefix", defaultConfig.Prefix),
+		Port:           env.String("port", defaultConfig.Port),
 		DB: DB{
 			DSN:     env.String("db.dsn", defaultConfig.DB.DSN),
 			Dialect: env.String("db.dialect", defaultConfig.DB.Dialect),

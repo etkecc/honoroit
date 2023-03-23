@@ -2,7 +2,7 @@ FROM registry.gitlab.com/etke.cc/base/build AS builder
 
 WORKDIR /honoroit
 COPY . .
-RUN make build
+RUN just build
 
 FROM registry.gitlab.com/etke.cc/base/app
 

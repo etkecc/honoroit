@@ -53,8 +53,8 @@ func (b *Bot) handle(evt *event.Event, hub *sentry.Hub) {
 		return
 	}
 
-	// ignore any type apart from text (e.g. reactions, redactions, notices, etc)
-	if content.MsgType != event.MsgText {
+	// ignore notices
+	if content.MsgType == event.MsgNotice {
 		return
 	}
 

@@ -63,7 +63,7 @@ func (b *Bot) handle(evt *event.Event, hub *sentry.Hub) {
 		hub.ConfigureScope(func(scope *sentry.Scope) {
 			scope.SetTag("to", "thread")
 		})
-		go metrics.Messages(true)
+		go metrics.MessagesCustomer(evt.Sender)
 		b.forwardToThread(evt, content, hub)
 		return
 	}
@@ -82,7 +82,7 @@ func (b *Bot) handle(evt *event.Event, hub *sentry.Hub) {
 	hub.ConfigureScope(func(scope *sentry.Scope) {
 		scope.SetTag("to", "customer")
 	})
-	go metrics.Messages(false)
+	go metrics.MessagesOperator()
 	b.forwardToCustomer(evt, content, hub)
 }
 

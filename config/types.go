@@ -18,6 +18,8 @@ type Config struct {
 	IgnoredRooms []string
 	// IgnoreNoThread mode completely ignores any messages sent outside of thread
 	IgnoreNoThread bool
+	// Port for HTTP listener
+	Port string
 	// Prefix for honoroit commands
 	Prefix string
 	// LogLevel for logger

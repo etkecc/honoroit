@@ -8,6 +8,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ## Features
 
+* prometheus metrics on `/metrics` endpoint
 * End-to-End encryption
 * Get a message from any matrix user proxied to a specific room. Any message that user will send in his 1:1 room with Honoroit will be proxied as thread messages
 * Chat with that user through the honoroit bot in a thread inside your special room. Any member of that special room can participate in discussion
@@ -75,6 +76,7 @@ env vars
 #### honoroit internals
 
 * **HONOROIT_PREFIX** - command prefix
+* **HONOROIT_PORT** - http port
 * **HONOROIT_MONITORING_SENTRY_DSN** - sentry DSN
 * **HONOROIT_MONITORING_SENTRY_RATE** - sentry sample rate, from 0 to 100 (default: 20)
 * **HONOROIT_MONITORING_HEALTHCHECKS_UUID** - healthchecks.io UUID

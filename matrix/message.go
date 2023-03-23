@@ -7,6 +7,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
+
+	"gitlab.com/etke.cc/honoroit/metrics"
 )
 
 // Error message to the log and matrix room
@@ -61,6 +63,7 @@ func (b *Bot) handle(evt *event.Event, hub *sentry.Hub) {
 		hub.ConfigureScope(func(scope *sentry.Scope) {
 			scope.SetTag("to", "thread")
 		})
+		go metrics.Messages(true)
 		b.forwardToThread(evt, content, hub)
 		return
 	}
@@ -79,6 +82,7 @@ func (b *Bot) handle(evt *event.Event, hub *sentry.Hub) {
 	hub.ConfigureScope(func(scope *sentry.Scope) {
 		scope.SetTag("to", "customer")
 	})
+	go metrics.Messages(false)
 	b.forwardToCustomer(evt, content, hub)
 }
 

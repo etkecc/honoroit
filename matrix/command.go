@@ -8,6 +8,8 @@ import (
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
+
+	"gitlab.com/etke.cc/honoroit/metrics"
 )
 
 func (b *Bot) parseCommand(message string) []string {
@@ -35,6 +37,7 @@ func (b *Bot) readCommand(message string) string {
 func (b *Bot) runCommand(command string, evt *event.Event, hub *sentry.Hub) {
 	switch command {
 	case "done", "complete", "close":
+		go metrics.RequestDone()
 		b.closeRequest(evt, hub)
 	case "rename":
 		b.renameRequest(evt, hub)
@@ -42,6 +45,7 @@ func (b *Bot) runCommand(command string, evt *event.Event, hub *sentry.Hub) {
 		b.inviteRequest(evt, hub)
 	case "start":
 		b.startRequest(evt, hub)
+		go metrics.RequestNew()
 	case "note":
 		// do nothing
 		return

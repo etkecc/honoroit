@@ -19,7 +19,8 @@ var defaultConfig = &Config{
 		Greetings: `Hello,
 Your message was sent to operators.
 Please, keep calm and wait for the answer (usually, it takes 1-2 days).
-Don't forget that instant messenger is the same communication channel as email, so don't expect an instant response.`,
+Don't forget that instant messenger is the same communication channel as email, so don't expect an instant response.
+Please be advised that requests that are older than 7 days are eligible for automatic removal on our end.`,
 		Join:   "New customer (%s) joined the room",
 		Invite: "Customer (%s) invited another user (%s) into the room",
 		Leave:  "Customer (%s) left the room",

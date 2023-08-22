@@ -88,5 +88,12 @@ func (b *Bot) findEventID(roomID id.RoomID) (id.EventID, error) {
 		b.log.Debug("room not found in existing mappings")
 		return "", errNotMapped
 	}
+	_, err := b.lp.GetClient().GetEvent(b.roomID, eventID)
+	if err != nil {
+		b.log.Warn("eventID for roomdID = %s has been found, but cannot be retrieved, ignoring it. Error: %v", roomID, err)
+		b.removeMapping("room_id", roomID.String())
+		return "", errNotMapped
+	}
+
 	return eventID, nil
 }

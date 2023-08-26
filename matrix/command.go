@@ -138,6 +138,7 @@ func (b *Bot) closeRequest(evt *event.Event, hub *sentry.Hub) {
 		}
 	}
 	b.removeMapping("event_id", threadID.String())
+	b.removeMapping("room_id", roomID.String())
 }
 
 func (b *Bot) inviteRequest(evt *event.Event, hub *sentry.Hub) {

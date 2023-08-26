@@ -13,6 +13,31 @@ var errNotMapped = errors.New("cannot find appropriate mapping")
 // errNotRelated returned if a message doesn't have relation (even recursive) to a thread
 var errNotRelated = errors.New("cannot find appropriate thread")
 
+func (b *Bot) findEventByAttr(roomID id.RoomID, attrName, attrValue, from string) *event.Event {
+	resp, err := b.lp.GetClient().Messages(roomID, from, "", 'b', nil, 100)
+	if err != nil {
+		b.log.Warn("cannot get room %s events", roomID)
+		return nil
+	}
+
+	for _, msg := range resp.Chunk {
+		if msg.Content.Raw == nil {
+			continue
+		}
+		if msg.Content.Raw[attrName] != attrValue {
+			continue
+		}
+
+		return msg
+	}
+
+	if resp.End == "" { // nothing more
+		return nil
+	}
+
+	return b.findEventByAttr(roomID, attrName, attrValue, resp.End)
+}
+
 func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 	err := evt.Content.ParseRaw(event.EventMessage)
 	if err != nil && err != event.ErrContentAlreadyParsed {

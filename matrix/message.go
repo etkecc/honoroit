@@ -207,7 +207,13 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 
 	content.RelatesTo = nil
 	b.clearReply(content)
-	_, err = b.lp.Send(roomID, content)
+	fullContent := &event.Content{
+		Parsed: content,
+		Raw: map[string]interface{}{
+			"event_id": evt.ID,
+		},
+	}
+	_, err = b.lp.Send(roomID, fullContent)
 	if err != nil {
 		b.Error(evt.RoomID, b.getRelatesTo(evt), hub, err.Error())
 	}
@@ -229,7 +235,13 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 		EventID: eventID,
 	})
 
-	_, err = b.lp.Send(b.roomID, content)
+	fullContent := &event.Content{
+		Parsed: content,
+		Raw: map[string]interface{}{
+			"event_id": evt.ID,
+		},
+	}
+	_, err = b.lp.Send(b.roomID, fullContent)
 	if err != nil {
 		b.Error(b.roomID, nil, hub, "user %s tried to send a message from room %s, but creation of a thread failed: %v", evt.Sender, evt.RoomID, err)
 		b.Error(evt.RoomID, nil, hub, b.txt.Error)

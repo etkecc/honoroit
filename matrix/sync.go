@@ -19,6 +19,12 @@ func (b *Bot) initSync() {
 		},
 	)
 	b.lp.OnEventType(
+		event.EventReaction,
+		func(_ mautrix.EventSource, evt *event.Event) {
+			go b.onReaction(evt)
+		},
+	)
+	b.lp.OnEventType(
 		event.EventMessage,
 		func(_ mautrix.EventSource, evt *event.Event) {
 			go b.onMessage(evt)
@@ -145,6 +151,19 @@ func (b *Bot) onMembership(evt *event.Event) {
 	case event.MembershipLeave, event.MembershipBan:
 		b.onLeave(evt, eventID, hub)
 	}
+}
+
+func (b *Bot) onReaction(evt *event.Event) {
+	// ignore own messages
+	if evt.Sender == b.lp.GetClient().UserID {
+		return
+	}
+	// ignore any events in ignored rooms
+	if _, ok := b.ignoredRooms[evt.RoomID]; ok {
+		return
+	}
+
+	b.forwardReaction(evt)
 }
 
 func (b *Bot) onMessage(evt *event.Event) {

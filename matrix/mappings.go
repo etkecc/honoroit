@@ -21,14 +21,9 @@ func (b *Bot) findEventByAttr(roomID id.RoomID, attrName, attrValue, from string
 	}
 
 	for _, msg := range resp.Chunk {
-		if msg.Content.Raw == nil {
-			continue
+		if b.eventContains(msg, attrName, attrValue) {
+			return msg
 		}
-		if msg.Content.Raw[attrName] != attrValue {
-			continue
-		}
-
-		return msg
 	}
 
 	if resp.End == "" { // nothing more

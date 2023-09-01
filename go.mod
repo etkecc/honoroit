@@ -3,6 +3,7 @@ module gitlab.com/etke.cc/honoroit
 go 1.18
 
 require (
+	github.com/dustin/go-humanize v1.0.1
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/lib/pq v1.10.7

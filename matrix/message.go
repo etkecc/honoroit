@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dustin/go-humanize"
 	"github.com/getsentry/sentry-go"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
@@ -165,12 +166,24 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, hub *sentry.Hub, g
 		return eventID, nil
 	}
 
+	requests, err := b.countCustomerRequests(userID)
+	if err != nil {
+		b.log.Error("cannot calculate count of the support requests made by the %s: %v", userID, err)
+	}
+	requestNumberStr := humanize.Ordinal(requests + 1) // including current request
 	content := &event.MessageEventContent{
 		MsgType: event.MsgText,
-		Body:    b.txt.PrefixOpen + " Request by " + b.getName(userID, hub) + " in " + roomID.String(),
+		Body:    b.txt.PrefixOpen + requestNumberStr + " request by " + b.getName(userID) + " in " + roomID.String(),
 	}
 
-	eventID, err = b.lp.Send(b.roomID, content)
+	fullContent := &event.Content{
+		Parsed: content,
+		Raw: map[string]interface{}{
+			"customer": userID,
+		},
+	}
+
+	eventID, err = b.lp.Send(b.roomID, fullContent)
 	if err != nil {
 		b.Error(b.roomID, nil, hub, "user %s tried to send a message from room %s, but creation of a thread failed: %v", userID, roomID, err)
 		return "", err
@@ -246,17 +259,4 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 		b.Error(b.roomID, nil, hub, "user %s tried to send a message from room %s, but creation of a thread failed: %v", evt.Sender, evt.RoomID, err)
 		b.Error(evt.RoomID, nil, hub, b.txt.Error)
 	}
-}
-
-func (b *Bot) getName(userID id.UserID, hub *sentry.Hub) string {
-	name := userID.String()
-	dnresp, err := b.lp.GetClient().GetDisplayName(userID)
-	if err != nil {
-		b.Error(b.roomID, nil, hub, "cannot get user %s display name: %v", userID, err)
-	}
-	if dnresp != nil {
-		name = dnresp.DisplayName + " (" + name + ")"
-	}
-
-	return name
 }

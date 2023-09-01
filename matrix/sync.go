@@ -51,7 +51,7 @@ func (b *Bot) joinPermit(evt *event.Event) bool {
 func (b *Bot) onJoin(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 	content := &event.MessageEventContent{
 		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.txt.Join, b.getName(evt.Sender, hub)),
+		Body:    fmt.Sprintf(b.txt.Join, b.getName(evt.Sender)),
 		RelatesTo: &event.RelatesTo{
 			Type:    ThreadRelation,
 			EventID: threadID,
@@ -67,7 +67,7 @@ func (b *Bot) onJoin(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 func (b *Bot) onInvite(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 	content := &event.MessageEventContent{
 		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.txt.Invite, b.getName(evt.Sender, hub), b.getName(id.UserID(evt.GetStateKey()), hub)),
+		Body:    fmt.Sprintf(b.txt.Invite, b.getName(evt.Sender), b.getName(id.UserID(evt.GetStateKey()))),
 		RelatesTo: &event.RelatesTo{
 			Type:    ThreadRelation,
 			EventID: threadID,
@@ -83,7 +83,7 @@ func (b *Bot) onInvite(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 func (b *Bot) onLeave(evt *event.Event, threadID id.EventID, hub *sentry.Hub) {
 	content := &event.MessageEventContent{
 		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.txt.Leave, b.getName(id.UserID(evt.GetStateKey()), hub)),
+		Body:    fmt.Sprintf(b.txt.Leave, b.getName(id.UserID(evt.GetStateKey()))),
 		RelatesTo: &event.RelatesTo{
 			Type:    ThreadRelation,
 			EventID: threadID,

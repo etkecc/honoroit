@@ -30,7 +30,18 @@ func (b *Bot) forwardReactionToCustomer(evt *event.Event) {
 		return
 	}
 
-	roomID, err := b.findRoomID(b.getRelatesTo(sourceEvt).EventID)
+	relatesTo := b.getRelatesTo(sourceEvt)
+	if relatesTo == nil {
+		b.log.Error("cannot parse source event relates_to: %v", err)
+		return
+	}
+
+	if relatesTo.EventID == "" {
+		b.log.Error("cannot parse source event relates_to doesn't contain event id")
+		return
+	}
+
+	roomID, err := b.findRoomID(relatesTo.EventID)
 	if err != nil {
 		b.log.Error("cannot find a suitable room to send reaction event: %v", err)
 		return

@@ -110,8 +110,8 @@ func (b *Bot) replace(eventID id.EventID, hub *sentry.Hub, prefix string, suffix
 
 	body = prefix + body + suffix
 	formattedBody = prefix + formattedBody + suffix
-	content.Body = prefix + body + suffix
-	content.FormattedBody = prefix + formattedBody + suffix
+	content.Body = body
+	content.FormattedBody = formattedBody
 	content.SetEdit(eventID)
 
 	b.log.Debug("replacing thread topic event")
@@ -166,32 +166,42 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, hub *sentry.Hub, g
 		return eventID, nil
 	}
 
-	requests, err := b.countCustomerRequests(userID)
+	eventID, err = b.newThread(b.txt.PrefixOpen, userID, hub)
 	if err != nil {
-		b.log.Error("cannot calculate count of the support requests made by the %s: %v", userID, err)
-	}
-	requestNumberStr := humanize.Ordinal(requests + 1) // including current request
-	content := &event.MessageEventContent{
-		MsgType: event.MsgText,
-		Body:    b.txt.PrefixOpen + requestNumberStr + " request by " + b.getName(userID) + " in " + roomID.String(),
-	}
-
-	fullContent := &event.Content{
-		Parsed: content,
-		Raw: map[string]interface{}{
-			"customer": userID,
-		},
-	}
-
-	eventID, err = b.lp.Send(b.roomID, fullContent)
-	if err != nil {
-		b.Error(b.roomID, nil, hub, "user %s tried to send a message from room %s, but creation of a thread failed: %v", userID, roomID, err)
 		return "", err
 	}
 
 	b.saveMapping(roomID, "", eventID)
 	if greet {
 		b.greetings(roomID, userID, hub)
+	}
+	return eventID, nil
+}
+
+func (b *Bot) newThread(prefix string, userID id.UserID, hub *sentry.Hub) (id.EventID, error) {
+	customerRequests, hsRequests, err := b.countCustomerRequests(userID)
+	if err != nil {
+		b.log.Error("cannot calculate count of the support requests made by the %s: %v", userID, err)
+	}
+	customerRequestsStr := humanize.Ordinal(customerRequests + 1) // including current request
+	hsRequestsStr := humanize.Ordinal(hsRequests + 1)             // including current request
+	content := &event.MessageEventContent{
+		MsgType: event.MsgText,
+		Body:    fmt.Sprintf("%s %s request from %s (%s by %s)", prefix, hsRequestsStr, userID.Homeserver(), customerRequestsStr, b.getName(userID)),
+	}
+
+	fullContent := &event.Content{
+		Parsed: content,
+		Raw: map[string]interface{}{
+			"customer":   userID,
+			"homeserver": userID.Homeserver(),
+		},
+	}
+
+	eventID, err := b.lp.Send(b.roomID, fullContent)
+	if err != nil {
+		b.Error(b.roomID, nil, hub, "user %s tried to send a message, but creation of a thread failed: %v", userID, err)
+		return "", err
 	}
 	return eventID, nil
 }

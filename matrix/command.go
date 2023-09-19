@@ -46,6 +46,8 @@ func (b *Bot) runCommand(command string, evt *event.Event, hub *sentry.Hub) {
 	case "start":
 		b.startRequest(evt, hub)
 		go metrics.RequestNew()
+	case "count":
+		b.countRequest(evt, hub)
 	case "note":
 		// do nothing
 		return
@@ -217,6 +219,39 @@ func (b *Bot) startRequest(evt *event.Event, hub *sentry.Hub) {
 	b.forwardToThread(newEvent, newContent, hub)
 }
 
+func (b *Bot) countRequest(evt *event.Event, hub *sentry.Hub) {
+	command := b.parseCommand(evt.Content.AsMessage().Body)
+	if len(command) < 2 {
+		b.Error(b.roomID, b.getRelatesTo(evt), hub, "cannot count a request - MXID is not specified")
+		return
+	}
+	userID := id.UserID(command[1])
+
+	eventID, err := b.newThread(b.txt.PrefixDone, userID, hub)
+	if err != nil {
+		return
+	}
+
+	fullContent := &event.Content{
+		Parsed: &event.MessageEventContent{
+			Body:    b.txt.Count,
+			MsgType: event.MsgNotice,
+			RelatesTo: &event.RelatesTo{
+				Type:    ThreadRelation,
+				EventID: eventID,
+			},
+		},
+		Raw: map[string]interface{}{
+			"event_id": evt.ID,
+		},
+	}
+	_, err = b.lp.Send(b.roomID, fullContent)
+	if err != nil {
+		b.Error(b.roomID, nil, hub, "cannot send count notice: %v", err)
+		b.Error(evt.RoomID, nil, hub, b.txt.Error)
+	}
+}
+
 func (b *Bot) help(evt *event.Event, hub *sentry.Hub) {
 	b.log.Debug("help request")
 	text := `Honoroit can perform following actions (note that all of them should be sent in a thread:
@@ -225,7 +260,13 @@ func (b *Bot) help(evt *event.Event, hub *sentry.Hub) {
 
 ` + b.prefix + ` rename TEXT - replaces thread topic text to the TEXT
 
+` + b.prefix + ` note NOTE - a message prefixed with "!ho note" won't be sent anywhere, it's a safe place to keep notes for other operations in a thread with a customer
+
 ` + b.prefix + ` invite - invite yourself into the customer's room
+
+` + b.prefix + ` start MXID - start a conversation with a MXID (like a new thread, but initialized by operator)
+
+` + b.prefix + ` count MXID - count a request from MXID and their homeserver, but don't actually create a room or invite them
 `
 	content := event.MessageEventContent{
 		MsgType:   event.MsgNotice,

@@ -29,6 +29,7 @@ I notified the developers and they are fixing the issue.
 Please, try again later or use any other contact method.`,
 		EmptyRoom: "The last customer left the room.\nConsider that request closed.",
 		Start:     "The customer was invited to the new room. Send messages into that thread and they will be automatically forwarded.",
+		Count:     "Request has been counted.",
 		Done: `The operator marked your request as completed.
 If you think that it's not done yet, please start another 1:1 chat with me to open a new request.`,
 		NoEncryption: `Unfortunately, encryption is disabled to prevent common decryption issues among customers.

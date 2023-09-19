@@ -136,18 +136,22 @@ func (b *Bot) Threads(roomID id.RoomID, from string) (*RespThreads, error) {
 	return resp, err
 }
 
-func (b *Bot) countCustomerRequests(userID id.UserID) (int, error) {
-	var requests int
+func (b *Bot) countCustomerRequests(userID id.UserID) (int, int, error) {
+	var user int
+	var hs int
 	var from string
 	for {
 		resp, err := b.Threads(b.roomID, from)
 		if err != nil {
 			b.log.Error("cannot request threads of the %s from %s: %v", b.roomID, from)
-			return requests, err
+			return user, hs, err
 		}
 		for _, evt := range resp.Chunk {
 			if b.eventContains(evt, "customer", userID.String()) {
-				requests++
+				user++
+			}
+			if b.eventContains(evt, "homeserver", userID.Homeserver()) {
+				hs++
 			}
 		}
 		from = resp.NextBatch
@@ -156,7 +160,7 @@ func (b *Bot) countCustomerRequests(userID id.UserID) (int, error) {
 		}
 	}
 
-	return requests, nil
+	return user, hs, nil
 }
 
 func (b *Bot) getName(userID id.UserID) string {

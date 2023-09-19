@@ -97,6 +97,8 @@ type Text struct {
 	EmptyRoom string
 	// Start message that sent into the read as result of the "start" command
 	Start string
+	// Count message that sent into the thread as result of the "count" command
+	Count string
 	// Done message sent to customer when request marked as done in the threads room
 	Done string
 }

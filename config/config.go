@@ -45,6 +45,7 @@ func New() *Config {
 			Error:        env.String("text.error", defaultConfig.Text.Error),
 			EmptyRoom:    env.String("text.emptyroom", defaultConfig.Text.EmptyRoom),
 			Start:        env.String("text.start", defaultConfig.Text.Start),
+			Count:        env.String("text.count", defaultConfig.Text.Count),
 			Done:         env.String("text.done", defaultConfig.Text.Done),
 		},
 	}

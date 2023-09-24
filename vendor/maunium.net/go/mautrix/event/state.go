@@ -152,8 +152,9 @@ type BridgeEventContent struct {
 }
 
 type SpaceChildEventContent struct {
-	Via   []string `json:"via,omitempty"`
-	Order string   `json:"order,omitempty"`
+	Via       []string `json:"via,omitempty"`
+	Order     string   `json:"order,omitempty"`
+	Suggested bool     `json:"suggested,omitempty"`
 }
 
 type SpaceParentEventContent struct {
@@ -169,6 +170,7 @@ type ModPolicyContent struct {
 	Recommendation string `json:"recommendation"`
 }
 
+// Deprecated: MSC2716 has been abandoned
 type InsertionMarkerContent struct {
 	InsertionID id.EventID `json:"org.matrix.msc2716.marker.insertion"`
 	Timestamp   int64      `json:"com.beeper.timestamp,omitempty"`

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,66 +11,65 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/getsentry/sentry-go"
+	zlogsentry "github.com/archdx/zerolog-sentry"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/zerolog"
 	"gitlab.com/etke.cc/go/healthchecks"
-	"gitlab.com/etke.cc/go/logger"
-	"maunium.net/go/mautrix/id"
+	"gitlab.com/etke.cc/linkpearl"
 
 	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/matrix"
+	mxconfig "gitlab.com/etke.cc/honoroit/matrix/config"
 	"gitlab.com/etke.cc/honoroit/metrics"
 )
 
 var (
-	version = "development"
-	hc      *healthchecks.Client
-	bot     *matrix.Bot
-	srv     *http.Server
-	log     *logger.Logger
+	hc  *healthchecks.Client
+	bot *matrix.Bot
+	srv *http.Server
+	log zerolog.Logger
 )
 
 func main() {
-	var err error
 	cfg := config.New()
-	log = logger.New("honoroit.", cfg.LogLevel)
-	initSentry(cfg)
+	initLog(cfg)
 	initHealthchecks(cfg)
 	metrics.InitMetrics()
 	go initHTTP(cfg)
-	defer recovery(cfg.RoomID)
+	defer recovery()
 
-	log.Info("#############################")
-	log.Info("Honoroit " + version)
-	log.Info("Matrix: true")
-	log.Info("#############################")
+	log.Info().Msg("#############################")
+	log.Info().Msg("Honoroit")
+	log.Info().Msg("#############################")
 
-	initBot(cfg)
+	if err := initBot(cfg); err != nil {
+		log.Error().Err(err).Msg("cannot initialize the bot")
+		return
+	}
 	initShutdown()
 
-	log.Debug("starting bot...")
-	if err = bot.Start(); err != nil {
-		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("matrix bot crashed: %v", err)
+	log.Debug().Msg("starting bot...")
+	if err := bot.Start(); err != nil {
+		log.Error().Err(err).Msg("matrix bot crashed")
 	}
 }
 
-func initSentry(cfg *config.Config) {
-	env := version
-	if env != "development" {
-		env = "production"
-	}
-	err := sentry.Init(sentry.ClientOptions{
-		Dsn:              cfg.Monitoring.SentryDSN,
-		Release:          "honoroit@" + version,
-		Environment:      env,
-		AttachStacktrace: true,
-		TracesSampleRate: float64(cfg.Monitoring.SentrySampleRate) / 100,
-	})
+func initLog(cfg *config.Config) {
+	loglevel, err := zerolog.ParseLevel(cfg.LogLevel)
 	if err != nil {
-		log.Fatal("cannot initialize sentry: %v", err)
+		loglevel = zerolog.InfoLevel
 	}
+	zerolog.SetGlobalLevel(loglevel)
+	var w io.Writer
+	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout, PartsExclude: []string{zerolog.TimestampFieldName}}
+	sentryWriter, err := zlogsentry.New(cfg.Monitoring.SentryDSN)
+	if err == nil {
+		w = io.MultiWriter(sentryWriter, consoleWriter)
+	} else {
+		w = consoleWriter
+	}
+	log = zerolog.New(w).With().Timestamp().Caller().Logger()
 }
 
 func initHealthchecks(cfg *config.Config) {
@@ -77,7 +77,7 @@ func initHealthchecks(cfg *config.Config) {
 		return
 	}
 	hc = healthchecks.New(cfg.Monitoring.HealchecksUUID, func(operation string, err error) {
-		log.Error("healthchecks operation %q failed: %v", operation, err)
+		log.Error().Err(err).Str("op", operation).Msg("healthchecks operation failed")
 	})
 	hc.Start(strings.NewReader("starting honoroit"))
 	go hc.Auto(cfg.Monitoring.HealthechsDuration)
@@ -87,37 +87,31 @@ func initHTTP(cfg *config.Config) {
 	srv = &http.Server{Addr: ":" + cfg.Port, Handler: nil}
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Error("http server failed: %v", err)
+		log.Error().Err(err).Msg("http server failed")
 	}
 }
 
-func initBot(cfg *config.Config) {
+func initBot(cfg *config.Config) error {
 	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
 	if err != nil {
-		log.Fatal("cannot initialize SQL database: %v", err)
+		return err
 	}
-	botConfig := &matrix.Config{
-		Homeserver:     cfg.Homeserver,
-		Login:          cfg.Login,
-		Password:       cfg.Password,
-		LogLevel:       cfg.LogLevel,
-		Prefix:         cfg.Prefix,
-		RoomID:         cfg.RoomID,
-		AllowedUsers:   cfg.AllowedUsers,
-		IgnoredRooms:   cfg.IgnoredRooms,
-		IgnoreNoThread: cfg.IgnoreNoThread,
-		Text:           (*matrix.Text)(&cfg.Text),
-		DB:             db,
-		Dialect:        cfg.DB.Dialect,
-		CacheSize:      cfg.CacheSize,
-		NoEncryption:   cfg.NoEncryption,
-	}
-	bot, err = matrix.NewBot(botConfig)
+	lp, err := linkpearl.New(&linkpearl.Config{
+		Homeserver:        cfg.Homeserver,
+		Login:             cfg.Login,
+		Password:          cfg.Password,
+		SharedSecret:      cfg.SharedSecret,
+		DB:                db,
+		Dialect:           cfg.DB.Dialect,
+		AccountDataSecret: cfg.DataSecret,
+		Logger:            log,
+	})
 	if err != nil {
-		// nolint // Fatal = panic, not os.Exit()
-		log.Fatal("cannot create the matrix bot: %v", err)
+		return err
 	}
-	log.Debug("bot has been created")
+	mxc := mxconfig.New(lp)
+	bot, err = matrix.NewBot(lp, &log, mxc, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
+	return err
 }
 
 func initShutdown() {
@@ -144,19 +138,12 @@ func shutdown() {
 	srv.Shutdown(ctx) //nolint:errcheck // nobody cares
 }
 
-func recovery(roomID string) {
-	defer sentry.Flush(5 * time.Second)
+func recovery() {
 	err := recover()
 	// no problem just shutdown
 	if err == nil {
 		return
 	}
 
-	// try to send that error to matrix and log, if available
-	if bot != nil {
-		bot.Error(id.RoomID(roomID), nil, sentry.CurrentHub(), "recovery(): %v", err)
-	}
-
-	sentry.CurrentHub().Recover(err)
-	sentry.Flush(5 * time.Second)
+	log.Error().Err(err.(error)).Msg("panic")
 }

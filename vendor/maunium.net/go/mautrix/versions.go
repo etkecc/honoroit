@@ -48,6 +48,26 @@ func (versions *RespVersions) GetLatest() (latest SpecVersion) {
 	return
 }
 
+type UnstableFeature struct {
+	UnstableFlag string
+	SpecVersion  SpecVersion
+}
+
+var (
+	FeatureAppservicePing = UnstableFeature{UnstableFlag: "fi.mau.msc2659.stable", SpecVersion: SpecV17}
+
+	BeeperFeatureHungry               = UnstableFeature{UnstableFlag: "com.beeper.hungry"}
+	BeeperFeatureBatchSending         = UnstableFeature{UnstableFlag: "com.beeper.batch_sending"}
+	BeeperFeatureRoomYeeting          = UnstableFeature{UnstableFlag: "com.beeper.room_yeeting"}
+	BeeperFeatureAutojoinInvites      = UnstableFeature{UnstableFlag: "com.beeper.room_create_autojoin_invites"}
+	BeeperFeatureArbitraryProfileMeta = UnstableFeature{UnstableFlag: "com.beeper.arbitrary_profile_meta"}
+)
+
+func (versions *RespVersions) Supports(feature UnstableFeature) bool {
+	return versions.UnstableFeatures[feature.UnstableFlag] ||
+		(!feature.SpecVersion.IsEmpty() && versions.ContainsGreaterOrEqual(feature.SpecVersion))
+}
+
 type SpecVersionFormat int
 
 const (
@@ -57,6 +77,8 @@ const (
 )
 
 var (
+	SpecR000 = MustParseSpecVersion("r0.0.0")
+	SpecR001 = MustParseSpecVersion("r0.0.1")
 	SpecR010 = MustParseSpecVersion("r0.1.0")
 	SpecR020 = MustParseSpecVersion("r0.2.0")
 	SpecR030 = MustParseSpecVersion("r0.3.0")
@@ -68,6 +90,9 @@ var (
 	SpecV12  = MustParseSpecVersion("v1.2")
 	SpecV13  = MustParseSpecVersion("v1.3")
 	SpecV14  = MustParseSpecVersion("v1.4")
+	SpecV15  = MustParseSpecVersion("v1.5")
+	SpecV16  = MustParseSpecVersion("v1.6")
+	SpecV17  = MustParseSpecVersion("v1.7")
 )
 
 func (svf SpecVersionFormat) String() string {
@@ -136,6 +161,10 @@ func (sv SpecVersion) String() string {
 	default:
 		return sv.Raw
 	}
+}
+
+func (sv SpecVersion) IsEmpty() bool {
+	return sv.Format == SpecVersionFormatUnknown && sv.Raw == ""
 }
 
 func (sv SpecVersion) LessThan(other SpecVersion) bool {

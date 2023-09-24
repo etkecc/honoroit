@@ -32,6 +32,8 @@ type RelatesTo struct {
 
 type InReplyTo struct {
 	EventID id.EventID `json:"event_id,omitempty"`
+
+	UnstableRoomID id.RoomID `json:"room_id,omitempty"`
 }
 
 func (rel *RelatesTo) Copy() *RelatesTo {
@@ -65,6 +67,13 @@ func (rel *RelatesTo) GetThreadParent() id.EventID {
 
 func (rel *RelatesTo) GetReplyTo() id.EventID {
 	if rel != nil && rel.InReplyTo != nil {
+		return rel.InReplyTo.EventID
+	}
+	return ""
+}
+
+func (rel *RelatesTo) GetNonFallbackReplyTo() id.EventID {
+	if rel != nil && rel.InReplyTo != nil && !rel.IsFallingBack {
 		return rel.InReplyTo.EventID
 	}
 	return ""

@@ -3,15 +3,17 @@ package mautrix
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
+	"go.mau.fi/util/jsontime"
 
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
-	"maunium.net/go/mautrix/util"
 )
 
 // RespWhoami is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3accountwhoami
@@ -107,11 +109,12 @@ type RespMediaUpload struct {
 	ContentURI id.ContentURI `json:"content_uri"`
 }
 
-// RespCreateMXC is the JSON response for /_matrix/media/v3/create as specified in https://github.com/matrix-org/matrix-spec-proposals/pull/2246
+// RespCreateMXC is the JSON response for https://spec.matrix.org/v1.7/client-server-api/#post_matrixmediav1create
 type RespCreateMXC struct {
 	ContentURI      id.ContentURI `json:"content_uri"`
 	UnusedExpiresAt int           `json:"unused_expires_at,omitempty"`
-	UploadURL       string        `json:"upload_url,omitempty"`
+
+	UnstableUploadURL string `json:"com.beeper.msc3870.upload_url,omitempty"`
 }
 
 // RespPreviewURL is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3preview_url
@@ -157,6 +160,11 @@ func (r RespUserInteractive) HasSingleStageFlow(stageName AuthType) bool {
 // RespUserDisplayName is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuseriddisplayname
 type RespUserDisplayName struct {
 	DisplayName string `json:"displayname"`
+}
+
+type RespUserProfile struct {
+	DisplayName string        `json:"displayname"`
+	AvatarURL   id.ContentURI `json:"avatar_url"`
 }
 
 // RespRegisterAvailable is the JSON response for https://spec.matrix.org/v1.4/client-server-api/#get_matrixclientv3registeravailable
@@ -245,8 +253,9 @@ type RespSync struct {
 	Presence    SyncEventsList `json:"presence"`
 	ToDevice    SyncEventsList `json:"to_device"`
 
-	DeviceLists    DeviceLists `json:"device_lists"`
-	DeviceOTKCount OTKCount    `json:"device_one_time_keys_count"`
+	DeviceLists    DeviceLists       `json:"device_lists"`
+	DeviceOTKCount OTKCount          `json:"device_one_time_keys_count"`
+	FallbackKeys   []id.KeyAlgorithm `json:"device_unused_fallback_key_types"`
 
 	Rooms RespSyncRooms `json:"rooms"`
 }
@@ -255,14 +264,33 @@ type RespSyncRooms struct {
 	Leave  map[id.RoomID]*SyncLeftRoom    `json:"leave,omitempty"`
 	Join   map[id.RoomID]*SyncJoinedRoom  `json:"join,omitempty"`
 	Invite map[id.RoomID]*SyncInvitedRoom `json:"invite,omitempty"`
+	Knock  map[id.RoomID]*SyncKnockedRoom `json:"knock,omitempty"`
 }
 
 type marshalableRespSync RespSync
 
 var syncPathsToDelete = []string{"account_data", "presence", "to_device", "device_lists", "device_one_time_keys_count", "rooms"}
 
+// marshalAndDeleteEmpty marshals a JSON object, then uses gjson to delete empty objects at the given gjson paths.
+func marshalAndDeleteEmpty(marshalable interface{}, paths []string) ([]byte, error) {
+	data, err := json.Marshal(marshalable)
+	if err != nil {
+		return nil, err
+	}
+	for _, path := range paths {
+		res := gjson.GetBytes(data, path)
+		if res.IsObject() && len(res.Raw) == 2 {
+			data, err = sjson.DeleteBytes(data, path)
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete empty %s: %w", path, err)
+			}
+		}
+	}
+	return data, nil
+}
+
 func (rs *RespSync) MarshalJSON() ([]byte, error) {
-	return util.MarshalAndDeleteEmpty((*marshalableRespSync)(rs), syncPathsToDelete)
+	return marshalAndDeleteEmpty((*marshalableRespSync)(rs), syncPathsToDelete)
 }
 
 type DeviceLists struct {
@@ -290,7 +318,7 @@ type marshalableSyncLeftRoom SyncLeftRoom
 var syncLeftRoomPathsToDelete = []string{"summary", "state", "timeline"}
 
 func (slr SyncLeftRoom) MarshalJSON() ([]byte, error) {
-	return util.MarshalAndDeleteEmpty((marshalableSyncLeftRoom)(slr), syncLeftRoomPathsToDelete)
+	return marshalAndDeleteEmpty((marshalableSyncLeftRoom)(slr), syncLeftRoomPathsToDelete)
 }
 
 type SyncJoinedRoom struct {
@@ -315,7 +343,7 @@ type marshalableSyncJoinedRoom SyncJoinedRoom
 var syncJoinedRoomPathsToDelete = []string{"summary", "state", "timeline", "ephemeral", "account_data"}
 
 func (sjr SyncJoinedRoom) MarshalJSON() ([]byte, error) {
-	return util.MarshalAndDeleteEmpty((marshalableSyncJoinedRoom)(sjr), syncJoinedRoomPathsToDelete)
+	return marshalAndDeleteEmpty((marshalableSyncJoinedRoom)(sjr), syncJoinedRoomPathsToDelete)
 }
 
 type SyncInvitedRoom struct {
@@ -328,7 +356,11 @@ type marshalableSyncInvitedRoom SyncInvitedRoom
 var syncInvitedRoomPathsToDelete = []string{"summary"}
 
 func (sir SyncInvitedRoom) MarshalJSON() ([]byte, error) {
-	return util.MarshalAndDeleteEmpty((marshalableSyncInvitedRoom)(sir), syncInvitedRoomPathsToDelete)
+	return marshalAndDeleteEmpty((marshalableSyncInvitedRoom)(sir), syncInvitedRoomPathsToDelete)
+}
+
+type SyncKnockedRoom struct {
+	State SyncEventsList `json:"knock_state"`
 }
 
 type RespTurnServer struct {
@@ -389,6 +421,7 @@ type RespDeviceInfo struct {
 	LastSeenTS  int64       `json:"last_seen_ts"`
 }
 
+// Deprecated: MSC2716 was abandoned
 type RespBatchSend struct {
 	StateEventIDs []id.EventID `json:"state_event_ids"`
 	EventIDs      []id.EventID `json:"event_ids"`
@@ -398,6 +431,10 @@ type RespBatchSend struct {
 	BaseInsertionEventID id.EventID `json:"base_insertion_event_id"`
 
 	NextBatchID id.BatchID `json:"next_batch_id"`
+}
+
+type RespBeeperBatchSend struct {
+	EventIDs []id.EventID `json:"event_ids"`
 }
 
 // RespCapabilities is the JSON response for https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv3capabilities
@@ -513,4 +550,76 @@ func (vers *CapRoomVersions) IsAvailable(version string) bool {
 	}
 	_, available := vers.Available[version]
 	return available
+}
+
+// RespHierarchy is the JSON response for https://spec.matrix.org/v1.4/client-server-api/#get_matrixclientv1roomsroomidhierarchy
+type RespHierarchy struct {
+	NextBatch string            `json:"next_batch,omitempty"`
+	Rooms     []ChildRoomsChunk `json:"rooms"`
+}
+
+type ChildRoomsChunk struct {
+	AvatarURL        id.ContentURI           `json:"avatar_url,omitempty"`
+	CanonicalAlias   id.RoomAlias            `json:"canonical_alias,omitempty"`
+	ChildrenState    []StrippedStateWithTime `json:"children_state"`
+	GuestCanJoin     bool                    `json:"guest_can_join"`
+	JoinRule         event.JoinRule          `json:"join_rule,omitempty"`
+	Name             string                  `json:"name,omitempty"`
+	NumJoinedMembers int                     `json:"num_joined_members"`
+	RoomID           id.RoomID               `json:"room_id"`
+	RoomType         event.RoomType          `json:"room_type"`
+	Topic            string                  `json:"topic,omitempty"`
+	WorldReadble     bool                    `json:"world_readable"`
+}
+
+type StrippedStateWithTime struct {
+	event.StrippedState
+	Timestamp jsontime.UnixMilli `json:"origin_server_ts"`
+}
+
+type RespAppservicePing struct {
+	DurationMS int64 `json:"duration_ms"`
+}
+
+type RespBeeperMergeRoom RespCreateRoom
+
+type RespBeeperSplitRoom struct {
+	RoomIDs map[string]id.RoomID `json:"room_ids"`
+}
+
+type RespTimestampToEvent struct {
+	EventID   id.EventID         `json:"event_id"`
+	Timestamp jsontime.UnixMilli `json:"origin_server_ts"`
+}
+
+type RespRoomKeysVersionCreate struct {
+	Version string `json:"version"`
+}
+
+type RespRoomKeysVersion struct {
+	Algorithm string          `json:"algorithm"`
+	AuthData  json.RawMessage `json:"auth_data"`
+	Count     int             `json:"count"`
+	ETag      string          `json:"etag"`
+	Version   string          `json:"version"`
+}
+
+type RespRoomKeys struct {
+	Rooms map[id.RoomID]RespRoomKeysRoom `json:"rooms"`
+}
+
+type RespRoomKeysRoom struct {
+	Sessions map[id.SessionID]RespRoomKeysSession `json:"sessions"`
+}
+
+type RespRoomKeysSession struct {
+	FirstMessageIndex int             `json:"first_message_index"`
+	ForwardedCount    int             `json:"forwarded_count"`
+	IsVerified        bool            `json:"is_verified"`
+	SessionData       json.RawMessage `json:"session_data"`
+}
+
+type RespRoomKeysUpdate struct {
+	Count int    `json:"count"`
+	ETag  string `json:"etag"`
 }

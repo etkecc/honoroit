@@ -124,7 +124,8 @@ func (et *Type) GuessClass() TypeClass {
 		CallInvite.Type, CallCandidates.Type, CallAnswer.Type, CallReject.Type, CallSelectAnswer.Type,
 		CallNegotiate.Type, CallHangup.Type, BeeperMessageStatus.Type:
 		return MessageEventType
-	case ToDeviceRoomKey.Type, ToDeviceRoomKeyRequest.Type, ToDeviceForwardedRoomKey.Type, ToDeviceRoomKeyWithheld.Type:
+	case ToDeviceRoomKey.Type, ToDeviceRoomKeyRequest.Type, ToDeviceForwardedRoomKey.Type, ToDeviceRoomKeyWithheld.Type,
+		ToDeviceBeeperRoomKeyAck.Type:
 		return ToDeviceEventType
 	default:
 		return UnknownEventType
@@ -186,7 +187,9 @@ var (
 	StateHalfShotBridge    = Type{"uk.half-shot.bridge", StateEventType}
 	StateSpaceChild        = Type{"m.space.child", StateEventType}
 	StateSpaceParent       = Type{"m.space.parent", StateEventType}
-	StateInsertionMarker   = Type{"org.matrix.msc2716.marker", StateEventType}
+
+	// Deprecated: MSC2716 has been abandoned
+	StateInsertionMarker = Type{"org.matrix.msc2716.marker", StateEventType}
 )
 
 // Message events
@@ -253,4 +256,6 @@ var (
 	ToDeviceVerificationCancel  = Type{"m.key.verification.cancel", ToDeviceEventType}
 
 	ToDeviceOrgMatrixRoomKeyWithheld = Type{"org.matrix.room_key.withheld", ToDeviceEventType}
+
+	ToDeviceBeeperRoomKeyAck = Type{"com.beeper.room_key.ack", ToDeviceEventType}
 )

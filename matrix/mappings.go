@@ -1,22 +1,25 @@
 package matrix
 
 import (
+	"database/sql"
 	"errors"
 
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
 
-// errNotMapped returned if roomID or eventID doesn't exist in room<->event map (yet)
-var errNotMapped = errors.New("cannot find appropriate mapping")
+const mappingPrefix = "cc.etke.honoroit.mapping."
 
-// errNotRelated returned if a message doesn't have relation (even recursive) to a thread
-var errNotRelated = errors.New("cannot find appropriate thread")
+var (
+	// errNotMapped returned if roomID or eventID doesn't exist in room<->event map (yet)
+	errNotMapped = errors.New("cannot find appropriate mapping")
+	// errNotRelated returned if a message doesn't have relation (even recursive) to a thread
+	errNotRelated = errors.New("cannot find appropriate thread")
+)
 
 func (b *Bot) findEventByAttr(roomID id.RoomID, attrName, attrValue, from string) *event.Event {
 	resp, err := b.lp.GetClient().Messages(roomID, from, "", 'b', nil, 100)
 	if err != nil {
-		b.log.Warn("cannot get room %s events", roomID)
 		return nil
 	}
 
@@ -88,32 +91,79 @@ func (b *Bot) walkReplies(evt *event.Event) (id.EventID, error) {
 	return threadID, nil
 }
 
-// findRoomID by eventID
-func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
-	b.log.Debug("trying to find room ID by eventID = %s", eventID)
-	roomID, _, _ := b.loadMapping("event_id", eventID.String())
-	if roomID == "" {
-		b.log.Debug("room not found in existing mappings")
+func (b *Bot) getMapping(id string) (string, error) {
+	data, err := b.lp.GetAccountData(mappingPrefix + id)
+	if err != nil {
+		return "", err
+	}
+	if data == nil {
 		return "", errNotMapped
 	}
 
-	return roomID, nil
+	v, ok := data["id"]
+	if !ok {
+		return "", errNotMapped
+	}
+	return v, nil
+}
+
+func (b *Bot) setMapping(from, to string) {
+	err := b.lp.SetAccountData(mappingPrefix+from, map[string]string{"id": to})
+	if err != nil {
+		b.log.Error().Err(err).Msg("cannot set mapping")
+	}
+}
+
+func (b *Bot) removeMapping(id string) {
+	b.lp.SetAccountData(mappingPrefix+id, map[string]string{}) //nolint:errcheck // doesn't matter
+}
+
+// TODO remove after some time
+func (b *Bot) migrateMappings() {
+	query := "SELECT * FROM mappings"
+	rows, err := b.lp.GetDB().Query(query)
+	if err != nil {
+		b.log.Info().Err(err).Msg("query of the old db mappings table failed, nothing to migrate")
+		return
+	}
+	for rows.Next() {
+		var roomID id.RoomID
+		var email string
+		var eventID id.EventID
+		err := rows.Scan(&roomID, &email, &eventID)
+		if err != nil && err != sql.ErrNoRows {
+			b.log.Warn().Err(err).Msg("cannot load mapping from the old db")
+			continue
+		}
+
+		if roomID == "" || eventID == "" {
+			continue
+		}
+
+		b.setMapping(roomID.String(), eventID.String())
+		b.setMapping(eventID.String(), roomID.String())
+	}
+}
+
+// findRoomID by eventID
+func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
+	roomID, err := b.getMapping(eventID.String())
+
+	return id.RoomID(roomID), err
 }
 
 // findEventID by roomID
 func (b *Bot) findEventID(roomID id.RoomID) (id.EventID, error) {
-	b.log.Debug("trying to find event ID by roomID = %s", roomID)
-	_, _, eventID := b.loadMapping("room_id", roomID.String())
+	eventID, err := b.getMapping(roomID.String())
 	if eventID == "" {
-		b.log.Debug("room not found in existing mappings")
-		return "", errNotMapped
+		return "", err
 	}
-	_, err := b.lp.GetClient().GetEvent(b.roomID, eventID)
+	_, err = b.lp.GetClient().GetEvent(b.roomID, id.EventID(eventID))
 	if err != nil {
-		b.log.Warn("eventID for roomdID = %s has been found, but cannot be retrieved, ignoring it. Error: %v", roomID, err)
-		b.removeMapping("room_id", roomID.String())
+		b.removeMapping(roomID.String())
+		b.removeMapping(eventID)
 		return "", errNotMapped
 	}
 
-	return eventID, nil
+	return id.EventID(eventID), nil
 }

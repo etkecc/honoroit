@@ -80,6 +80,8 @@ var TypeMap = map[Type]reflect.Type{
 
 	ToDeviceOrgMatrixRoomKeyWithheld: reflect.TypeOf(RoomKeyWithheldEventContent{}),
 
+	ToDeviceBeeperRoomKeyAck: reflect.TypeOf(BeeperRoomKeyAckEventContent{}),
+
 	CallInvite:       reflect.TypeOf(CallInviteEventContent{}),
 	CallCandidates:   reflect.TypeOf(CallCandidatesEventContent{}),
 	CallAnswer:       reflect.TypeOf(CallAnswerEventContent{}),
@@ -157,6 +159,7 @@ func (content *Content) MarshalJSON() ([]byte, error) {
 	return json.Marshal(content.Raw)
 }
 
+// Deprecated: use errors.Is directly
 func IsUnsupportedContentType(err error) bool {
 	return errors.Is(err, ErrUnsupportedContentType)
 }

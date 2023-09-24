@@ -119,6 +119,7 @@ func (b *Bot) removeMapping(id string) {
 }
 
 // TODO remove after some time
+// nolint:gocognit
 func (b *Bot) migrateMappings() {
 	query := "SELECT * FROM mappings"
 	rows, err := b.lp.GetDB().Query(query)
@@ -142,6 +143,20 @@ func (b *Bot) migrateMappings() {
 
 		b.setMapping(roomID.String(), eventID.String())
 		b.setMapping(eventID.String(), roomID.String())
+
+		// remove old mapping
+		tx, err := b.lp.GetDB().Begin()
+		if err != nil {
+			continue
+		}
+		query := "DELETE FROM mappings WHERE room_id = $1"
+		_, err = tx.Exec(query, roomID)
+		if err != nil {
+			tx.Rollback() //nolint:errcheck
+			continue
+		}
+
+		tx.Commit() //nolint:errcheck
 	}
 }
 

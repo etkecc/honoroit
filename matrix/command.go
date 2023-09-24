@@ -116,7 +116,7 @@ func (b *Bot) closeRequest(evt *event.Event) {
 		return
 	}
 
-	b.Notice(evt.RoomID, b.cfg.Get(config.TextDone.Key))
+	b.Notice(roomID, b.cfg.Get(config.TextDone.Key))
 
 	var oldbody string
 	if threadEvt.Content.AsMessage() != nil {

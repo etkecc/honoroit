@@ -20,30 +20,29 @@ func (b *Bot) forwardReactionToCustomer(evt *event.Event) {
 	sourceID := content.GetRelatesTo().EventID
 	sourceEvt, err := b.lp.GetClient().GetEvent(evt.RoomID, sourceID)
 	if err != nil {
-		b.log.Error("cannot get event %s in the room %s: %v", sourceID, evt.RoomID, err)
+		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Str("roomID", evt.RoomID.String()).Msg("cannot get event in the room")
 		return
 	}
 
 	err = sourceEvt.Content.ParseRaw(event.EventMessage)
 	if err != nil {
-		b.log.Error("cannot parse source event content: %v", err)
+		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Str("roomID", evt.RoomID.String()).Msg("cannot parse source event content")
 		return
 	}
 
 	relatesTo := b.getRelatesTo(sourceEvt)
 	if relatesTo == nil {
-		b.log.Error("cannot parse source event relates_to: %v", err)
+		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Str("roomID", evt.RoomID.String()).Msg("cannot parse source event relates_to")
 		return
 	}
 
 	if relatesTo.EventID == "" {
-		b.log.Error("cannot parse source event relates_to doesn't contain event id")
 		return
 	}
 
 	roomID, err := b.findRoomID(relatesTo.EventID)
 	if err != nil {
-		b.log.Error("cannot find a suitable room to send reaction event: %v", err)
+		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Str("roomID", evt.RoomID.String()).Msg("cannot find a suitable room to send reaction event")
 		return
 	}
 
@@ -51,7 +50,7 @@ func (b *Bot) forwardReactionToCustomer(evt *event.Event) {
 	if !ok { // message by operator doesn't contain metadata, try to find the same event in the customer's room
 		targetEvent := b.findEventByAttr(roomID, "event_id", sourceID.String(), "")
 		if targetEvent == nil {
-			b.log.Error("cannot find event %s neither in operators, nor in customer's room", sourceID)
+			b.log.Error().Err(err).Str("sourceID", sourceID.String()).Msg("event found neither in operators nor in customers room")
 			return
 		}
 		targetID = targetEvent.ID.String()
@@ -59,7 +58,7 @@ func (b *Bot) forwardReactionToCustomer(evt *event.Event) {
 
 	_, err = b.lp.GetClient().SendReaction(roomID, id.EventID(targetID), content.RelatesTo.Key)
 	if err != nil {
-		b.log.Error("cannot send reaction: %v", err)
+		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Msg("cannot send reaction")
 	}
 }
 
@@ -68,24 +67,24 @@ func (b *Bot) forwardReactionToThread(evt *event.Event) {
 	sourceID := content.GetRelatesTo().EventID
 	sourceEvt, err := b.lp.GetClient().GetEvent(evt.RoomID, sourceID)
 	if err != nil {
-		b.log.Error("cannot get event %s in the room %s: %v", sourceID, evt.RoomID, err)
+		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Str("roomID", evt.RoomID.String()).Msg("cannot get event in the room")
 		return
 	}
 
 	err = sourceEvt.Content.ParseRaw(event.EventMessage)
 	if err != nil {
-		b.log.Error("cannot parse source event content: %v", err)
+		b.log.Error().Err(err).Msg("cannot parse source event content")
 		return
 	}
 
 	operatorsRoomEventID, ok := sourceEvt.Content.Raw["event_id"].(string)
 	if !ok {
-		b.log.Error("cannot cast source event's event_id field, raw: %v", sourceEvt.Content.Raw["event_id"])
+		b.log.Error().Msg("cannot cast source events event_id field")
 		return
 	}
 
 	_, err = b.lp.GetClient().SendReaction(b.roomID, id.EventID(operatorsRoomEventID), content.RelatesTo.Key)
 	if err != nil {
-		b.log.Error("cannot send reaction: %v", err)
+		b.log.Error().Err(err).Msg("cannot send reaction")
 	}
 }

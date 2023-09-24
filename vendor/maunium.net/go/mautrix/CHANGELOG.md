@@ -1,3 +1,226 @@
+## v0.16.1 (2023-09-16)
+
+* **Breaking change *(id)*** Updated user ID localpart encoding to not encode
+  `+` as per [MSC4009].
+* *(bridge)* Added bridge utility to handle double puppeting logins.
+  * The utility supports automatic logins with all three current methods
+    (shared secret, legacy appservice, new appservice).
+* *(appservice)* Added warning logs and timeout on appservice event handling.
+  * Defaults to warning after 30 seconds and timeout 15 minutes after that.
+  * Timeouts can be adjusted or disabled by setting `ExecSync` variables in the
+    `EventProcessor`.
+* *(crypto/olm)* Added `PkDecryption` wrapper.
+
+[MSC4009]: https://github.com/matrix-org/matrix-spec-proposals/pull/4009
+
+## v0.16.0 (2023-08-16)
+
+* Bumped minimum Go version to 1.20.
+* **Breaking change *(util)*** Moved package to [go.mau.fi/util](https://go.mau.fi/util/)
+* *(event)* Removed MSC2716 `historical` field in the `m.room.power_levels`
+  event content struct.
+* *(bridge)* Added `--version-json` flag to print bridge version info as JSON.
+* *(appservice)* Added option to use custom transaction handler for websocket mode.
+
+## v0.15.4 (2023-07-16)
+
+* *(client)* Deprecated MSC2716 methods and added new Beeper-specific batch
+  send methods, as upstream MSC2716 support has been abandoned.
+* *(client)* Added proper error handling and automatic retries to media
+  downloads.
+* *(crypto, bridge)* Added option to remove all keys that were received before
+  the automatic ratcheting was implemented (in v0.15.1).
+* *(dbutil)* Added `JSON` utility for writing/reading arbitrary JSON objects to
+  the db conveniently without manually de/serializing.
+
+## v0.15.3 (2023-06-16)
+
+* *(synapseadmin)* Added wrappers for some Synapse admin API endpoints.
+* *(pushrules)* Implemented new `event_property_is` and `event_property_contains`
+  push rule condition kinds as per MSC3758 and MSC3966.
+* *(bridge)* Moved websocket code from mautrix-imessage to enable all bridges
+  to use appservice websockets easily.
+* *(bridge)* Added retrying for appservice pings.
+* *(types)* Removed unstable field for MSC3952 (intentional mentions).
+* *(client)* Deprecated `OldEventIgnorer` and added `Client.DontProcessOldEvents`
+  to replace it.
+* *(client)* Added `MoveInviteState` sync handler for moving state events in
+  the invite section of sync inside the invite event itself.
+* *(crypto)* Added option to not rotate keys when devices change.
+* *(crypto)* Added additional duplicate message index check if decryption fails
+  because the keys had been ratcheted forward.
+* *(client)* Stabilized support for asynchronous uploads.
+  * `UnstableCreateMXC` and `UnstableUploadAsync` were renamed to `CreateMXC`
+    and `UploadAsync` respectively.
+* *(util/dbutil)* Added option to use a separate database connection pool for
+  read-only transactions.
+  * This is mostly meant for SQLite and it enables read-only transactions that
+    don't lock the database, even when normal transactions are configured to
+    acquire a write lock immediately.
+* *(util/dbutil)* Enabled caller info in zerolog by default.
+
+## v0.15.2 (2023-05-16)
+
+* *(client)* Changed member-fetching methods to clear existing member info in
+  state store.
+* *(client)* Added support for inserting mautrix-go commit hash into default
+  user agent at compile time.
+* *(bridge)* Fixed bridge bot intent not having state store set.
+* *(client)* Fixed `RespError` marshaling mutating the `ExtraData` map and
+  potentially causing panics.
+* *(util/dbutil)* Added `DoTxn` method for an easier way to manage database
+  transactions.
+* *(util)* Added a zerolog `CallerMarshalFunc` implementation that includes the
+  function name.
+* *(bridge)* Added error reply to encrypted messages if the bridge isn't
+  configured to do encryption.
+
+## v0.15.1 (2023-04-16)
+
+* *(crypto, bridge)* Added options to automatically ratchet/delete megolm
+  sessions to minimize access to old messages.
+* *(pushrules)* Added method to get entire push rule that matched (instead of
+  only the list of actions).
+* *(pushrules)* Deprecated `NotifySpecified` as there's no reason to read it.
+* *(crypto)* Changed `max_age` column in `crypto_megolm_inbound_session` table
+  to be milliseconds instead of nanoseconds.
+* *(util)* Added method for iterating `RingBuffer`.
+* *(crypto/cryptohelper)* Changed decryption errors to request session from all
+  own devices in addition to the sender, instead of only asking the sender.
+* *(sqlstatestore)* Fixed `FindSharedRooms` throwing an error when using from
+  a non-bridge context.
+* *(client)* Optimized `AccountDataSyncStore` to not resend save requests if
+  the sync token didn't change.
+* *(types)* Added `Clone()` method for `PowerLevelEventContent`.
+
+## v0.15.0 (2023-03-16)
+
+### beta.3 (2023-03-15)
+
+* **Breaking change *(appservice)*** Removed `Load()` and `AppService.Init()`
+  functions. The struct should just be created with `Create()` and the relevant
+  fields should be filled manually.
+* **Breaking change *(appservice)*** Removed public `HomeserverURL` field and
+  replaced it with a `SetHomeserverURL` method.
+* *(appservice)* Added support for unix sockets for homeserver URL and
+  appservice HTTP server.
+* *(client)* Changed request logging to log durations as floats instead of
+  strings (using zerolog's `Dur()`, so the exact output can be configured).
+* *(bridge)* Changed zerolog to use nanosecond precision timestamps.
+* *(crypto)* Added message index to log after encrypting/decrypting megolm
+  events, and when failing to decrypt due to duplicate index.
+* *(sqlstatestore)* Fixed warning log for rooms that don't have encryption
+  enabled.
+
+### beta.2 (2023-03-02)
+
+* *(bridge)* Fixed building with `nocrypto` tag.
+* *(bridge)* Fixed legacy logging config migration not disabling file writer
+  when `file_name_format` was empty.
+* *(bridge)* Added option to require room power level to run commands.
+* *(event)* Added structs for [MSC3952]: Intentional Mentions.
+* *(util/variationselector)* Added `FullyQualify` method to add necessary emoji
+  variation selectors without adding all possible ones.
+
+[MSC3952]: https://github.com/matrix-org/matrix-spec-proposals/pull/3952
+
+### beta.1 (2023-02-24)
+
+* Bumped minimum Go version to 1.19.
+* **Breaking changes**
+  * *(all)* Switched to zerolog for logging.
+    * The `Client` and `Bridge` structs still include a legacy logger for
+      backwards compatibility.
+  * *(client, appservice)* Moved `SQLStateStore` from appservice module to the
+    top-level (client) module.
+  * *(client, appservice)* Removed unused `Typing` map in `SQLStateStore`.
+  * *(client)* Removed unused `SaveRoom` and `LoadRoom` methods in `Storer`.
+  * *(client, appservice)* Removed deprecated `SendVideo` and `SendImage` methods.
+  * *(client)* Replaced `AppServiceUserID` field with `SetAppServiceUserID` boolean.
+    The `UserID` field is used as the value for the query param.
+  * *(crypto)* Renamed `GobStore` to `MemoryStore` and removed the file saving
+    features. The data can still be persisted, but the persistence part must be
+    implemented separately.
+  * *(crypto)* Removed deprecated `DeviceIdentity` alias
+    (renamed to `id.Device` long ago).
+  * *(client)* Removed `Stringifable` interface as it's the same as `fmt.Stringer`.
+* *(client)* Renamed `Storer` interface to `SyncStore`. A type alias exists for
+  backwards-compatibility.
+* *(crypto/cryptohelper)* Added package for a simplified crypto interface for clients.
+* *(example)* Added e2ee support to example using crypto helper.
+* *(client)* Changed default syncer to stop syncing on `M_UNKNOWN_TOKEN` errors.
+
+## v0.14.0 (2023-02-16)
+
+* **Breaking change *(format)*** Refactored the HTML parser `Context` to have
+  more data.
+* *(id)* Fixed escaping path components when forming matrix.to URLs
+  or `matrix:` URIs.
+* *(bridge)* Bumped default timeouts for decrypting incoming messages.
+* *(bridge)* Added `RawArgs` to commands to allow accessing non-split input.
+* *(bridge)* Added `ReplyAdvanced` to commands to allow setting markdown
+  settings.
+* *(event)* Added `notifications` key to `PowerLevelEventContent`.
+* *(event)* Changed `SetEdit` to cut off edit fallback if the message is long.
+* *(util)* Added `SyncMap` as a simple generic wrapper for a map with a mutex.
+* *(util)* Added `ReturnableOnce` as a wrapper for `sync.Once` with a return
+  value.
+
+## v0.13.0 (2023-01-16)
+
+* **Breaking change:** Removed `IsTyping` and `SetTyping` in `appservice.StateStore`
+  and removed the `TypingStateStore` struct implementing those methods.
+* **Breaking change:** Removed legacy fields in Beeper MSS events.
+* Added knocked rooms to sync response structs.
+* Added wrapper for `/timestamp_to_event` endpoint added in Matrix v1.6.
+* Fixed MSC3870 uploads not failing properly after using up the max retry count.
+* Fixed parsing non-positive ordered list start positions in HTML parser.
+
+## v0.12.4 (2022-12-16)
+
+* Added `SendReceipt` to support private read receipts and thread receipts in
+  the same function. `MarkReadWithContent` is now deprecated.
+* Changed media download methods to return errors if the server returns a
+  non-2xx status code.
+* Removed legacy `sql_store_upgrade.Upgrade` method. Using `store.DB.Upgrade()`
+  after `NewSQLCryptoStore(...)` is recommended instead (the bridge module does
+  this automatically).
+* Added missing `suggested` field to `m.space.child` content struct.
+* Added `device_unused_fallback_key_types` to `/sync` response and appservice
+  transaction structs.
+* Changed `ReqSetReadMarkers` to omit empty fields.
+* Changed bridge configs to force `sqlite3-fk-wal` instead of `sqlite3`.
+* Updated bridge helper to close database connection when stopping.
+* Fixed read receipt and account data endpoints sending `null` instead of an
+  empty object as the body when content isn't provided.
+
+## v0.12.3 (2022-11-16)
+
+* **Breaking change:** Added logging for row iteration in the dbutil package.
+  This changes the return type of `Query` methods from `*sql.Rows` to a new
+  `dbutil.Rows` interface.
+* Added flag to disable wrapping database upgrades in a transaction (e.g. to
+  allow setting `PRAGMA`s for advanced table mutations on SQLite).
+* Deprecated `MessageEventContent.GetReplyTo` in favor of directly using
+  `RelatesTo.GetReplyTo`. RelatesTo methods are nil-safe, so checking if
+  RelatesTo is nil is not necessary for using those methods.
+* Added wrapper for space hierarchyendpoint (thanks to [@mgcm] in [#100]).
+* Added bridge config option to handle transactions asynchronously.
+* Added separate channels for to-device events in appservice transaction
+  handler to avoid blocking to-device events behind normal events.
+* Added `RelatesTo.GetNonFallbackReplyTo` utility method to get the reply event
+  ID, unless the reply is a thread fallback.
+* Added `event.TextToHTML` as an utility method to HTML-escape a string and
+  replace newlines with `<br/>`.
+* Added check to bridge encryption helper to make sure the e2ee keys are still
+  on the server. Synapse is known to sometimes lose keys randomly.
+* Changed bridge crypto syncer to crash on `M_UNKNOWN_TOKEN` errors instead of
+  retrying forever pointlessly.
+* Fixed verifying signatures of fallback one-time keys.
+
+[@mgcm]: https://github.com/mgcm
+[#100]: https://github.com/mautrix/go/pull/100
+
 ## v0.12.2 (2022-10-16)
 
 * Added utility method to redact bridge commands.
@@ -95,6 +318,11 @@
 
 [@nightmared]: https://github.com/nightmared
 [#83]: https://github.com/mautrix/go/pull/83
+
+## v0.11.1 (2023-01-15)
+
+* Fixed parsing non-positive ordered list start positions in HTML parser
+  (backport of the same fix in v0.13.0).
 
 ## v0.11.0 (2022-05-16)
 

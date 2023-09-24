@@ -8,6 +8,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ## Features
 
+* chat-based configuration
 * prometheus metrics on `/metrics` endpoint
 * End-to-End encryption
 * Get a message from any matrix user proxied to a specific room. Any message that user will send in his 1:1 room with Honoroit will be proxied as thread messages
@@ -59,6 +60,9 @@ Available commands in the threads. Note that all commands should be called with 
 * `invite` - invite yourself into the customer 1:1 room
 * `start MXID` - start a conversation with a MXID from the honoroit (like a new thread, but initialized by operator), eg: `!ho start @user:example.com`
 * `count MXID` - count a request from MXID and their homeserver, but don't actually create a room or invite them
+* `config` - show all config options
+* `config KEY` - show specific config option and its current value
+* `config KEY VALUE` - update value of the specific config option
 
 
 ## Configuration
@@ -68,8 +72,9 @@ env vars
 ### mandatory
 
 * **HONOROIT_HOMESERVER** - homeserver url, eg: `https://matrix.example.com`
-* **HONOROIT_LOGIN** - user login/localpart, eg: `honoroit`
-* **HONOROIT_PASSWORD** - user password
+* **HONOROIT_LOGIN** - user login, localpart when using password (e.g., `honoroit`), OR full MXID when using shared secret (e.g., `@honoroit:example.com`)
+* **HONOROIT_PASSWORD** - user password, alternatively you may use shared secret
+* **HONOROIT_SHAREDSECRET** - alternative to password, shared secret ([details](https://github.com/devture/matrix-synapse-shared-secret-auth))
 * **HONOROIT_ROOMID** - room ID where threads will be created, eg: `!test:example.com`
 
 ### optional
@@ -78,6 +83,7 @@ env vars
 
 * **HONOROIT_PREFIX** - command prefix
 * **HONOROIT_PORT** - http port
+* **HONOROIT_DATA_SECRET** - secure key (password) to encrypt account data, must be 16, 24, or 32 bytes long
 * **HONOROIT_MONITORING_SENTRY_DSN** - sentry DSN
 * **HONOROIT_MONITORING_SENTRY_RATE** - sentry sample rate, from 0 to 100 (default: 20)
 * **HONOROIT_MONITORING_HEALTHCHECKS_UUID** - healthchecks.io UUID
@@ -85,25 +91,8 @@ env vars
 * **HONOROIT_LOGLEVEL** - log level
 * **HONOROIT_CACHESIZE** - max allowed mappings in cache
 * **HONOROIT_NOENCRYPTION** - disable e2e encryption support
-* **HONOROIT_ALLOWEDUSERS** - space separated list of allowed MXID patterns, where each pattern is like `@someone:example.com`, `@bot.*:example.com`, `@*:another.com`, or `@*:*` (the default one)
-* **HONOROIT_IGNOREDROOMS** - space separated list of roomIDs to ignore
-* **HONOROIT_IGNORENOTHREAD** - completely ignore messages outside of threads
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
-
-#### text messages
-
-* **HONOROIT_TEXT_PREFIX_OPEN** - prefix of a new thread topic
-* **HONOROIT_TEXT_PREFIX_DONE** - prefix of a closed thread topic
-* **HONOROIT_TEXT_GREETINGS** - a message sent to customer on first contact
-* **HONOROIT_TEXT_NOENCRYPTION** - a message sent to customer when encryption disabled and customer tries to use encrypted chat
-* **HONOROIT_TEXT_JOIN** - a message sent to backoffice/threads room when a customer joins a room
-* **HONOROIT_TEXT_INVITE** - a message sent to backoffice/threads room when a customer invites another user
-* **HONOROIT_TEXT_LEAVE** - a message sent to backoffice/threads room when a customer leaves a room
-* **HONOROIT_TEXT_ERROR** - a message sent to customer if something goes wrong
-* **HONOROIT_TEXT_EMPTYROOM** - a message sent to backoffice/threads room when the last customer left a room
-* **HONOROIT_TEXT_START** - a message sent to thread when using `start` command
-* **HONOROIT_TEXT_DONE** - a message sent to customer when request marked as done in the threads room
 
 You can find default values in [config/defaults.go](config/defaults.go)
 

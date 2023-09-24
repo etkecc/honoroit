@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func parseAndNormalizeBaseURL(homeserverURL string) (*url.URL, error) {
+func ParseAndNormalizeBaseURL(homeserverURL string) (*url.URL, error) {
 	hsURL, err := url.Parse(homeserverURL)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func parseAndNormalizeBaseURL(homeserverURL string) (*url.URL, error) {
 }
 
 // BuildURL builds a URL with the given path parts
-func BuildURL(baseURL *url.URL, path ...interface{}) *url.URL {
+func BuildURL(baseURL *url.URL, path ...any) *url.URL {
 	createdURL := *baseURL
 	rawParts := make([]string, len(path)+1)
 	rawParts[0] = strings.TrimSuffix(createdURL.RawPath, "/")
@@ -43,7 +43,7 @@ func BuildURL(baseURL *url.URL, path ...interface{}) *url.URL {
 			parts[i+1] = casted
 		case int:
 			parts[i+1] = strconv.Itoa(casted)
-		case Stringifiable:
+		case fmt.Stringer:
 			parts[i+1] = casted.String()
 		default:
 			parts[i+1] = fmt.Sprint(casted)
@@ -62,30 +62,36 @@ func (cli *Client) BuildURL(urlPath PrefixableURLPath) string {
 
 // BuildClientURL builds a URL with the Client's homeserver and appservice user ID set already.
 // This method also automatically prepends the client API prefix (/_matrix/client).
-func (cli *Client) BuildClientURL(urlPath ...interface{}) string {
+func (cli *Client) BuildClientURL(urlPath ...any) string {
 	return cli.BuildURLWithQuery(ClientURLPath(urlPath), nil)
 }
 
 type PrefixableURLPath interface {
-	FullPath() []interface{}
+	FullPath() []any
 }
 
-type BaseURLPath []interface{}
+type BaseURLPath []any
 
-func (bup BaseURLPath) FullPath() []interface{} {
+func (bup BaseURLPath) FullPath() []any {
 	return bup
 }
 
-type ClientURLPath []interface{}
+type ClientURLPath []any
 
-func (cup ClientURLPath) FullPath() []interface{} {
-	return append([]interface{}{"_matrix", "client"}, []interface{}(cup)...)
+func (cup ClientURLPath) FullPath() []any {
+	return append([]any{"_matrix", "client"}, []any(cup)...)
 }
 
-type MediaURLPath []interface{}
+type MediaURLPath []any
 
-func (mup MediaURLPath) FullPath() []interface{} {
-	return append([]interface{}{"_matrix", "media"}, []interface{}(mup)...)
+func (mup MediaURLPath) FullPath() []any {
+	return append([]any{"_matrix", "media"}, []any(mup)...)
+}
+
+type SynapseAdminURLPath []any
+
+func (saup SynapseAdminURLPath) FullPath() []any {
+	return append([]any{"_synapse", "admin"}, []any(saup)...)
 }
 
 // BuildURLWithQuery builds a URL with query parameters in addition to the Client's homeserver
@@ -93,8 +99,8 @@ func (mup MediaURLPath) FullPath() []interface{} {
 func (cli *Client) BuildURLWithQuery(urlPath PrefixableURLPath, urlQuery map[string]string) string {
 	hsURL := *BuildURL(cli.HomeserverURL, urlPath.FullPath()...)
 	query := hsURL.Query()
-	if cli.AppServiceUserID != "" {
-		query.Set("user_id", string(cli.AppServiceUserID))
+	if cli.SetAppServiceUserID {
+		query.Set("user_id", string(cli.UserID))
 	}
 	if urlQuery != nil {
 		for k, v := range urlQuery {

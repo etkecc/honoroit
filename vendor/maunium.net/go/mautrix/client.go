@@ -14,34 +14,35 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/rs/zerolog"
+	"go.mau.fi/util/retryafter"
+	"maunium.net/go/maulogger/v2/maulogadapt"
 
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 	"maunium.net/go/mautrix/pushrules"
 )
 
+type CryptoHelper interface {
+	Encrypt(id.RoomID, event.Type, any) (*event.EncryptedEventContent, error)
+	Decrypt(*event.Event) (*event.Event, error)
+	WaitForSession(id.RoomID, id.SenderKey, id.SessionID, time.Duration) bool
+	RequestSession(id.RoomID, id.SenderKey, id.SessionID, id.UserID, id.DeviceID)
+	Init() error
+}
+
+// Deprecated: switch to zerolog
 type Logger interface {
 	Debugfln(message string, args ...interface{})
 }
 
-// StubLogger is an implementation of Logger that does nothing
-type StubLogger struct{}
-
-func (sl *StubLogger) Debugfln(message string, args ...interface{}) {}
-func (sl *StubLogger) Warnfln(message string, args ...interface{})  {}
-
-var stubLogger = &StubLogger{}
-
+// Deprecated: switch to zerolog
 type WarnLogger interface {
 	Logger
 	Warnfln(message string, args ...interface{})
-}
-
-type Stringifiable interface {
-	String() string
 }
 
 // Client represents a Matrix client.
@@ -53,9 +54,18 @@ type Client struct {
 	UserAgent     string       // The value for the User-Agent header
 	Client        *http.Client // The underlying HTTP client which will be used to make HTTP requests.
 	Syncer        Syncer       // The thing which can process /sync responses
-	Store         Storer       // The thing which can store rooms/tokens/ids
-	Logger        Logger
-	SyncPresence  event.Presence
+	Store         SyncStore    // The thing which can store tokens/ids
+	StateStore    StateStore
+	Crypto        CryptoHelper
+
+	Log zerolog.Logger
+	// Deprecated: switch to the zerolog instance in Log
+	Logger Logger
+
+	RequestHook  func(req *http.Request)
+	ResponseHook func(req *http.Request, resp *http.Response, duration time.Duration)
+
+	SyncPresence event.Presence
 
 	StreamSyncMinAge time.Duration
 
@@ -67,10 +77,9 @@ type Client struct {
 
 	txnID int32
 
-	// The ?user_id= query parameter for application services. This must be set *prior* to calling a method.
-	// If this is empty, no user_id parameter will be sent.
-	// See https://spec.matrix.org/v1.2/application-service-api/#identity-assertion
-	AppServiceUserID id.UserID
+	// Should the ?user_id= query parameter be set in requests?
+	// See https://spec.matrix.org/v1.6/application-service-api/#identity-assertion
+	SetAppServiceUserID bool
 
 	syncingID uint32 // Identifies the current Sync. Only one Sync can be active at any given time.
 }
@@ -180,7 +189,7 @@ func (cli *Client) SyncWithContext(ctx context.Context) error {
 	for {
 		streamResp := false
 		if cli.StreamSyncMinAge > 0 && time.Since(lastSuccessfulSync) > cli.StreamSyncMinAge {
-			cli.Logger.Debugfln("Last sync is old, will stream next response")
+			cli.Log.Debug().Msg("Last sync is old, will stream next response")
 			streamResp = true
 		}
 		resSync, err := cli.FullSyncRequest(ReqSync{
@@ -242,40 +251,59 @@ func (cli *Client) StopSync() {
 	cli.incrementSyncingID()
 }
 
-const logBodyContextKey = "fi.mau.mautrix.log_body"
-const logRequestIDContextKey = "fi.mau.mautrix.request_id"
+type contextKey int
 
-func (cli *Client) LogRequest(req *http.Request) {
-	if cli.Logger == stubLogger {
-		return
-	}
-	body, ok := req.Context().Value(logBodyContextKey).(string)
-	reqID, _ := req.Context().Value(logRequestIDContextKey).(int)
-	if ok && len(body) > 0 {
-		cli.Logger.Debugfln("req #%d: %s %s %s", reqID, req.Method, req.URL.String(), body)
-	} else {
-		cli.Logger.Debugfln("req #%d: %s %s", reqID, req.Method, req.URL.String())
+const (
+	LogBodyContextKey contextKey = iota
+	LogRequestIDContextKey
+)
+
+func (cli *Client) RequestStart(req *http.Request) {
+	if cli.RequestHook != nil {
+		cli.RequestHook(req)
 	}
 }
 
-func (cli *Client) LogRequestDone(req *http.Request, resp *http.Response, handlerErr error, contentLength int, duration time.Duration) {
-	if cli.Logger == stubLogger {
-		return
+func (cli *Client) LogRequestDone(req *http.Request, resp *http.Response, err error, handlerErr error, contentLength int, duration time.Duration) {
+	var evt *zerolog.Event
+	if err != nil {
+		evt = zerolog.Ctx(req.Context()).Err(err)
+	} else if handlerErr != nil {
+		evt = zerolog.Ctx(req.Context()).Warn().
+			AnErr("body_parse_err", handlerErr)
+	} else {
+		evt = zerolog.Ctx(req.Context()).Debug()
 	}
-	reqID, _ := req.Context().Value(logRequestIDContextKey).(int)
-	mime := resp.Header.Get("Content-Type")
-	var suffix string
-	if handlerErr != nil {
-		suffix = fmt.Sprintf(" (but parsing the body failed)")
+	evt = evt.
+		Str("method", req.Method).
+		Str("url", req.URL.String()).
+		Dur("duration", duration)
+	if resp != nil {
+		if cli.ResponseHook != nil {
+			cli.ResponseHook(req, resp, duration)
+		}
+		mime := resp.Header.Get("Content-Type")
+		length := resp.ContentLength
+		if length == -1 && contentLength > 0 {
+			length = int64(contentLength)
+		}
+		evt = evt.Int("status_code", resp.StatusCode).
+			Int64("response_length", length).
+			Str("response_mime", mime)
+		if serverRequestID := resp.Header.Get("X-Beeper-Request-ID"); serverRequestID != "" {
+			evt.Str("beeper_request_id", serverRequestID)
+		}
 	}
-	length := resp.ContentLength
-	if length == -1 && contentLength > 0 {
-		length = int64(contentLength)
+	if body := req.Context().Value(LogBodyContextKey); body != nil {
+		evt.Interface("req_body", body)
 	}
-	cli.Logger.Debugfln(
-		"req #%d (%s) completed in %s with status %d and %d bytes of %s body%s",
-		reqID, strings.TrimPrefix(req.URL.Path, "/_matrix/client"), duration, resp.StatusCode, length, mime, suffix,
-	)
+	if err != nil {
+		evt.Msg("Request failed")
+	} else if handlerErr != nil {
+		evt.Msg("Request parsing failed")
+	} else {
+		evt.Msg("Request completed")
+	}
 }
 
 func (cli *Client) MakeRequest(method string, httpURL string, reqBody interface{}, resBody interface{}) ([]byte, error) {
@@ -297,13 +325,14 @@ type FullRequest struct {
 	MaxAttempts      int
 	SensitiveContent bool
 	Handler          ClientResponseHandler
+	Logger           *zerolog.Logger
 }
 
 var requestID int32
 var logSensitiveContent = os.Getenv("MAUTRIX_LOG_SENSITIVE_CONTENT") == "yes"
 
 func (params *FullRequest) compileRequest() (*http.Request, error) {
-	var logBody string
+	var logBody any
 	reqBody := params.RequestBody
 	if params.Context == nil {
 		params.Context = context.Background()
@@ -319,7 +348,7 @@ func (params *FullRequest) compileRequest() (*http.Request, error) {
 		if params.SensitiveContent && !logSensitiveContent {
 			logBody = "<sensitive content omitted>"
 		} else {
-			logBody = string(jsonStr)
+			logBody = params.RequestJSON
 		}
 		reqBody = bytes.NewReader(jsonStr)
 	} else if params.RequestBytes != nil {
@@ -330,12 +359,20 @@ func (params *FullRequest) compileRequest() (*http.Request, error) {
 		logBody = fmt.Sprintf("<%d bytes>", params.RequestLength)
 	} else if params.Method != http.MethodGet && params.Method != http.MethodHead {
 		params.RequestJSON = struct{}{}
-		logBody = "<default empty object>"
+		logBody = params.RequestJSON
 		reqBody = bytes.NewReader([]byte("{}"))
 	}
-	ctx := context.WithValue(params.Context, logBodyContextKey, logBody)
 	reqID := atomic.AddInt32(&requestID, 1)
-	ctx = context.WithValue(ctx, logRequestIDContextKey, int(reqID))
+	ctx := params.Context
+	logger := zerolog.Ctx(ctx)
+	if logger.GetLevel() == zerolog.Disabled || logger == zerolog.DefaultContextLogger {
+		logger = params.Logger
+	}
+	ctx = logger.With().
+		Int32("req_id", reqID).
+		Logger().WithContext(ctx)
+	ctx = context.WithValue(ctx, LogBodyContextKey, logBody)
+	ctx = context.WithValue(ctx, LogRequestIDContextKey, int(reqID))
 	req, err := http.NewRequestWithContext(ctx, params.Method, params.URL, reqBody)
 	if err != nil {
 		return nil, HTTPError{
@@ -365,12 +402,15 @@ func (cli *Client) MakeFullRequest(params FullRequest) ([]byte, error) {
 	if params.MaxAttempts == 0 {
 		params.MaxAttempts = 1 + cli.DefaultHTTPRetries
 	}
+	if params.Logger == nil {
+		params.Logger = &cli.Log
+	}
 	req, err := params.compileRequest()
 	if err != nil {
 		return nil, err
 	}
 	if params.Handler == nil {
-		params.Handler = cli.handleNormalResponse
+		params.Handler = handleNormalResponse
 	}
 	req.Header.Set("User-Agent", cli.UserAgent)
 	if len(cli.AccessToken) > 0 {
@@ -379,35 +419,36 @@ func (cli *Client) MakeFullRequest(params FullRequest) ([]byte, error) {
 	return cli.executeCompiledRequest(req, params.MaxAttempts-1, 4*time.Second, params.ResponseJSON, params.Handler)
 }
 
-func (cli *Client) logWarning(format string, args ...interface{}) {
-	warnLogger, ok := cli.Logger.(WarnLogger)
-	if ok {
-		warnLogger.Warnfln(format, args...)
-	} else {
-		cli.Logger.Debugfln(format, args...)
+func (cli *Client) cliOrContextLog(ctx context.Context) *zerolog.Logger {
+	log := zerolog.Ctx(ctx)
+	if log.GetLevel() == zerolog.Disabled || log == zerolog.DefaultContextLogger {
+		return &cli.Log
 	}
+	return log
 }
 
 func (cli *Client) doRetry(req *http.Request, cause error, retries int, backoff time.Duration, responseJSON interface{}, handler ClientResponseHandler) ([]byte, error) {
-	reqID, _ := req.Context().Value(logRequestIDContextKey).(int)
+	log := zerolog.Ctx(req.Context())
 	if req.Body != nil {
 		if req.GetBody == nil {
-			cli.logWarning("Failed to get new body to retry request #%d: GetBody is nil", reqID)
+			log.Warn().Msg("Failed to get new body to retry request: GetBody is nil")
 			return nil, cause
 		}
 		var err error
 		req.Body, err = req.GetBody()
 		if err != nil {
-			cli.logWarning("Failed to get new body to retry request #%d: %v", reqID, err)
+			log.Warn().Err(err).Msg("Failed to get new body to retry request")
 			return nil, cause
 		}
 	}
-	cli.logWarning("Request #%d failed: %v, retrying in %d seconds", reqID, cause, int(backoff.Seconds()))
+	log.Warn().Err(cause).
+		Int("retry_in_seconds", int(backoff.Seconds())).
+		Msg("Request failed, retrying")
 	time.Sleep(backoff)
 	return cli.executeCompiledRequest(req, retries-1, backoff*2, responseJSON, handler)
 }
 
-func (cli *Client) readRequestBody(req *http.Request, res *http.Response) ([]byte, error) {
+func readRequestBody(req *http.Request, res *http.Response) ([]byte, error) {
 	contents, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, HTTPError{
@@ -421,22 +462,23 @@ func (cli *Client) readRequestBody(req *http.Request, res *http.Response) ([]byt
 	return contents, nil
 }
 
-func (cli *Client) closeTemp(file *os.File) {
+func closeTemp(log *zerolog.Logger, file *os.File) {
 	_ = file.Close()
 	err := os.Remove(file.Name())
 	if err != nil {
-		cli.logWarning("Failed to remove temp file %s: %v", file.Name(), err)
+		log.Warn().Err(err).Str("file_name", file.Name()).Msg("Failed to remove response temp file")
 	}
 }
 
-func (cli *Client) streamResponse(req *http.Request, res *http.Response, responseJSON interface{}) ([]byte, error) {
+func streamResponse(req *http.Request, res *http.Response, responseJSON interface{}) ([]byte, error) {
+	log := zerolog.Ctx(req.Context())
 	file, err := os.CreateTemp("", "mautrix-response-")
 	if err != nil {
-		cli.logWarning("Failed to create temporary file: %v", err)
-		_, err = cli.handleNormalResponse(req, res, responseJSON)
+		log.Warn().Err(err).Msg("Failed to create temporary file for streaming response")
+		_, err = handleNormalResponse(req, res, responseJSON)
 		return nil, err
 	}
-	defer cli.closeTemp(file)
+	defer closeTemp(log, file)
 	if _, err = io.Copy(file, res.Body); err != nil {
 		return nil, fmt.Errorf("failed to copy response to file: %w", err)
 	} else if _, err = file.Seek(0, 0); err != nil {
@@ -448,8 +490,8 @@ func (cli *Client) streamResponse(req *http.Request, res *http.Response, respons
 	}
 }
 
-func (cli *Client) handleNormalResponse(req *http.Request, res *http.Response, responseJSON interface{}) ([]byte, error) {
-	if contents, err := cli.readRequestBody(req, res); err != nil {
+func handleNormalResponse(req *http.Request, res *http.Response, responseJSON interface{}) ([]byte, error) {
+	if contents, err := readRequestBody(req, res); err != nil {
 		return nil, err
 	} else if responseJSON == nil {
 		return contents, nil
@@ -467,8 +509,8 @@ func (cli *Client) handleNormalResponse(req *http.Request, res *http.Response, r
 	}
 }
 
-func (cli *Client) handleResponseError(req *http.Request, res *http.Response) ([]byte, error) {
-	contents, err := cli.readRequestBody(req, res)
+func ParseErrorResponse(req *http.Request, res *http.Response) ([]byte, error) {
+	contents, err := readRequestBody(req, res)
 	if err != nil {
 		return contents, err
 	}
@@ -485,36 +527,8 @@ func (cli *Client) handleResponseError(req *http.Request, res *http.Response) ([
 	}
 }
 
-// parseBackoffFromResponse extracts the backoff time specified in the Retry-After header if present. See
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After.
-func (cli *Client) parseBackoffFromResponse(res *http.Response, now time.Time, fallback time.Duration) time.Duration {
-	retryAfterHeaderValue := res.Header.Get("Retry-After")
-	if retryAfterHeaderValue == "" {
-		return fallback
-	}
-
-	if t, err := time.Parse(http.TimeFormat, retryAfterHeaderValue); err == nil {
-		return t.Sub(now)
-	}
-
-	if seconds, err := strconv.Atoi(retryAfterHeaderValue); err == nil {
-		return time.Duration(seconds) * time.Second
-	}
-
-	cli.logWarning(`Failed to parse Retry-After header value "%s"`, retryAfterHeaderValue)
-
-	return fallback
-}
-
-func (cli *Client) shouldRetry(res *http.Response) bool {
-	return res.StatusCode == http.StatusBadGateway ||
-		res.StatusCode == http.StatusServiceUnavailable ||
-		res.StatusCode == http.StatusGatewayTimeout ||
-		(res.StatusCode == http.StatusTooManyRequests && !cli.IgnoreRateLimit)
-}
-
 func (cli *Client) executeCompiledRequest(req *http.Request, retries int, backoff time.Duration, responseJSON interface{}, handler ClientResponseHandler) ([]byte, error) {
-	cli.LogRequest(req)
+	cli.RequestStart(req)
 	startTime := time.Now()
 	res, err := cli.Client.Do(req)
 	duration := time.Now().Sub(startTime)
@@ -525,29 +539,29 @@ func (cli *Client) executeCompiledRequest(req *http.Request, retries int, backof
 		if retries > 0 {
 			return cli.doRetry(req, err, retries, backoff, responseJSON, handler)
 		}
-		return nil, HTTPError{
+		err = HTTPError{
 			Request:  req,
 			Response: res,
 
 			Message:      "request error",
 			WrappedError: err,
 		}
+		cli.LogRequestDone(req, res, err, nil, 0, duration)
+		return nil, err
 	}
 
-	if retries > 0 && cli.shouldRetry(res) {
-		if res.StatusCode == http.StatusTooManyRequests {
-			backoff = cli.parseBackoffFromResponse(res, time.Now(), backoff)
-		}
+	if retries > 0 && retryafter.Should(res.StatusCode, !cli.IgnoreRateLimit) {
+		backoff = retryafter.Parse(res.Header.Get("Retry-After"), backoff)
 		return cli.doRetry(req, fmt.Errorf("HTTP %d", res.StatusCode), retries, backoff, responseJSON, handler)
 	}
 
 	var body []byte
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		body, err = cli.handleResponseError(req, res)
-		cli.LogRequestDone(req, res, nil, len(body), duration)
+		body, err = ParseErrorResponse(req, res)
+		cli.LogRequestDone(req, res, nil, nil, len(body), duration)
 	} else {
 		body, err = handler(req, res, responseJSON)
-		cli.LogRequestDone(req, res, err, len(body), duration)
+		cli.LogRequestDone(req, res, nil, err, len(body), duration)
 	}
 	return body, err
 }
@@ -620,7 +634,7 @@ func (cli *Client) FullSyncRequest(req ReqSync) (resp *RespSync, err error) {
 		MaxAttempts: 1,
 	}
 	if req.StreamResponse {
-		fullReq.Handler = cli.streamResponse
+		fullReq.Handler = streamResponse
 	}
 	start := time.Now()
 	_, err = cli.MakeFullRequest(fullReq)
@@ -631,7 +645,11 @@ func (cli *Client) FullSyncRequest(req ReqSync) (resp *RespSync, err error) {
 		buffer = 1 * time.Minute
 	}
 	if err == nil && duration > timeout+buffer {
-		cli.logWarning("Sync request (%s) took %s with timeout %s", req.Since, duration, timeout)
+		cli.cliOrContextLog(fullReq.Context).Warn().
+			Str("since", req.Since).
+			Dur("duration", duration).
+			Dur("timeout", timeout).
+			Msg("Sync request took unusually long")
 	}
 	return
 }
@@ -760,15 +778,24 @@ func (cli *Client) Login(req *ReqLogin) (resp *RespLogin, err error) {
 		cli.DeviceID = resp.DeviceID
 		cli.AccessToken = resp.AccessToken
 		cli.UserID = resp.UserID
-		cli.Logger.Debugfln("Stored credentials for %s/%s after login", cli.UserID, cli.DeviceID)
+
+		cli.Log.Debug().
+			Str("user_id", cli.UserID.String()).
+			Str("device_id", cli.DeviceID.String()).
+			Msg("Stored credentials after login")
 	}
 	if req.StoreHomeserverURL && err == nil && resp.WellKnown != nil && len(resp.WellKnown.Homeserver.BaseURL) > 0 {
 		var urlErr error
 		cli.HomeserverURL, urlErr = url.Parse(resp.WellKnown.Homeserver.BaseURL)
 		if urlErr != nil {
-			cli.logWarning("Failed to parse homeserver URL '%s' in login response: %v", resp.WellKnown.Homeserver.BaseURL, urlErr)
+			cli.Log.Warn().
+				Err(urlErr).
+				Str("homeserver_url", resp.WellKnown.Homeserver.BaseURL).
+				Msg("Failed to parse homeserver URL in login response")
 		} else {
-			cli.Logger.Debugfln("Updated homeserver URL to %s after login", cli.HomeserverURL.String())
+			cli.Log.Debug().
+				Str("homeserver_url", cli.HomeserverURL.String()).
+				Msg("Updated homeserver URL after login")
 		}
 	}
 	return
@@ -818,6 +845,9 @@ func (cli *Client) JoinRoom(roomIDorAlias, serverName string, content interface{
 		urlPath = cli.BuildClientURL("v3", "join", roomIDorAlias)
 	}
 	_, err = cli.MakeRequest("POST", urlPath, content, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.SetMembership(resp.RoomID, cli.UserID, event.MembershipJoin)
+	}
 	return
 }
 
@@ -827,6 +857,15 @@ func (cli *Client) JoinRoom(roomIDorAlias, serverName string, content interface{
 // It's mostly intended for bridges and other things where it's already certain that the server is in the room.
 func (cli *Client) JoinRoomByID(roomID id.RoomID) (resp *RespJoinRoom, err error) {
 	_, err = cli.MakeRequest("POST", cli.BuildClientURL("v3", "rooms", roomID, "join"), nil, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.SetMembership(resp.RoomID, cli.UserID, event.MembershipJoin)
+	}
+	return
+}
+
+func (cli *Client) GetProfile(mxid id.UserID) (resp *RespUserProfile, err error) {
+	urlPath := cli.BuildClientURL("v3", "profile", mxid)
+	_, err = cli.MakeRequest("GET", urlPath, nil, &resp)
 	return
 }
 
@@ -886,6 +925,13 @@ func (cli *Client) SetAvatarURL(url id.ContentURI) (err error) {
 	return nil
 }
 
+// BeeperUpdateProfile sets custom fields in the user's profile.
+func (cli *Client) BeeperUpdateProfile(data map[string]any) (err error) {
+	urlPath := cli.BuildClientURL("v3", "profile", cli.UserID)
+	_, err = cli.MakeRequest("PATCH", urlPath, &data, nil)
+	return
+}
+
 // GetAccountData gets the user's account data of this type. See https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype
 func (cli *Client) GetAccountData(name string, output interface{}) (err error) {
 	urlPath := cli.BuildClientURL("v3", "user", cli.UserID, "account_data", name)
@@ -896,7 +942,7 @@ func (cli *Client) GetAccountData(name string, output interface{}) (err error) {
 // SetAccountData sets the user's account data of this type. See https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridaccount_datatype
 func (cli *Client) SetAccountData(name string, data interface{}) (err error) {
 	urlPath := cli.BuildClientURL("v3", "user", cli.UserID, "account_data", name)
-	_, err = cli.MakeRequest("PUT", urlPath, &data, nil)
+	_, err = cli.MakeRequest("PUT", urlPath, data, nil)
 	if err != nil {
 		return err
 	}
@@ -914,7 +960,7 @@ func (cli *Client) GetRoomAccountData(roomID id.RoomID, name string, output inte
 // SetRoomAccountData sets the user's account data of this type in a specific room. See https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridroomsroomidaccount_datatype
 func (cli *Client) SetRoomAccountData(roomID id.RoomID, name string, data interface{}) (err error) {
 	urlPath := cli.BuildClientURL("v3", "user", cli.UserID, "rooms", roomID, "account_data", name)
-	_, err = cli.MakeRequest("PUT", urlPath, &data, nil)
+	_, err = cli.MakeRequest("PUT", urlPath, data, nil)
 	if err != nil {
 		return err
 	}
@@ -925,6 +971,8 @@ func (cli *Client) SetRoomAccountData(roomID id.RoomID, name string, data interf
 type ReqSendEvent struct {
 	Timestamp     int64
 	TransactionID string
+
+	DontEncrypt bool
 
 	MeowEventID id.EventID
 }
@@ -952,8 +1000,16 @@ func (cli *Client) SendMessageEvent(roomID id.RoomID, eventType event.Type, cont
 		queryParams["fi.mau.event_id"] = req.MeowEventID.String()
 	}
 
-	urlData := ClientURLPath{"v3", "rooms", roomID, "send", eventType.String(), txnID}
+	if !req.DontEncrypt && cli.Crypto != nil && eventType != event.EventReaction && eventType != event.EventEncrypted && cli.StateStore.IsEncrypted(roomID) {
+		contentJSON, err = cli.Crypto.Encrypt(roomID, eventType, contentJSON)
+		if err != nil {
+			err = fmt.Errorf("failed to encrypt event: %w", err)
+			return
+		}
+		eventType = event.EventEncrypted
+	}
 
+	urlData := ClientURLPath{"v3", "rooms", roomID, "send", eventType.String(), txnID}
 	urlPath := cli.BuildURLWithQuery(urlData, queryParams)
 	_, err = cli.MakeRequest("PUT", urlPath, contentJSON, &resp)
 	return
@@ -964,6 +1020,9 @@ func (cli *Client) SendMessageEvent(roomID id.RoomID, eventType event.Type, cont
 func (cli *Client) SendStateEvent(roomID id.RoomID, eventType event.Type, stateKey string, contentJSON interface{}) (resp *RespSendEvent, err error) {
 	urlPath := cli.BuildClientURL("v3", "rooms", roomID, "state", eventType.String(), stateKey)
 	_, err = cli.MakeRequest("PUT", urlPath, contentJSON, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.updateStoreWithOutgoingEvent(roomID, eventType, stateKey, contentJSON)
+	}
 	return
 }
 
@@ -974,6 +1033,9 @@ func (cli *Client) SendMassagedStateEvent(roomID id.RoomID, eventType event.Type
 		"ts": strconv.FormatInt(ts, 10),
 	})
 	_, err = cli.MakeRequest("PUT", urlPath, contentJSON, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.updateStoreWithOutgoingEvent(roomID, eventType, stateKey, contentJSON)
+	}
 	return
 }
 
@@ -983,30 +1045,6 @@ func (cli *Client) SendText(roomID id.RoomID, text string) (*RespSendEvent, erro
 	return cli.SendMessageEvent(roomID, event.EventMessage, &event.MessageEventContent{
 		MsgType: event.MsgText,
 		Body:    text,
-	})
-}
-
-// SendImage sends an m.room.message event into the given room with a msgtype of m.image
-// See https://spec.matrix.org/v1.2/client-server-api/#mimage
-//
-// Deprecated: This does not allow setting image metadata, you should prefer SendMessageEvent with a properly filled &event.MessageEventContent
-func (cli *Client) SendImage(roomID id.RoomID, body string, url id.ContentURI) (*RespSendEvent, error) {
-	return cli.SendMessageEvent(roomID, event.EventMessage, &event.MessageEventContent{
-		MsgType: event.MsgImage,
-		Body:    body,
-		URL:     url.CUString(),
-	})
-}
-
-// SendVideo sends an m.room.message event into the given room with a msgtype of m.video
-// See https://spec.matrix.org/v1.2/client-server-api/#mvideo
-//
-// Deprecated: This does not allow setting video metadata, you should prefer SendMessageEvent with a properly filled &event.MessageEventContent
-func (cli *Client) SendVideo(roomID id.RoomID, body string, url id.ContentURI) (*RespSendEvent, error) {
-	return cli.SendMessageEvent(roomID, event.EventMessage, &event.MessageEventContent{
-		MsgType: event.MsgVideo,
-		Body:    body,
-		URL:     url.CUString(),
 	})
 }
 
@@ -1061,6 +1099,22 @@ func (cli *Client) RedactEvent(roomID id.RoomID, eventID id.EventID, extra ...Re
 func (cli *Client) CreateRoom(req *ReqCreateRoom) (resp *RespCreateRoom, err error) {
 	urlPath := cli.BuildClientURL("v3", "createRoom")
 	_, err = cli.MakeRequest("POST", urlPath, req, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.SetMembership(resp.RoomID, cli.UserID, event.MembershipJoin)
+		for _, evt := range req.InitialState {
+			UpdateStateStore(cli.StateStore, evt)
+		}
+		inviteMembership := event.MembershipInvite
+		if req.BeeperAutoJoinInvites {
+			inviteMembership = event.MembershipJoin
+		}
+		for _, invitee := range req.Invite {
+			cli.StateStore.SetMembership(resp.RoomID, invitee, inviteMembership)
+		}
+		for _, evt := range req.InitialState {
+			cli.updateStoreWithOutgoingEvent(resp.RoomID, evt.Type, evt.GetStateKey(), &evt.Content)
+		}
+	}
 	return
 }
 
@@ -1074,6 +1128,9 @@ func (cli *Client) LeaveRoom(roomID id.RoomID, optionalReq ...*ReqLeave) (resp *
 	}
 	u := cli.BuildClientURL("v3", "rooms", roomID, "leave")
 	_, err = cli.MakeRequest("POST", u, req, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.SetMembership(roomID, cli.UserID, event.MembershipLeave)
+	}
 	return
 }
 
@@ -1088,6 +1145,9 @@ func (cli *Client) ForgetRoom(roomID id.RoomID) (resp *RespForgetRoom, err error
 func (cli *Client) InviteUser(roomID id.RoomID, req *ReqInviteUser) (resp *RespInviteUser, err error) {
 	u := cli.BuildClientURL("v3", "rooms", roomID, "invite")
 	_, err = cli.MakeRequest("POST", u, req, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.SetMembership(roomID, req.UserID, event.MembershipInvite)
+	}
 	return
 }
 
@@ -1102,6 +1162,9 @@ func (cli *Client) InviteUserByThirdParty(roomID id.RoomID, req *ReqInvite3PID) 
 func (cli *Client) KickUser(roomID id.RoomID, req *ReqKickUser) (resp *RespKickUser, err error) {
 	u := cli.BuildClientURL("v3", "rooms", roomID, "kick")
 	_, err = cli.MakeRequest("POST", u, req, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.SetMembership(roomID, req.UserID, event.MembershipLeave)
+	}
 	return
 }
 
@@ -1109,6 +1172,9 @@ func (cli *Client) KickUser(roomID id.RoomID, req *ReqKickUser) (resp *RespKickU
 func (cli *Client) BanUser(roomID id.RoomID, req *ReqBanUser) (resp *RespBanUser, err error) {
 	u := cli.BuildClientURL("v3", "rooms", roomID, "ban")
 	_, err = cli.MakeRequest("POST", u, req, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.SetMembership(roomID, req.UserID, event.MembershipBan)
+	}
 	return
 }
 
@@ -1116,6 +1182,9 @@ func (cli *Client) BanUser(roomID id.RoomID, req *ReqBanUser) (resp *RespBanUser
 func (cli *Client) UnbanUser(roomID id.RoomID, req *ReqUnbanUser) (resp *RespUnbanUser, err error) {
 	u := cli.BuildClientURL("v3", "rooms", roomID, "unban")
 	_, err = cli.MakeRequest("POST", u, req, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.SetMembership(roomID, req.UserID, event.MembershipLeave)
+	}
 	return
 }
 
@@ -1147,12 +1216,48 @@ func (cli *Client) SetPresence(status event.Presence) (err error) {
 	return
 }
 
+func (cli *Client) updateStoreWithOutgoingEvent(roomID id.RoomID, eventType event.Type, stateKey string, contentJSON interface{}) {
+	if cli.StateStore == nil {
+		return
+	}
+	fakeEvt := &event.Event{
+		StateKey: &stateKey,
+		Type:     eventType,
+		RoomID:   roomID,
+	}
+	var err error
+	fakeEvt.Content.VeryRaw, err = json.Marshal(contentJSON)
+	if err != nil {
+		cli.Log.Warn().Err(err).Msg("Failed to marshal state event content to update state store")
+		return
+	}
+	err = json.Unmarshal(fakeEvt.Content.VeryRaw, &fakeEvt.Content.Raw)
+	if err != nil {
+		cli.Log.Warn().Err(err).Msg("Failed to unmarshal state event content to update state store")
+		return
+	}
+	err = fakeEvt.Content.ParseRaw(fakeEvt.Type)
+	if err != nil {
+		switch fakeEvt.Type {
+		case event.StateMember, event.StatePowerLevels, event.StateEncryption:
+			cli.Log.Warn().Err(err).Msg("Failed to parse state event content to update state store")
+		default:
+			cli.Log.Debug().Err(err).Msg("Failed to parse state event content to update state store")
+		}
+		return
+	}
+	UpdateStateStore(cli.StateStore, fakeEvt)
+}
+
 // StateEvent gets a single state event in a room. It will attempt to JSON unmarshal into the given "outContent" struct with
 // the HTTP response body, or return an error.
 // See https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey
 func (cli *Client) StateEvent(roomID id.RoomID, eventType event.Type, stateKey string, outContent interface{}) (err error) {
 	u := cli.BuildClientURL("v3", "rooms", roomID, "state", eventType.String(), stateKey)
 	_, err = cli.MakeRequest("GET", u, nil, outContent)
+	if err == nil && cli.StateStore != nil {
+		cli.updateStoreWithOutgoingEvent(roomID, eventType, stateKey, outContent)
+	}
 	return
 }
 
@@ -1176,6 +1281,7 @@ func parseRoomStateArray(_ *http.Request, res *http.Response, responseJSON inter
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse state array item #%d: %v", i, err)
 		}
+		evt.Type.Class = event.StateEventType
 		_ = evt.Content.ParseRaw(evt.Type)
 		subMap, ok := response[evt.Type]
 		if !ok {
@@ -1203,6 +1309,14 @@ func (cli *Client) State(roomID id.RoomID) (stateMap RoomStateMap, err error) {
 		ResponseJSON: &stateMap,
 		Handler:      parseRoomStateArray,
 	})
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.ClearCachedMembers(roomID)
+		for _, evts := range stateMap {
+			for _, evt := range evts {
+				UpdateStateStore(cli.StateStore, evt)
+			}
+		}
+	}
 	return
 }
 
@@ -1234,15 +1348,80 @@ func (cli *Client) Download(mxcURL id.ContentURI) (io.ReadCloser, error) {
 }
 
 func (cli *Client) DownloadContext(ctx context.Context, mxcURL id.ContentURI) (io.ReadCloser, error) {
-	if req, err := http.NewRequestWithContext(ctx, http.MethodGet, cli.GetDownloadURL(mxcURL), nil); err != nil {
+	resp, err := cli.downloadContext(ctx, mxcURL)
+	if err != nil {
 		return nil, err
-	} else if req.Header.Set("User-Agent", cli.UserAgent+" (media downloader)"); false {
-		panic("false is true")
-	} else if resp, err := cli.Client.Do(req); err != nil {
-		return nil, err
-	} else {
-		return resp.Body, nil
 	}
+	return resp.Body, nil
+}
+
+func (cli *Client) doMediaRetry(req *http.Request, cause error, retries int, backoff time.Duration) (*http.Response, error) {
+	log := zerolog.Ctx(req.Context())
+	if req.Body != nil {
+		if req.GetBody == nil {
+			log.Warn().Msg("Failed to get new body to retry request: GetBody is nil")
+			return nil, cause
+		}
+		var err error
+		req.Body, err = req.GetBody()
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to get new body to retry request")
+			return nil, cause
+		}
+	}
+	log.Warn().Err(cause).
+		Int("retry_in_seconds", int(backoff.Seconds())).
+		Msg("Request failed, retrying")
+	time.Sleep(backoff)
+	return cli.doMediaRequest(req, retries-1, backoff*2)
+}
+
+func (cli *Client) doMediaRequest(req *http.Request, retries int, backoff time.Duration) (*http.Response, error) {
+	cli.RequestStart(req)
+	startTime := time.Now()
+	res, err := cli.Client.Do(req)
+	duration := time.Now().Sub(startTime)
+	if err != nil {
+		if retries > 0 {
+			return cli.doMediaRetry(req, err, retries, backoff)
+		}
+		err = HTTPError{
+			Request:  req,
+			Response: res,
+
+			Message:      "request error",
+			WrappedError: err,
+		}
+		cli.LogRequestDone(req, res, err, nil, 0, duration)
+		return nil, err
+	}
+
+	if retries > 0 && retryafter.Should(res.StatusCode, !cli.IgnoreRateLimit) {
+		backoff = retryafter.Parse(res.Header.Get("Retry-After"), backoff)
+		return cli.doMediaRetry(req, fmt.Errorf("HTTP %d", res.StatusCode), retries, backoff)
+	}
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		var body []byte
+		body, err = ParseErrorResponse(req, res)
+		cli.LogRequestDone(req, res, err, nil, len(body), duration)
+	} else {
+		cli.LogRequestDone(req, res, nil, nil, -1, duration)
+	}
+	return res, err
+}
+
+func (cli *Client) downloadContext(ctx context.Context, mxcURL id.ContentURI) (*http.Response, error) {
+	ctxLog := zerolog.Ctx(ctx)
+	if ctxLog.GetLevel() == zerolog.Disabled || ctxLog == zerolog.DefaultContextLogger {
+		ctx = cli.Log.WithContext(ctx)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cli.GetDownloadURL(mxcURL), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", cli.UserAgent+" (media downloader)")
+	return cli.doMediaRequest(req, cli.DefaultHTTPRetries, 4*time.Second)
 }
 
 func (cli *Client) DownloadBytes(mxcURL id.ContentURI) ([]byte, error) {
@@ -1250,18 +1429,19 @@ func (cli *Client) DownloadBytes(mxcURL id.ContentURI) ([]byte, error) {
 }
 
 func (cli *Client) DownloadBytesContext(ctx context.Context, mxcURL id.ContentURI) ([]byte, error) {
-	resp, err := cli.DownloadContext(ctx, mxcURL)
+	resp, err := cli.downloadContext(ctx, mxcURL)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Close()
-	return io.ReadAll(resp)
+	defer resp.Body.Close()
+	return io.ReadAll(resp.Body)
 }
 
-// UnstableCreateMXC creates a blank Matrix content URI to allow uploading the content asynchronously later.
-// See https://github.com/matrix-org/matrix-spec-proposals/pull/2246
-func (cli *Client) UnstableCreateMXC() (*RespCreateMXC, error) {
-	u, _ := url.Parse(cli.BuildURL(MediaURLPath{"unstable", "fi.mau.msc2246", "create"}))
+// CreateMXC creates a blank Matrix content URI to allow uploading the content asynchronously later.
+//
+// See https://spec.matrix.org/v1.7/client-server-api/#post_matrixmediav1create
+func (cli *Client) CreateMXC() (*RespCreateMXC, error) {
+	u, _ := url.Parse(cli.BuildURL(MediaURLPath{"v1", "create"}))
 	var m RespCreateMXC
 	_, err := cli.MakeFullRequest(FullRequest{
 		Method:       http.MethodPost,
@@ -1271,19 +1451,22 @@ func (cli *Client) UnstableCreateMXC() (*RespCreateMXC, error) {
 	return &m, err
 }
 
-// UnstableUploadAsync creates a blank content URI with UnstableCreateMXC, starts uploading the data in the background
-// and returns the created MXC immediately. See https://github.com/matrix-org/matrix-spec-proposals/pull/2246 for more info.
-func (cli *Client) UnstableUploadAsync(req ReqUploadMedia) (*RespCreateMXC, error) {
-	resp, err := cli.UnstableCreateMXC()
+// UploadAsync creates a blank content URI with CreateMXC, starts uploading the data in the background
+// and returns the created MXC immediately.
+//
+// See https://spec.matrix.org/v1.7/client-server-api/#post_matrixmediav1create
+// and https://spec.matrix.org/v1.7/client-server-api/#put_matrixmediav3uploadservernamemediaid
+func (cli *Client) UploadAsync(req ReqUploadMedia) (*RespCreateMXC, error) {
+	resp, err := cli.CreateMXC()
 	if err != nil {
 		return nil, err
 	}
-	req.UnstableMXC = resp.ContentURI
-	req.UploadURL = resp.UploadURL
+	req.MXC = resp.ContentURI
+	req.UnstableUploadURL = resp.UnstableUploadURL
 	go func() {
 		_, err = cli.UploadMedia(req)
 		if err != nil {
-			cli.logWarning("Failed to upload %s: %v", req.UnstableMXC, err)
+			cli.Log.Error().Str("mxc", req.MXC.String()).Err(err).Msg("Async upload of media failed")
 		}
 	}()
 	return resp, nil
@@ -1319,13 +1502,25 @@ type ReqUploadMedia struct {
 	ContentType   string
 	FileName      string
 
-	// UnstableMXC specifies an existing MXC URI which doesn't have content yet to upload into.
-	// See https://github.com/matrix-org/matrix-spec-proposals/pull/2246 for more info.
-	UnstableMXC id.ContentURI
+	// MXC specifies an existing MXC URI which doesn't have content yet to upload into.
+	// See https://spec.matrix.org/unstable/client-server-api/#put_matrixmediav3uploadservernamemediaid
+	MXC id.ContentURI
 
-	// UploadURL specifies the URL to upload the content to (MSC3870)
+	// UnstableUploadURL specifies the URL to upload the content to. MXC must also be set.
 	// see https://github.com/matrix-org/matrix-spec-proposals/pull/3870 for more info
-	UploadURL string
+	UnstableUploadURL string
+}
+
+func (cli *Client) tryUploadMediaToURL(url, contentType string, content io.Reader) (*http.Response, error) {
+	cli.Log.Debug().Str("url", url).Msg("Uploading media to external URL")
+	req, err := http.NewRequest(http.MethodPut, url, content)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("User-Agent", cli.UserAgent+" (external media uploader)")
+
+	return http.DefaultClient.Do(req)
 }
 
 func (cli *Client) uploadMediaToURL(data ReqUploadMedia) (*RespMediaUpload, error) {
@@ -1335,29 +1530,28 @@ func (cli *Client) uploadMediaToURL(data ReqUploadMedia) (*RespMediaUpload, erro
 		retries = 0
 	}
 	for {
-		if data.Content == nil {
-			data.Content = bytes.NewReader(data.ContentBytes)
+		reader := data.Content
+		if reader == nil {
+			reader = bytes.NewReader(data.ContentBytes)
+		} else {
+			data.Content = nil
 		}
-		cli.Logger.Debugfln("Uploading media to external URL %s", data.UploadURL)
-		req, err := http.NewRequest(http.MethodPut, data.UploadURL, data.Content)
-		if err != nil {
+		resp, err := cli.tryUploadMediaToURL(data.UnstableUploadURL, data.ContentType, reader)
+		if err == nil {
+			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+				// Everything is fine
+				break
+			}
+			err = fmt.Errorf("HTTP %d", resp.StatusCode)
+		}
+		if retries <= 0 {
+			cli.Log.Warn().Str("url", data.UnstableUploadURL).Err(err).
+				Msg("Error uploading media to external URL, not retrying")
 			return nil, err
 		}
-		// Tell the next retry to create a new reader from ContentBytes
-		data.Content = nil
-		req.Header.Set("Content-Type", data.ContentType)
-		req.Header.Set("User-Agent", cli.UserAgent+" (external media uploader)")
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			cli.Logger.Debugfln("Error uploading media to %s: %v, retrying", data.UploadURL, err)
-			retries--
-		} else if resp.StatusCode >= 400 || resp.StatusCode < 200 {
-			cli.Logger.Debugfln("Error uploading media to %s: HTTP %d, retrying", data.UploadURL, resp.StatusCode)
-			retries--
-		} else {
-			break
-		}
+		cli.Log.Warn().Str("url", data.UnstableUploadURL).Err(err).
+			Msg("Error uploading media to external URL, retrying")
+		retries--
 	}
 
 	query := map[string]string{}
@@ -1365,7 +1559,7 @@ func (cli *Client) uploadMediaToURL(data ReqUploadMedia) (*RespMediaUpload, erro
 		query["filename"] = data.FileName
 	}
 
-	notifyURL := cli.BuildURLWithQuery(MediaURLPath{"unstable", "fi.mau.msc2246", "upload", data.UnstableMXC.Homeserver, data.UnstableMXC.FileID, "complete"}, query)
+	notifyURL := cli.BuildURLWithQuery(MediaURLPath{"unstable", "com.beeper.msc3870", "upload", data.MXC.Homeserver, data.MXC.FileID, "complete"}, query)
 
 	var m *RespMediaUpload
 	_, err := cli.MakeFullRequest(FullRequest{
@@ -1381,15 +1575,18 @@ func (cli *Client) uploadMediaToURL(data ReqUploadMedia) (*RespMediaUpload, erro
 }
 
 // UploadMedia uploads the given data to the content repository and returns an MXC URI.
-// See https://spec.matrix.org/v1.2/client-server-api/#post_matrixmediav3upload
+// See https://spec.matrix.org/v1.7/client-server-api/#post_matrixmediav3upload
 func (cli *Client) UploadMedia(data ReqUploadMedia) (*RespMediaUpload, error) {
-	if data.UploadURL != "" {
+	if data.UnstableUploadURL != "" {
+		if data.MXC.IsEmpty() {
+			return nil, errors.New("MXC must also be set when uploading to external URL")
+		}
 		return cli.uploadMediaToURL(data)
 	}
 	u, _ := url.Parse(cli.BuildURL(MediaURLPath{"v3", "upload"}))
 	method := http.MethodPost
-	if !data.UnstableMXC.IsEmpty() {
-		u, _ = url.Parse(cli.BuildURL(MediaURLPath{"unstable", "fi.mau.msc2246", "upload", data.UnstableMXC.Homeserver, data.UnstableMXC.FileID}))
+	if !data.MXC.IsEmpty() {
+		u, _ = url.Parse(cli.BuildURL(MediaURLPath{"v3", "upload", data.MXC.Homeserver, data.MXC.FileID}))
 		method = http.MethodPut
 	}
 	if len(data.FileName) > 0 {
@@ -1435,6 +1632,16 @@ func (cli *Client) GetURLPreview(url string) (*RespPreviewURL, error) {
 func (cli *Client) JoinedMembers(roomID id.RoomID) (resp *RespJoinedMembers, err error) {
 	u := cli.BuildClientURL("v3", "rooms", roomID, "joined_members")
 	_, err = cli.MakeRequest("GET", u, nil, &resp)
+	if err == nil && cli.StateStore != nil {
+		cli.StateStore.ClearCachedMembers(roomID, event.MembershipJoin)
+		for userID, member := range resp.Joined {
+			cli.StateStore.SetMember(roomID, userID, &event.MemberEventContent{
+				Membership:  event.MembershipJoin,
+				AvatarURL:   id.ContentURIString(member.AvatarURL),
+				Displayname: member.DisplayName,
+			})
+		}
+	}
 	return
 }
 
@@ -1455,6 +1662,18 @@ func (cli *Client) Members(roomID id.RoomID, req ...ReqMembers) (resp *RespMembe
 	}
 	u := cli.BuildURLWithQuery(ClientURLPath{"v3", "rooms", roomID, "members"}, query)
 	_, err = cli.MakeRequest("GET", u, nil, &resp)
+	if err == nil && cli.StateStore != nil {
+		var clearMemberships []event.Membership
+		if extra.Membership != "" {
+			clearMemberships = append(clearMemberships, extra.Membership)
+		}
+		if extra.NotMembership == "" {
+			cli.StateStore.ClearCachedMembers(roomID, clearMemberships...)
+		}
+		for _, evt := range resp.Chunk {
+			UpdateStateStore(cli.StateStore, evt)
+		}
+	}
 	return
 }
 
@@ -1468,10 +1687,22 @@ func (cli *Client) JoinedRooms() (resp *RespJoinedRooms, err error) {
 	return
 }
 
+// Hierarchy returns a list of rooms that are in the room's hierarchy. See https://spec.matrix.org/v1.4/client-server-api/#get_matrixclientv1roomsroomidhierarchy
+//
+// The hierarchy API is provided to walk the space tree and discover the rooms with their aesthetic details. works in a depth-first manner:
+// when it encounters another space as a child it recurses into that space before returning non-space children.
+//
+// The second function parameter specifies query parameters to limit the response. No query parameters will be added if it's nil.
+func (cli *Client) Hierarchy(roomID id.RoomID, req *ReqHierarchy) (resp *RespHierarchy, err error) {
+	urlPath := cli.BuildURLWithQuery(ClientURLPath{"v1", "rooms", roomID, "hierarchy"}, req.Query())
+	_, err = cli.MakeRequest(http.MethodGet, urlPath, nil, &resp)
+	return
+}
+
 // Messages returns a list of message and state events for a room. It uses
 // pagination query parameters to paginate history in the room.
 // See https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidmessages
-func (cli *Client) Messages(roomID id.RoomID, from, to string, dir rune, filter *FilterPart, limit int) (resp *RespMessages, err error) {
+func (cli *Client) Messages(roomID id.RoomID, from, to string, dir Direction, filter *FilterPart, limit int) (resp *RespMessages, err error) {
 	query := map[string]string{
 		"from": from,
 		"dir":  string(dir),
@@ -1492,6 +1723,19 @@ func (cli *Client) Messages(roomID id.RoomID, from, to string, dir rune, filter 
 
 	urlPath := cli.BuildURLWithQuery(ClientURLPath{"v3", "rooms", roomID, "messages"}, query)
 	_, err = cli.MakeRequest("GET", urlPath, nil, &resp)
+	return
+}
+
+// TimestampToEvent finds the ID of the event closest to the given timestamp.
+//
+// See https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv1roomsroomidtimestamp_to_event
+func (cli *Client) TimestampToEvent(roomID id.RoomID, timestamp time.Time, dir Direction) (resp *RespTimestampToEvent, err error) {
+	query := map[string]string{
+		"ts":  strconv.FormatInt(timestamp.UnixMilli(), 10),
+		"dir": string(dir),
+	}
+	urlPath := cli.BuildURLWithQuery(ClientURLPath{"v1", "rooms", roomID, "timestamp_to_event"}, query)
+	_, err = cli.MakeRequest(http.MethodGet, urlPath, nil, &resp)
 	return
 }
 
@@ -1524,20 +1768,29 @@ func (cli *Client) GetEvent(roomID id.RoomID, eventID id.EventID) (resp *event.E
 }
 
 func (cli *Client) MarkRead(roomID id.RoomID, eventID id.EventID) (err error) {
-	return cli.MarkReadWithContent(roomID, eventID, struct{}{})
+	return cli.SendReceipt(roomID, eventID, event.ReceiptTypeRead, nil)
 }
 
 // MarkReadWithContent sends a read receipt including custom data.
-// N.B. This is not (yet) a part of the spec, normal servers will drop any extra content.
+//
+// Deprecated: Use SendReceipt instead.
 func (cli *Client) MarkReadWithContent(roomID id.RoomID, eventID id.EventID, content interface{}) (err error) {
-	urlPath := cli.BuildClientURL("v3", "rooms", roomID, "receipt", "m.read", eventID)
-	_, err = cli.MakeRequest("POST", urlPath, &content, nil)
+	return cli.SendReceipt(roomID, eventID, event.ReceiptTypeRead, content)
+}
+
+// SendReceipt sends a receipt, usually specifically a read receipt.
+//
+// Passing nil as the content is safe, the library will automatically replace it with an empty JSON object.
+// To mark a message in a specific thread as read, use pass a ReqSendReceipt as the content.
+func (cli *Client) SendReceipt(roomID id.RoomID, eventID id.EventID, receiptType event.ReceiptType, content interface{}) (err error) {
+	urlPath := cli.BuildClientURL("v3", "rooms", roomID, "receipt", receiptType, eventID)
+	_, err = cli.MakeRequest("POST", urlPath, content, nil)
 	return
 }
 
 func (cli *Client) SetReadMarkers(roomID id.RoomID, content interface{}) (err error) {
 	urlPath := cli.BuildClientURL("v3", "rooms", roomID, "read_markers")
-	_, err = cli.MakeRequest("POST", urlPath, &content, nil)
+	_, err = cli.MakeRequest("POST", urlPath, content, nil)
 	return
 }
 
@@ -1751,7 +2004,7 @@ func (cli *Client) PutPushRule(scope string, kind pushrules.PushRuleType, ruleID
 
 // BatchSend sends a batch of historical events into a room. This is only available for appservices.
 //
-// See https://github.com/matrix-org/matrix-doc/pull/2716 for more info.
+// Deprecated: MSC2716 has been abandoned, so this is now Beeper-specific. BeeperBatchSend should be used instead.
 func (cli *Client) BatchSend(roomID id.RoomID, req *ReqBatchSend) (resp *RespBatchSend, err error) {
 	path := ClientURLPath{"unstable", "org.matrix.msc2716", "rooms", roomID, "batch_send"}
 	query := map[string]string{
@@ -1760,10 +2013,49 @@ func (cli *Client) BatchSend(roomID id.RoomID, req *ReqBatchSend) (resp *RespBat
 	if req.BeeperNewMessages {
 		query["com.beeper.new_messages"] = "true"
 	}
+	if req.BeeperMarkReadBy != "" {
+		query["com.beeper.mark_read_by"] = req.BeeperMarkReadBy.String()
+	}
 	if len(req.BatchID) > 0 {
 		query["batch_id"] = req.BatchID.String()
 	}
 	_, err = cli.MakeRequest("POST", cli.BuildURLWithQuery(path, query), req, &resp)
+	return
+}
+
+func (cli *Client) AppservicePing(id, txnID string) (resp *RespAppservicePing, err error) {
+	_, err = cli.MakeFullRequest(FullRequest{
+		Method:       http.MethodPost,
+		URL:          cli.BuildClientURL("v1", "appservice", id, "ping"),
+		RequestJSON:  &ReqAppservicePing{TxnID: txnID},
+		ResponseJSON: &resp,
+		// This endpoint intentionally returns 50x, so don't retry
+		MaxAttempts: 1,
+	})
+	return
+}
+
+func (cli *Client) BeeperBatchSend(roomID id.RoomID, req *ReqBeeperBatchSend) (resp *RespBeeperBatchSend, err error) {
+	u := cli.BuildClientURL("unstable", "com.beeper.backfill", "rooms", roomID, "batch_send")
+	_, err = cli.MakeRequest(http.MethodPost, u, req, &resp)
+	return
+}
+
+func (cli *Client) BeeperMergeRooms(req *ReqBeeperMergeRoom) (resp *RespBeeperMergeRoom, err error) {
+	urlPath := cli.BuildClientURL("unstable", "com.beeper.chatmerging", "merge")
+	_, err = cli.MakeRequest(http.MethodPost, urlPath, req, &resp)
+	return
+}
+
+func (cli *Client) BeeperSplitRoom(req *ReqBeeperSplitRoom) (resp *RespBeeperSplitRoom, err error) {
+	urlPath := cli.BuildClientURL("unstable", "com.beeper.chatmerging", "rooms", req.RoomID, "split")
+	_, err = cli.MakeRequest(http.MethodPost, urlPath, req, &resp)
+	return
+}
+
+func (cli *Client) BeeperDeleteRoom(roomID id.RoomID) (err error) {
+	urlPath := cli.BuildClientURL("unstable", "com.beeper.yeet", "rooms", roomID, "delete")
+	_, err = cli.MakeRequest(http.MethodPost, urlPath, nil, nil)
 	return
 }
 
@@ -1775,21 +2067,23 @@ func (cli *Client) TxnID() string {
 
 // NewClient creates a new Matrix Client ready for syncing
 func NewClient(homeserverURL string, userID id.UserID, accessToken string) (*Client, error) {
-	hsURL, err := parseAndNormalizeBaseURL(homeserverURL)
+	hsURL, err := ParseAndNormalizeBaseURL(homeserverURL)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{
+	cli := &Client{
 		AccessToken:   accessToken,
 		UserAgent:     DefaultUserAgent,
 		HomeserverURL: hsURL,
 		UserID:        userID,
 		Client:        &http.Client{Timeout: 180 * time.Second},
 		Syncer:        NewDefaultSyncer(),
-		Logger:        stubLogger,
+		Log:           zerolog.Nop(),
 		// By default, use an in-memory store which will never save filter ids / next batch tokens to disk.
 		// The client will work with this storer: it just won't remember across restarts.
 		// In practice, a database backend should be used.
-		Store: NewInMemoryStore(),
-	}, nil
+		Store: NewMemorySyncStore(),
+	}
+	cli.Logger = maulogadapt.ZeroAsMau(&cli.Log)
+	return cli, nil
 }

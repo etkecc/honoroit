@@ -111,6 +111,8 @@ type MautrixInfo struct {
 	TrustSource   *id.Device
 
 	ReceivedAt         time.Time
+	EditedAt           time.Time
+	LastEditID         id.EventID
 	DecryptionDuration time.Duration
 
 	CheckpointSent bool
@@ -124,9 +126,10 @@ func (evt *Event) GetStateKey() string {
 }
 
 type StrippedState struct {
-	Content  Content `json:"content"`
-	Type     Type    `json:"type"`
-	StateKey string  `json:"state_key"`
+	Content  Content   `json:"content"`
+	Type     Type      `json:"type"`
+	StateKey string    `json:"state_key"`
+	Sender   id.UserID `json:"sender"`
 }
 
 type Unsigned struct {
@@ -139,7 +142,7 @@ type Unsigned struct {
 	RedactedBecause *Event          `json:"redacted_because,omitempty"`
 	InviteRoomState []StrippedState `json:"invite_room_state,omitempty"`
 
-	HungryRowID int64 `json:"com.beeper.hungry_row_id,omitempty"`
+	BeeperHSOrder int64 `json:"com.beeper.hs.order,omitempty"`
 }
 
 func (us *Unsigned) IsEmpty() bool {

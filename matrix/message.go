@@ -6,6 +6,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"maunium.net/go/mautrix/event"
+	"maunium.net/go/mautrix/format"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/matrix/config"
@@ -18,11 +19,10 @@ func (b *Bot) Notice(roomID id.RoomID, message string, relatesTo ...*event.Relat
 		relates = relatesTo[0]
 	}
 
-	_, err := b.lp.Send(roomID, &event.MessageEventContent{
-		MsgType:   event.MsgNotice,
-		Body:      message,
-		RelatesTo: relates,
-	})
+	content := format.RenderMarkdown(message, true, true)
+	content.MsgType = event.MsgNotice
+	content.RelatesTo = relates
+	_, err := b.lp.Send(roomID, &content)
 	if err != nil {
 		b.log.Error().Err(err).Str("roomID", roomID.String()).Msg("cannot send a notice")
 	}

@@ -29,8 +29,8 @@ func (b *Bot) forwardReactionToCustomer(evt *event.Event) {
 	// if it is encrypted
 	if sourceEvt.Type == event.EventEncrypted {
 		linkpearl.ParseContent(sourceEvt, b.log)
-		decrypted, err := b.lp.GetClient().Crypto.Decrypt(sourceEvt)
-		if err == nil {
+		decrypted, derr := b.lp.GetClient().Crypto.Decrypt(sourceEvt)
+		if derr == nil {
 			sourceEvt = decrypted
 		}
 	}
@@ -71,8 +71,8 @@ func (b *Bot) forwardReactionToThread(evt *event.Event) {
 	// if it is encrypted
 	if sourceEvt.Type == event.EventEncrypted {
 		linkpearl.ParseContent(sourceEvt, b.log)
-		decrypted, err := b.lp.GetClient().Crypto.Decrypt(sourceEvt)
-		if err == nil {
+		decrypted, derr := b.lp.GetClient().Crypto.Decrypt(sourceEvt)
+		if derr == nil {
 			sourceEvt = decrypted
 		}
 	}

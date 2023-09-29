@@ -14,16 +14,8 @@ import (
 	"gitlab.com/etke.cc/honoroit/matrix/config"
 )
 
-const (
-	// ThreadRelation with stable prefix
-	ThreadRelation = "m.thread"
-	// ThreadRelationOld uses hardcoded value of element clients, should be replaced to m.thread after the MSC3440 release,
-	// ref: https://github.com/matrix-org/matrix-doc/pull/3440/files#diff-113727ce0257b4dc0ad6f1087b6402f2cfcb6ff93272757b947bf1ce444056aeR296
-	ThreadRelationOld = "io.element.thread"
-
-	// TypingTimeout in milliseconds, used to avoid stuck typing status
-	TypingTimeout = 5_000
-)
+// TypingTimeout in milliseconds, used to avoid stuck typing status
+const TypingTimeout = 5_000
 
 // Bot represents matrix bot
 type Bot struct {

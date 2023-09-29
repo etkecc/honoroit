@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
@@ -8,6 +9,7 @@ import (
 func (b *Bot) forwardReaction(evt *event.Event) {
 	b.lock(evt.RoomID.String())
 	defer b.unlock(evt.RoomID.String())
+
 	if evt.RoomID == b.roomID {
 		b.forwardReactionToCustomer(evt)
 		return
@@ -24,23 +26,18 @@ func (b *Bot) forwardReactionToCustomer(evt *event.Event) {
 		return
 	}
 
-	err = sourceEvt.Content.ParseRaw(event.EventMessage)
-	if err != nil {
-		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Str("roomID", evt.RoomID.String()).Msg("cannot parse source event content")
-		return
+	// if it is encrypted
+	if sourceEvt.Type == event.EventEncrypted {
+		linkpearl.ParseContent(sourceEvt, b.log)
+		decrypted, err := b.lp.GetClient().Crypto.Decrypt(sourceEvt)
+		if err == nil {
+			sourceEvt = decrypted
+		}
 	}
 
-	relatesTo := b.getRelatesTo(sourceEvt)
-	if relatesTo == nil {
-		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Str("roomID", evt.RoomID.String()).Msg("cannot parse source event relates_to")
-		return
-	}
-
-	if relatesTo.EventID == "" {
-		return
-	}
-
-	roomID, err := b.findRoomID(relatesTo.EventID)
+	linkpearl.ParseContent(sourceEvt, b.log)
+	parentID := linkpearl.GetParent(sourceEvt)
+	roomID, err := b.findRoomID(parentID)
 	if err != nil {
 		b.log.Error().Err(err).Str("sourceID", sourceID.String()).Str("roomID", evt.RoomID.String()).Msg("cannot find a suitable room to send reaction event")
 		return
@@ -71,15 +68,19 @@ func (b *Bot) forwardReactionToThread(evt *event.Event) {
 		return
 	}
 
-	err = sourceEvt.Content.ParseRaw(event.EventMessage)
-	if err != nil {
-		b.log.Error().Err(err).Msg("cannot parse source event content")
-		return
+	// if it is encrypted
+	if sourceEvt.Type == event.EventEncrypted {
+		linkpearl.ParseContent(sourceEvt, b.log)
+		decrypted, err := b.lp.GetClient().Crypto.Decrypt(sourceEvt)
+		if err == nil {
+			sourceEvt = decrypted
+		}
 	}
 
+	linkpearl.ParseContent(evt, b.log)
 	operatorsRoomEventID, ok := sourceEvt.Content.Raw["event_id"].(string)
 	if !ok {
-		b.log.Error().Msg("cannot cast source events event_id field")
+		b.log.Error().Any("any", sourceEvt.Content.Raw["event_id"]).Msg("cannot cast source events event_id field")
 		return
 	}
 

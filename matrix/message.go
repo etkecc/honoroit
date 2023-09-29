@@ -5,31 +5,16 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
+	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix/event"
-	"maunium.net/go/mautrix/format"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/matrix/config"
 	"gitlab.com/etke.cc/honoroit/metrics"
 )
 
-func (b *Bot) Notice(roomID id.RoomID, message string, relatesTo ...*event.RelatesTo) {
-	var relates *event.RelatesTo
-	if len(relatesTo) > 0 {
-		relates = relatesTo[0]
-	}
-
-	content := format.RenderMarkdown(message, true, true)
-	content.MsgType = event.MsgNotice
-	content.RelatesTo = relates
-	_, err := b.lp.Send(roomID, &content)
-	if err != nil {
-		b.log.Error().Err(err).Str("roomID", roomID.String()).Msg("cannot send a notice")
-	}
-}
-
 func (b *Bot) greetings(roomID id.RoomID) {
-	b.Notice(roomID, b.cfg.Get(config.TextGreetings.Key))
+	b.SendNotice(roomID, b.cfg.Get(config.TextGreetings.Key), nil)
 }
 
 func (b *Bot) handle(evt *event.Event) {
@@ -72,16 +57,11 @@ func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body str
 	evt, err := b.lp.GetClient().GetEvent(b.roomID, eventID)
 	if err != nil {
 		b.log.Error().Err(err).Str("eventID", eventID.String()).Msg("cannot find event to replace")
-		b.Notice(b.roomID, "cannot find event to replace")
+		b.SendNotice(b.roomID, "cannot find event to replace", nil)
 		return err
 	}
 
-	err = evt.Content.ParseRaw(event.EventMessage)
-	if err != nil {
-		b.log.Error().Err(err).Str("eventID", eventID.String()).Msg("cannot parse thread topic event")
-		b.Notice(b.roomID, "cannot parse thread topic event")
-		return err
-	}
+	linkpearl.ParseContent(evt, b.log)
 	content := evt.Content.AsMessage()
 	b.clearPrefix(content)
 	if body == "" {
@@ -138,7 +118,7 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, greet bool) (id.Ev
 	eventID, err := b.findEventID(roomID)
 	if err != nil && err != errNotMapped {
 		b.log.Error().Err(err).Str("userID", userID.String()).Str("roomID", roomID.String()).Msg("user tried to send a message from the room, but account data operation failed")
-		b.Notice(roomID, b.cfg.Get(config.TextError.Key))
+		b.SendNotice(roomID, b.cfg.Get(config.TextError.Key), nil)
 		return "", err
 	}
 
@@ -166,46 +146,38 @@ func (b *Bot) newThread(prefix string, userID id.UserID) (id.EventID, error) {
 	}
 	customerRequestsStr := humanize.Ordinal(customerRequests + 1) // including current request
 	hsRequestsStr := humanize.Ordinal(hsRequests + 1)             // including current request
-	content := &event.MessageEventContent{
-		MsgType: event.MsgText,
-		Body:    fmt.Sprintf("%s %s request from %s (%s by %s)", prefix, hsRequestsStr, userID.Homeserver(), customerRequestsStr, b.getName(userID)),
+	raw := map[string]interface{}{
+		"customer":   userID,
+		"homeserver": userID.Homeserver(),
 	}
 
-	fullContent := &event.Content{
-		Parsed: content,
-		Raw: map[string]interface{}{
-			"customer":   userID,
-			"homeserver": userID.Homeserver(),
-		},
-	}
+	eventID := b.SendNotice(b.roomID, fmt.Sprintf("%s %s request from %s (%s by %s)", prefix, hsRequestsStr, userID.Homeserver(), customerRequestsStr, b.getName(userID)), raw)
 
-	eventID, err := b.lp.Send(b.roomID, fullContent)
-	if err != nil {
-		b.log.Error().Err(err).Str("userID", userID.String()).Msg("user tried to send a message, but thread creation failed")
-		b.Notice(b.roomID, "user "+userID.String()+"tried to send a message, but thread creation failed")
+	if eventID == "" {
+		b.SendNotice(b.roomID, "user "+userID.String()+"tried to send a message, but thread creation failed", nil)
 		return "", err
 	}
 	return eventID, nil
 }
 
 func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventContent) {
-	relation := content.RelatesTo
-	if relation == nil {
+	relatesTo := linkpearl.EventRelatesTo(evt)
+	if content.RelatesTo == nil {
 		if b.cfg.Get(config.IgnoreNoThread.Key) == "true" {
 			return
 		}
-		b.Notice(evt.RoomID, "the message doesn't relate to any thread, so I don't know where to forward it.", b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, "the message doesn't relate to any thread, so I don't know where to forward it.", nil, relatesTo)
 		return
 	}
 	threadID, err := b.findThread(evt)
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
 	roomID, err := b.findRoomID(threadID)
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
@@ -219,7 +191,7 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 	}
 	_, err = b.lp.Send(roomID, fullContent)
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}
 }
 
@@ -229,15 +201,11 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 
 	eventID, err := b.startThread(evt.RoomID, evt.Sender, true)
 	if err != nil {
-		b.Notice(evt.RoomID, b.cfg.Get(config.TextError.Key))
+		b.SendNotice(evt.RoomID, b.cfg.Get(config.TextError.Key), nil)
 		return
 	}
 
-	content.SetRelatesTo(&event.RelatesTo{
-		Type:    ThreadRelation,
-		EventID: eventID,
-	})
-
+	content.RelatesTo = linkpearl.RelatesTo(eventID)
 	fullContent := &event.Content{
 		Parsed: content,
 		Raw: map[string]interface{}{
@@ -247,6 +215,6 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 	_, err = b.lp.Send(b.roomID, fullContent)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", evt.Sender.String()).Str("roomID", evt.RoomID.String()).Msg("user tried to send a message, but creation of the thread failed")
-		b.Notice(evt.RoomID, b.cfg.Get(config.TextError.Key))
+		b.SendNotice(evt.RoomID, b.cfg.Get(config.TextError.Key), nil)
 	}
 }

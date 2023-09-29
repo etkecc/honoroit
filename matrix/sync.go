@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"gitlab.com/etke.cc/go/mxidwc"
+	"gitlab.com/etke.cc/linkpearl"
 	"golang.org/x/exp/slices"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
@@ -52,51 +53,15 @@ func (b *Bot) joinPermit(evt *event.Event) bool {
 }
 
 func (b *Bot) onJoin(evt *event.Event, threadID id.EventID) {
-	content := &event.MessageEventContent{
-		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.cfg.Get(config.TextJoin.Key), b.getName(evt.Sender)),
-		RelatesTo: &event.RelatesTo{
-			Type:    ThreadRelation,
-			EventID: threadID,
-		},
-	}
-
-	_, err := b.lp.Send(b.roomID, content)
-	if err != nil {
-		b.log.Error().Err(err).Msg("cannot send join notice")
-	}
+	b.SendNotice(b.roomID, fmt.Sprintf(b.cfg.Get(config.TextJoin.Key), b.getName(evt.Sender)), nil, linkpearl.RelatesTo(threadID))
 }
 
 func (b *Bot) onInvite(evt *event.Event, threadID id.EventID) {
-	content := &event.MessageEventContent{
-		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.cfg.Get(config.TextInvite.Key), b.getName(evt.Sender), b.getName(id.UserID(evt.GetStateKey()))),
-		RelatesTo: &event.RelatesTo{
-			Type:    ThreadRelation,
-			EventID: threadID,
-		},
-	}
-
-	_, err := b.lp.Send(b.roomID, content)
-	if err != nil {
-		b.log.Error().Err(err).Msg("cannot send join notice")
-	}
+	b.SendNotice(b.roomID, fmt.Sprintf(b.cfg.Get(config.TextInvite.Key), b.getName(evt.Sender), b.getName(id.UserID(evt.GetStateKey()))), nil, linkpearl.RelatesTo(threadID))
 }
 
 func (b *Bot) onLeave(evt *event.Event, threadID id.EventID) {
-	content := &event.MessageEventContent{
-		MsgType: event.MsgNotice,
-		Body:    fmt.Sprintf(b.cfg.Get(config.TextLeave.Key), b.getName(id.UserID(evt.GetStateKey()))),
-		RelatesTo: &event.RelatesTo{
-			Type:    ThreadRelation,
-			EventID: threadID,
-		},
-	}
-
-	_, err := b.lp.Send(b.roomID, content)
-	if err != nil {
-		b.log.Error().Err(err).Msg("cannot send leave notice")
-	}
+	b.SendNotice(b.roomID, fmt.Sprintf(b.cfg.Get(config.TextLeave.Key), b.getName(id.UserID(evt.GetStateKey()))), nil, linkpearl.RelatesTo(threadID))
 
 	members, err := b.lp.GetClient().StateStore.GetRoomJoinedOrInvitedMembers(evt.RoomID)
 	if err != nil {
@@ -106,19 +71,7 @@ func (b *Bot) onLeave(evt *event.Event, threadID id.EventID) {
 
 	count := len(members)
 	if count == 1 && members[0] == b.lp.GetClient().UserID {
-		content := &event.MessageEventContent{
-			MsgType: event.MsgNotice,
-			Body:    b.cfg.Get(config.TextEmptyRoom.Key),
-			RelatesTo: &event.RelatesTo{
-				Type:    ThreadRelation,
-				EventID: threadID,
-			},
-		}
-
-		_, err = b.lp.Send(b.roomID, content)
-		if err != nil {
-			b.log.Error().Err(err).Msg("cannot send empty room notice")
-		}
+		b.SendNotice(b.roomID, b.cfg.Get(config.TextEmptyRoom.Key), nil, linkpearl.RelatesTo(threadID))
 	}
 }
 

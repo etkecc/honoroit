@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
-	"maunium.net/go/mautrix/format"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/matrix/config"
@@ -62,14 +62,15 @@ func (b *Bot) runCommand(command string, evt *event.Event) {
 func (b *Bot) renameRequest(evt *event.Event) {
 	b.log.Debug().Msg("renaming a request")
 	content := evt.Content.AsMessage()
+	relatesTo := linkpearl.EventRelatesTo(evt)
 	relation := content.RelatesTo
 	if relation == nil {
-		b.Notice(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I rename your request.", b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I rename your request.", nil, relatesTo)
 		return
 	}
 	threadID, err := b.findThread(evt)
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
@@ -86,7 +87,7 @@ func (b *Bot) renameRequest(evt *event.Event) {
 
 	err = b.replace(threadID, "", "", command, commandFormatted)
 	if err != nil {
-		b.Notice(b.roomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}
 }
 
@@ -94,29 +95,30 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	b.log.Debug().Msg("closing a request")
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
+	relatesTo := linkpearl.EventRelatesTo(evt)
 	if relation == nil {
-		b.Notice(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I close your request.", b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I close your request.", nil, relatesTo)
 		return
 	}
 	threadID, err := b.findThread(evt)
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
 	threadEvt, err := b.lp.GetClient().GetEvent(b.roomID, threadID)
 	if err != nil {
-		b.Notice(b.roomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
 	roomID, err := b.findRoomID(threadID)
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
-	b.Notice(roomID, b.cfg.Get(config.TextDone.Key))
+	b.SendNotice(roomID, b.cfg.Get(config.TextDone.Key), nil, relatesTo)
 
 	var oldbody string
 	if threadEvt.Content.AsMessage() != nil {
@@ -125,14 +127,14 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	timestamp := time.Now().UTC().Format("2006/01/02 15:04:05 MST")
 	err = b.replace(threadID, b.cfg.Get(config.TextPrefixDone.Key)+" ", oldbody+" ("+timestamp+")", "", "")
 	if err != nil {
-		b.Notice(b.roomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}
 
 	_, err = b.lp.GetClient().LeaveRoom(roomID)
 	if err != nil {
 		// do not send a message when already left
-		if !strings.Contains(err.Error(), "M_FORBIDDEN") {
-			b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		if !strings.Contains(linkpearl.UnwrapError(err).Error(), "M_FORBIDDEN") {
+			b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		}
 	}
 	b.removeMapping(threadID.String())
@@ -142,19 +144,20 @@ func (b *Bot) closeRequest(evt *event.Event) {
 func (b *Bot) inviteRequest(evt *event.Event) {
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
+	relatesTo := linkpearl.EventRelatesTo(evt)
 	if relation == nil {
-		b.Notice(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I invite you.", b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, "the message doesn't relate to any thread, so I don't know how can I invite you.", nil, relatesTo)
 		return
 	}
 	threadID, err := b.findThread(evt)
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
 	roomID, err := b.findRoomID(threadID)
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 	_, err = b.lp.GetClient().InviteUser(roomID, &mautrix.ReqInviteUser{
@@ -163,14 +166,15 @@ func (b *Bot) inviteRequest(evt *event.Event) {
 	})
 
 	if err != nil {
-		b.Notice(evt.RoomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}
 }
 
 func (b *Bot) startRequest(evt *event.Event) {
 	command := b.parseCommand(evt.Content.AsMessage().Body)
+	relatesTo := linkpearl.EventRelatesTo(evt)
 	if len(command) < 2 {
-		b.Notice(b.roomID, "cannot start a new matrix room - MXID is not specified", b.getRelatesTo(evt))
+		b.SendNotice(b.roomID, "cannot start a new matrix room - MXID is not specified", nil, relatesTo)
 		return
 	}
 	userID := id.UserID(command[1])
@@ -194,7 +198,7 @@ func (b *Bot) startRequest(evt *event.Event) {
 
 	resp, err := b.lp.GetClient().CreateRoom(req)
 	if err != nil {
-		b.Notice(b.roomID, err.Error(), b.getRelatesTo(evt))
+		b.SendNotice(b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 	roomID := resp.RoomID
@@ -217,7 +221,7 @@ func (b *Bot) startRequest(evt *event.Event) {
 func (b *Bot) countRequest(evt *event.Event) {
 	command := b.parseCommand(evt.Content.AsMessage().Body)
 	if len(command) < 2 {
-		b.Notice(b.roomID, "cannot count a request - MXID is not specified", b.getRelatesTo(evt))
+		b.SendNotice(b.roomID, "cannot count a request - MXID is not specified", nil, linkpearl.EventRelatesTo(evt))
 		return
 	}
 	userID := id.UserID(command[1])
@@ -227,23 +231,7 @@ func (b *Bot) countRequest(evt *event.Event) {
 		return
 	}
 
-	fullContent := &event.Content{
-		Parsed: &event.MessageEventContent{
-			Body:    b.cfg.Get(config.TextCount.Key),
-			MsgType: event.MsgNotice,
-			RelatesTo: &event.RelatesTo{
-				Type:    ThreadRelation,
-				EventID: eventID,
-			},
-		},
-		Raw: map[string]interface{}{
-			"event_id": evt.ID,
-		},
-	}
-	_, err = b.lp.Send(b.roomID, fullContent)
-	if err != nil {
-		b.Notice(b.roomID, err.Error())
-	}
+	b.SendNotice(b.roomID, b.cfg.Get(config.TextCount.Key), map[string]interface{}{"event_id": evt.ID}, linkpearl.RelatesTo(eventID))
 }
 
 func (b *Bot) handleConfig(evt *event.Event) {
@@ -254,15 +242,15 @@ func (b *Bot) handleConfig(evt *event.Event) {
 
 	switch len(command) {
 	case 1:
-		b.listConfigOptions()
+		b.listConfigOptions(evt)
 	case 2:
-		b.listConfigOption(command[1])
+		b.listConfigOption(evt, command[1])
 	default:
-		b.setConfigOption(command[1], strings.Join(command[2:], " "))
+		b.setConfigOption(evt, command[1], strings.Join(command[2:], " "))
 	}
 }
 
-func (b *Bot) listConfigOptions() {
+func (b *Bot) listConfigOptions(evt *event.Event) {
 	var txt strings.Builder
 	txt.WriteString("The following config options are available:\n")
 	for _, option := range config.Options {
@@ -274,19 +262,14 @@ func (b *Bot) listConfigOptions() {
 		txt.WriteString(option.Description)
 		txt.WriteString("\n")
 	}
-	content := format.RenderMarkdown(txt.String(), true, true)
-	content.MsgType = event.MsgNotice
-	_, err := b.lp.Send(b.roomID, &content)
-	if err != nil {
-		b.log.Error().Err(err).Msg("cannot send config options list")
-	}
+	b.SendNotice(evt.RoomID, txt.String(), nil, linkpearl.EventRelatesTo(evt))
 }
 
-func (b *Bot) listConfigOption(key string) {
+func (b *Bot) listConfigOption(evt *event.Event, key string) {
 	key = strings.ToLower(key)
 	option := config.Options.Find(key)
 	if option == nil {
-		b.Notice(b.roomID, "no such option")
+		b.SendNotice(b.roomID, "no such option", nil, linkpearl.EventRelatesTo(evt))
 		return
 	}
 
@@ -310,23 +293,18 @@ func (b *Bot) listConfigOption(key string) {
 	txt.WriteString(key)
 	txt.WriteString(" NEW VALUE`")
 
-	content := format.RenderMarkdown(txt.String(), true, true)
-	content.MsgType = event.MsgNotice
-	_, err := b.lp.Send(b.roomID, &content)
-	if err != nil {
-		b.log.Error().Err(err).Msg("cannot send config option info")
-	}
+	b.SendNotice(b.roomID, txt.String(), nil, linkpearl.EventRelatesTo(evt))
 }
 
-func (b *Bot) setConfigOption(key, value string) {
+func (b *Bot) setConfigOption(evt *event.Event, key, value string) {
 	option := config.Options.Find(strings.ToLower(key))
 	if option == nil {
-		b.Notice(b.roomID, "no such option")
+		b.SendNotice(b.roomID, "no such option", nil, linkpearl.EventRelatesTo(evt))
 		return
 	}
 	b.cfg.Set(option.Key, option.Sanitizer(value)).Save()
 
-	b.Notice(b.roomID, key+" has been updated, new value: `"+value+"`")
+	b.SendNotice(b.roomID, key+" has been updated, new value: `"+value+"`", nil, linkpearl.EventRelatesTo(evt))
 }
 
 func (b *Bot) help(evt *event.Event) {
@@ -350,22 +328,5 @@ func (b *Bot) help(evt *event.Event) {
 
 ` + b.prefix + ` config KEY VALUE - set config KEY's value to VALUE
 `
-	content := event.MessageEventContent{
-		MsgType:   event.MsgNotice,
-		Body:      text,
-		RelatesTo: b.getRelatesTo(evt),
-	}
-	_, err := b.lp.Send(b.roomID, &content)
-	if err != nil {
-		b.log.Error().Err(err).Msg("cannot send help message")
-	}
-}
-
-func (b *Bot) getRelatesTo(evt *event.Event) *event.RelatesTo {
-	content := evt.Content.AsMessage()
-	if content == nil {
-		return nil
-	}
-
-	return content.RelatesTo
+	b.SendNotice(b.roomID, text, nil, linkpearl.EventRelatesTo(evt))
 }

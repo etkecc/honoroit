@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
@@ -35,10 +36,10 @@ func (b *Bot) countCustomerRequests(userID id.UserID) (int, int, error) {
 			return user, hs, err
 		}
 		for _, evt := range resp.Chunk {
-			if b.eventContains(evt, "customer", userID.String()) {
+			if linkpearl.EventContains(evt, "customer", userID.String()) {
 				user++
 			}
-			if b.eventContains(evt, "homeserver", userID.Homeserver()) {
+			if linkpearl.EventContains(evt, "homeserver", userID.Homeserver()) {
 				hs++
 			}
 		}
@@ -62,15 +63,4 @@ func (b *Bot) getName(userID id.UserID) string {
 	}
 
 	return name
-}
-
-func (b *Bot) eventContains(evt *event.Event, attrName, attrValue string) bool {
-	if evt.Content.Raw == nil {
-		return false
-	}
-	if evt.Content.Raw[attrName] != attrValue {
-		return false
-	}
-
-	return true
 }

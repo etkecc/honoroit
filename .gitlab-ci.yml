@@ -1,30 +1,24 @@
 stages:
   - test
   - release
-
-lint:
-  stage: test
-  only: ['main']
+default:
   image: registry.gitlab.com/etke.cc/base/build
+variables:
+  PLATFORMS: linux/arm64/v8,linux/amd64
+
+test:
+  stage: test
   script:
     - just lint
-
-unit:
-  stage: test
-  only: ['main']
-  image: registry.gitlab.com/etke.cc/base/build
-  script:
     - just test
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - /root/cache/
 
 docker:
   stage: release
   only: ['main', 'tags']
-  services:
-    - docker:dind
-  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:latest
-  before_script:
-    - apk --no-cache add just
+  services: ['docker:dind']
   script:
     - just login docker
-  tags:
-    - docker

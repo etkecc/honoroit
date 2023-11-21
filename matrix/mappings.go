@@ -18,41 +18,12 @@ var (
 	errNotRelated = errors.New("cannot find appropriate thread")
 )
 
-func (b *Bot) findEventByAttr(roomID id.RoomID, attrName, attrValue, from string) *event.Event {
-	resp, err := b.lp.GetClient().Messages(roomID, from, "", 'b', nil, 100)
-	if err != nil {
-		return nil
-	}
-
-	for _, msg := range resp.Chunk {
-		// if it is encrypted
-		if msg.Type == event.EventEncrypted {
-			linkpearl.ParseContent(msg, b.log)
-			decrypted, err := b.lp.GetClient().Crypto.Decrypt(msg)
-			if err == nil {
-				msg = decrypted
-			}
-		}
-
-		if linkpearl.EventContains(msg, attrName, attrValue) {
-			return msg
-		}
-	}
-
-	if resp.End == "" { // nothing more
-		return nil
-	}
-
-	return b.findEventByAttr(roomID, attrName, attrValue, resp.End)
-}
-
 func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 	threadID := linkpearl.GetParent(evt)
 
-	v, ok := b.eventsCache.Get(string(threadID))
+	v, ok := b.eventsCache.Get(threadID)
 	if ok {
-		eventID := v.(id.EventID)
-		return eventID, nil
+		return v, nil
 	}
 
 	if threadID == evt.ID {

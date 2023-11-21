@@ -20,6 +20,11 @@ const transactionType = "transaction"
 // eventType is the type of an error event.
 const eventType = "event"
 
+const profileType = "profile"
+
+// checkInType is the type of a check in event.
+const checkInType = "check_in"
+
 // Level marks the severity of the event.
 type Level string
 
@@ -103,6 +108,14 @@ func (b *Breadcrumb) MarshalJSON() ([]byte, error) {
 	return json.Marshal((*breadcrumb)(b))
 }
 
+// Attachment allows associating files with your events to aid in investigation.
+// An event may contain one or more attachments.
+type Attachment struct {
+	Filename    string
+	ContentType string
+	Payload     []byte
+}
+
 // User describes the user associated with an Event. If this is used, at least
 // an ID or an IP address should be provided.
 type User struct {
@@ -173,7 +186,7 @@ func NewRequest(r *http.Request) *Request {
 	var env map[string]string
 	headers := map[string]string{}
 
-	if client := CurrentHub().Client(); client != nil && client.Options().SendDefaultPII {
+	if client := CurrentHub().Client(); client != nil && client.options.SendDefaultPII {
 		// We read only the first Cookie header because of the specification:
 		// https://tools.ietf.org/html/rfc6265#section-5.4
 		// When the user agent generates an HTTP request, the user agent MUST NOT
@@ -237,7 +250,8 @@ type Exception struct {
 // SDKMetaData is a struct to stash data which is needed at some point in the SDK's event processing pipeline
 // but which shouldn't get send to Sentry.
 type SDKMetaData struct {
-	dsc DynamicSamplingContext
+	dsc                DynamicSamplingContext
+	transactionProfile *profileInfo
 }
 
 // Contains information about how the name of the transaction was determined.
@@ -312,9 +326,15 @@ type Event struct {
 	Spans           []*Span          `json:"spans,omitempty"`
 	TransactionInfo *TransactionInfo `json:"transaction_info,omitempty"`
 
+	// The fields below are only relevant for crons/check ins
+
+	CheckIn       *CheckIn       `json:"check_in,omitempty"`
+	MonitorConfig *MonitorConfig `json:"monitor_config,omitempty"`
+
 	// The fields below are not part of the final JSON payload.
 
 	sdkMetaData SDKMetaData
+	attachments []*Attachment
 }
 
 // SetException appends the unwrapped errors to the event's exception list.
@@ -372,6 +392,8 @@ func (e *Event) MarshalJSON() ([]byte, error) {
 	// and a few type tricks.
 	if e.Type == transactionType {
 		return e.transactionMarshalJSON()
+	} else if e.Type == checkInType {
+		return e.checkInMarshalJSON()
 	}
 	return e.defaultMarshalJSON()
 }
@@ -444,6 +466,29 @@ func (e *Event) transactionMarshalJSON() ([]byte, error) {
 		x.StartTime = b
 	}
 	return json.Marshal(x)
+}
+
+func (e *Event) checkInMarshalJSON() ([]byte, error) {
+	checkIn := serializedCheckIn{
+		CheckInID:     string(e.CheckIn.ID),
+		MonitorSlug:   e.CheckIn.MonitorSlug,
+		Status:        e.CheckIn.Status,
+		Duration:      e.CheckIn.Duration.Seconds(),
+		Release:       e.Release,
+		Environment:   e.Environment,
+		MonitorConfig: nil,
+	}
+
+	if e.MonitorConfig != nil {
+		checkIn.MonitorConfig = &MonitorConfig{
+			Schedule:      e.MonitorConfig.Schedule,
+			CheckInMargin: e.MonitorConfig.CheckInMargin,
+			MaxRuntime:    e.MonitorConfig.MaxRuntime,
+			Timezone:      e.MonitorConfig.Timezone,
+		}
+	}
+
+	return json.Marshal(checkIn)
 }
 
 // NewEvent creates a new Event.

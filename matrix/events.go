@@ -2,7 +2,6 @@ package matrix
 
 import (
 	"gitlab.com/etke.cc/linkpearl"
-	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
@@ -12,25 +11,12 @@ type RespThreads struct {
 	NextBatch string         `json:"next_batch"`
 }
 
-// Threads returns all threads of the specified room
-func (b *Bot) Threads(roomID id.RoomID, from string) (*RespThreads, error) {
-	query := map[string]string{
-		"from":  from,
-		"limit": "100",
-	}
-
-	var resp *RespThreads
-	urlPath := b.lp.GetClient().BuildURLWithQuery(mautrix.ClientURLPath{"v1", "rooms", roomID, "threads"}, query)
-	_, err := b.lp.GetClient().MakeRequest("GET", urlPath, nil, &resp)
-	return resp, err
-}
-
 func (b *Bot) countCustomerRequests(userID id.UserID) (int, int, error) {
 	var user int
 	var hs int
 	var from string
 	for {
-		resp, err := b.Threads(b.roomID, from)
+		resp, err := b.lp.Threads(b.roomID)
 		if err != nil {
 			b.log.Error().Err(err).Str("from", from).Str("roomID", b.roomID.String()).Msg("cannot request threads for the room")
 			return user, hs, err

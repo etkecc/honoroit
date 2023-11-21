@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/rs/zerolog"
 	"gitlab.com/etke.cc/go/mxidwc"
 	"gitlab.com/etke.cc/linkpearl"
@@ -23,7 +23,7 @@ type Bot struct {
 	log          *zerolog.Logger
 	lp           *linkpearl.Linkpearl
 	mu           map[string]*sync.Mutex
-	eventsCache  *lru.Cache
+	eventsCache  *lru.Cache[id.EventID, id.EventID]
 	prefix       string
 	roomID       id.RoomID
 	ignoreBefore int64 // TODO remove after some time
@@ -38,7 +38,7 @@ func NewBot(
 	roomID string,
 	cacheSize int,
 ) (*Bot, error) {
-	cache, err := lru.New(cacheSize)
+	cache, err := lru.New[id.EventID, id.EventID](cacheSize)
 	if err != nil {
 		return nil, err
 	}

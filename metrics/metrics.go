@@ -1,12 +1,11 @@
 package metrics
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/VictoriaMetrics/metrics"
 	"maunium.net/go/mautrix/id"
 )
 
@@ -25,33 +24,22 @@ var (
 		"twitter":    true,
 		"whatsapp":   true,
 	}
-	requestsNew = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "honoroit_request_new",
-		Help: "The total number new/incoming requests",
-	})
-	requestsDone = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "honoroit_request_done",
-		Help: "The total number of closed/done requests",
-	})
-	messagesTotal = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "honoroit_messages_total",
-		Help: "The total number of messages",
-	})
-	messagesCustomer = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "honoroit_messages_customer",
-			Help: "The total number of messages, sent by customers",
-		},
-		[]string{"source", "sender", "domain"})
-	messagesOperator = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "honoroit_messages_operator",
-		Help: "The total number of messages, sent by operators",
-	})
+	requestsNew      = metrics.NewCounter("honoroit_request_new")
+	requestsDone     = metrics.NewCounter("honoroit_request_done")
+	messagesTotal    = metrics.NewCounter("honoroit_messages_total")
+	messagesOperator = metrics.NewCounter("honoroit_messages_operator")
 )
+
+// Handler for metrics
+type Handler struct{}
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	metrics.WritePrometheus(w, false)
+}
 
 // InitMetrics registers /metrics endpoint within default http serve mux
 func InitMetrics() {
-	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", &Handler{})
 }
 
 // RequestNew increments count of new requests
@@ -68,11 +56,12 @@ func RequestDone() {
 func MessagesCustomer(sender id.UserID) {
 	messagesTotal.Inc()
 
-	messagesCustomer.With(prometheus.Labels{
-		"source": getSource(sender),
-		"sender": sender.String(),
-		"domain": sender.Homeserver(),
-	}).Inc()
+	metrics.GetOrCreateCounter(
+		fmt.Sprintf(
+			"honoroit_messages_customer{source=%q,sender=%q,domain=%q}",
+			getSource(sender), sender.String(), sender.Homeserver(),
+		),
+	).Inc()
 }
 
 // MessagesOperator increments count of messages from operator

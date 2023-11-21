@@ -52,8 +52,6 @@ func DynamicSamplingContextFromTransaction(span *Span) DynamicSamplingContext {
 		}
 	}
 
-	options := client.Options()
-
 	if traceID := span.TraceID.String(); traceID != "" {
 		entries["trace_id"] = traceID
 	}
@@ -66,10 +64,10 @@ func DynamicSamplingContextFromTransaction(span *Span) DynamicSamplingContext {
 			entries["public_key"] = publicKey
 		}
 	}
-	if release := options.Release; release != "" {
+	if release := client.options.Release; release != "" {
 		entries["release"] = release
 	}
-	if environment := options.Environment; environment != "" {
+	if environment := client.options.Environment; environment != "" {
 		entries["environment"] = environment
 	}
 
@@ -82,6 +80,12 @@ func DynamicSamplingContextFromTransaction(span *Span) DynamicSamplingContext {
 
 	if userSegment := scope.user.Segment; userSegment != "" {
 		entries["user_segment"] = userSegment
+	}
+
+	if span.Sampled.Bool() {
+		entries["sampled"] = "true"
+	} else {
+		entries["sampled"] = "false"
 	}
 
 	return DynamicSamplingContext{

@@ -3,7 +3,7 @@ module gitlab.com/etke.cc/honoroit
 go 1.18
 
 require (
-	github.com/VictoriaMetrics/metrics v1.24.0
+	github.com/VictoriaMetrics/metrics v1.25.3
 	github.com/archdx/zerolog-sentry v1.7.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
@@ -15,7 +15,7 @@ require (
 	gitlab.com/etke.cc/go/healthchecks v1.0.1
 	gitlab.com/etke.cc/go/mxidwc v1.0.0
 	gitlab.com/etke.cc/linkpearl v0.0.0-20231121221431-72443f33d266
-	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
+	golang.org/x/exp v0.0.0-20231127185646-65229373498e
 	maunium.net/go/mautrix v0.16.2
 )
 
@@ -36,9 +36,9 @@ require (
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/yuin/goldmark v1.6.0 // indirect
 	go.mau.fi/util v0.2.1 // indirect
-	golang.org/x/crypto v0.15.0 // indirect
-	golang.org/x/net v0.18.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

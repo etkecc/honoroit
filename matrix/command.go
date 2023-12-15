@@ -2,7 +2,6 @@ package matrix
 
 import (
 	"strings"
-	"time"
 
 	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix"
@@ -124,8 +123,7 @@ func (b *Bot) closeRequest(evt *event.Event) {
 	if threadEvt.Content.AsMessage() != nil {
 		oldbody = strings.Replace(threadEvt.Content.AsMessage().Body, b.cfg.Get(config.TextPrefixOpen.Key), "", 1)
 	}
-	timestamp := time.Now().UTC().Format("2006/01/02 15:04:05 MST")
-	err = b.replace(threadID, b.cfg.Get(config.TextPrefixDone.Key)+" ", oldbody+" ("+timestamp+")", "", "")
+	err = b.replace(threadID, b.cfg.Get(config.TextPrefixDone.Key)+" ", oldbody, "", "")
 	if err != nil {
 		b.SendNotice(b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}

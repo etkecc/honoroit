@@ -8,7 +8,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/lib/pq v1.10.9
-	github.com/mattn/go-sqlite3 v1.14.18
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/rs/zerolog v1.31.0
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/etke.cc/go/env v1.1.0

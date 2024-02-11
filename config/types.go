@@ -1,6 +1,10 @@
 package config
 
-import "time"
+import (
+	"time"
+
+	echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
+)
 
 // Config of Honoroit
 type Config struct {
@@ -28,6 +32,9 @@ type Config struct {
 	// DB config
 	DB DB
 
+	// Auth Config
+	Auth Auth
+
 	// Monitoring config
 	Monitoring Monitoring
 }
@@ -38,6 +45,17 @@ type DB struct {
 	DSN string
 	// Dialect of the db, allowed values: postgres, sqlite3
 	Dialect string
+}
+
+type Auth struct {
+	Metrics *echobasicauth.Auth
+	PSD     PSDAuth
+}
+
+type PSDAuth struct {
+	URL      string
+	Login    string
+	Password string
 }
 
 // Monitoring config

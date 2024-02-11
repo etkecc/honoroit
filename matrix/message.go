@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -13,12 +14,12 @@ import (
 	"gitlab.com/etke.cc/honoroit/metrics"
 )
 
-func (b *Bot) greetings(roomID id.RoomID) {
-	b.SendNotice(roomID, b.cfg.Get(config.TextGreetings.Key), nil)
+func (b *Bot) greetings(ctx context.Context, roomID id.RoomID) {
+	b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextGreetings.Key), nil)
 }
 
-func (b *Bot) handle(evt *event.Event) {
-	err := b.lp.GetClient().MarkRead(evt.RoomID, evt.ID)
+func (b *Bot) handle(ctx context.Context, evt *event.Event) {
+	err := b.lp.GetClient().MarkRead(ctx, evt.RoomID, evt.ID)
 	if err != nil {
 		b.log.Warn().Err(err).Msg("cannot send mark event")
 	}
@@ -37,33 +38,33 @@ func (b *Bot) handle(evt *event.Event) {
 	// message sent by client
 	if evt.RoomID != b.roomID {
 		go metrics.MessagesCustomer(evt.Sender)
-		b.forwardToThread(evt, content)
+		b.forwardToThread(ctx, evt, content)
 		return
 	}
 
 	// message sent from threads room
 	// special command
 	if command := b.readCommand(content.Body); command != "" {
-		b.runCommand(command, evt)
+		b.runCommand(ctx, command, evt)
 		return
 	}
 
 	// not a command, but a message
 	go metrics.MessagesOperator()
-	b.forwardToCustomer(evt, content)
+	b.forwardToCustomer(ctx, evt, content)
 }
 
-func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body string, formattedBody string) error {
-	evt, err := b.lp.GetClient().GetEvent(b.roomID, eventID)
+func (b *Bot) replace(ctx context.Context, eventID id.EventID, prefix string, suffix string, body string, formattedBody string) error {
+	evt, err := b.lp.GetClient().GetEvent(ctx, b.roomID, eventID)
 	if err != nil {
 		b.log.Error().Err(err).Str("eventID", eventID.String()).Msg("cannot find event to replace")
-		b.SendNotice(b.roomID, "cannot find event to replace", nil)
+		b.SendNotice(ctx, b.roomID, "cannot find event to replace", nil)
 		return err
 	}
 
 	linkpearl.ParseContent(evt, b.log)
 	content := evt.Content.AsMessage()
-	b.clearPrefix(content)
+	b.clearPrefix(ctx, content)
 	if body == "" {
 		body = content.Body
 	}
@@ -77,12 +78,12 @@ func (b *Bot) replace(eventID id.EventID, prefix string, suffix string, body str
 	content.FormattedBody = formattedBody
 	content.SetEdit(eventID)
 
-	_, err = b.lp.Send(b.roomID, content)
+	_, err = b.lp.Send(ctx, b.roomID, content)
 	return err
 }
 
-func (b *Bot) clearPrefix(content *event.MessageEventContent) {
-	for _, prefix := range []string{b.cfg.Get(config.TextPrefixOpen.Key), b.cfg.Get(config.TextPrefixDone.Key)} {
+func (b *Bot) clearPrefix(ctx context.Context, content *event.MessageEventContent) {
+	for _, prefix := range []string{b.cfg.Get(ctx, config.TextPrefixOpen.Key), b.cfg.Get(ctx, config.TextPrefixDone.Key)} {
 		index := strings.Index(content.Body, prefix)
 		formattedIndex := strings.Index(content.FormattedBody, prefix)
 		if index > -1 {
@@ -110,15 +111,15 @@ func (b *Bot) clearReply(content *event.MessageEventContent) {
 	}
 }
 
-func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, greet bool) (id.EventID, error) {
+func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserID, greet bool) (id.EventID, error) {
 	mukey := "start_thread_" + roomID.String()
 	b.lock(mukey)
 	defer b.unlock(mukey)
 
-	eventID, err := b.findEventID(roomID)
+	eventID, err := b.findEventID(ctx, roomID)
 	if err != nil && err != errNotMapped {
 		b.log.Error().Err(err).Str("userID", userID.String()).Str("roomID", roomID.String()).Msg("user tried to send a message from the room, but account data operation failed")
-		b.SendNotice(roomID, b.cfg.Get(config.TextError.Key), nil)
+		b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 		return "", err
 	}
 
@@ -126,21 +127,22 @@ func (b *Bot) startThread(roomID id.RoomID, userID id.UserID, greet bool) (id.Ev
 		return eventID, nil
 	}
 
-	eventID, err = b.newThread(b.cfg.Get(config.TextPrefixOpen.Key), userID)
+	eventID, err = b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixOpen.Key), userID)
 	if err != nil {
 		return "", err
 	}
 
-	b.setMapping(roomID.String(), eventID.String())
-	b.setMapping(eventID.String(), roomID.String())
+	b.setMapping(ctx, roomID.String(), eventID.String())
+	b.setMapping(ctx, eventID.String(), roomID.String())
 	if greet {
-		b.greetings(roomID)
+		b.greetings(ctx, roomID)
 	}
 	return eventID, nil
 }
 
-func (b *Bot) newThread(prefix string, userID id.UserID) (id.EventID, error) {
-	customerRequests, hsRequests, err := b.countCustomerRequests(userID)
+func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (id.EventID, error) {
+	status := b.getStatus(userID)
+	customerRequests, hsRequests, err := b.countCustomerRequests(ctx, userID)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot calculate count of the support requests")
 	}
@@ -151,33 +153,32 @@ func (b *Bot) newThread(prefix string, userID id.UserID) (id.EventID, error) {
 		"homeserver": userID.Homeserver(),
 	}
 
-	eventID := b.SendNotice(b.roomID, fmt.Sprintf("%s %s request from %s (%s by %s)", prefix, hsRequestsStr, userID.Homeserver(), customerRequestsStr, b.getName(userID)), raw)
-
+	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s%s (%s by %s)", prefix, hsRequestsStr, status, userID.Homeserver(), customerRequestsStr, b.getName(ctx, userID)), raw)
 	if eventID == "" {
-		b.SendNotice(b.roomID, "user "+userID.String()+"tried to send a message, but thread creation failed", nil)
+		b.SendNotice(ctx, b.roomID, "user "+status+userID.String()+" tried to send a message, but thread creation failed", nil)
 		return "", err
 	}
 	return eventID, nil
 }
 
-func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventContent) {
+func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *event.MessageEventContent) {
 	relatesTo := linkpearl.EventRelatesTo(evt)
 	if content.RelatesTo == nil {
-		if b.cfg.Get(config.IgnoreNoThread.Key) == "true" {
+		if b.cfg.Get(ctx, config.IgnoreNoThread.Key) == "true" {
 			return
 		}
-		b.SendNotice(evt.RoomID, "the message doesn't relate to any thread, so I don't know where to forward it.", nil, relatesTo)
+		b.SendNotice(ctx, evt.RoomID, "the message doesn't relate to any thread, so I don't know where to forward it.", nil, relatesTo)
 		return
 	}
 	threadID, err := b.findThread(evt)
 	if err != nil {
-		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
+		b.SendNotice(ctx, evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
-	roomID, err := b.findRoomID(threadID)
+	roomID, err := b.findRoomID(ctx, threadID)
 	if err != nil {
-		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
+		b.SendNotice(ctx, evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
 
@@ -189,19 +190,19 @@ func (b *Bot) forwardToCustomer(evt *event.Event, content *event.MessageEventCon
 			"event_id": evt.ID,
 		},
 	}
-	_, err = b.lp.Send(roomID, fullContent)
+	_, err = b.lp.Send(ctx, roomID, fullContent)
 	if err != nil {
-		b.SendNotice(evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
+		b.SendNotice(ctx, evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}
 }
 
-func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventContent) {
+func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *event.MessageEventContent) {
 	b.lock(evt.RoomID.String())
 	defer b.unlock(evt.RoomID.String())
 
-	eventID, err := b.startThread(evt.RoomID, evt.Sender, true)
+	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, true)
 	if err != nil {
-		b.SendNotice(evt.RoomID, b.cfg.Get(config.TextError.Key), nil)
+		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 		return
 	}
 
@@ -212,9 +213,9 @@ func (b *Bot) forwardToThread(evt *event.Event, content *event.MessageEventConte
 			"event_id": evt.ID,
 		},
 	}
-	_, err = b.lp.Send(b.roomID, fullContent)
+	_, err = b.lp.Send(ctx, b.roomID, fullContent)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", evt.Sender.String()).Str("roomID", evt.RoomID.String()).Msg("user tried to send a message, but creation of the thread failed")
-		b.SendNotice(evt.RoomID, b.cfg.Get(config.TextError.Key), nil)
+		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 	}
 }

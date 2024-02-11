@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"io"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -12,31 +11,35 @@ import (
 	"time"
 
 	zlogsentry "github.com/archdx/zerolog-sentry"
+	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/zerolog"
+	"github.com/ziflex/lecho/v3"
 	"gitlab.com/etke.cc/go/healthchecks"
 	"gitlab.com/etke.cc/linkpearl"
 
 	"gitlab.com/etke.cc/honoroit/config"
+	"gitlab.com/etke.cc/honoroit/controllers"
+	"gitlab.com/etke.cc/honoroit/ext"
 	"gitlab.com/etke.cc/honoroit/matrix"
 	mxconfig "gitlab.com/etke.cc/honoroit/matrix/config"
 	"gitlab.com/etke.cc/honoroit/metrics"
 )
 
 var (
+	e   *echo.Echo
 	hc  *healthchecks.Client
 	bot *matrix.Bot
-	srv *http.Server
 	log zerolog.Logger
 )
 
 func main() {
 	cfg := config.New()
 	initLog(cfg)
+	initHTTP(cfg)
 	initHealthchecks(cfg)
 	metrics.InitMetrics()
-	go initHTTP(cfg)
 	defer recovery()
 
 	log.Info().Msg("#############################")
@@ -48,6 +51,8 @@ func main() {
 		return
 	}
 	initShutdown()
+
+	go e.Start(cfg.Port) //nolint:errcheck // nobody cares
 
 	log.Debug().Msg("starting bot...")
 	if err := bot.Start(); err != nil {
@@ -63,7 +68,7 @@ func initLog(cfg *config.Config) {
 	zerolog.SetGlobalLevel(loglevel)
 	var w io.Writer
 	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout, PartsExclude: []string{zerolog.TimestampFieldName}}
-	sentryWriter, err := zlogsentry.New(cfg.Monitoring.SentryDSN)
+	sentryWriter, err := zlogsentry.New(cfg.Monitoring.SentryDSN, zlogsentry.WithBreadcrumbs())
 	if err == nil {
 		w = io.MultiWriter(sentryWriter, consoleWriter)
 	} else {
@@ -84,11 +89,9 @@ func initHealthchecks(cfg *config.Config) {
 }
 
 func initHTTP(cfg *config.Config) {
-	srv = &http.Server{Addr: ":" + cfg.Port, Handler: nil}
-
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Error().Err(err).Msg("http server failed")
-	}
+	e = echo.New()
+	e.Logger = lecho.From(log)
+	controllers.ConfigureRouter(e, cfg.Auth.Metrics)
 }
 
 func initBot(cfg *config.Config) error {
@@ -109,8 +112,9 @@ func initBot(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
+	psd := ext.NewPSD(cfg.Auth.PSD.URL, cfg.Auth.PSD.Login, cfg.Auth.PSD.Password)
 	mxc := mxconfig.New(lp)
-	bot, err = matrix.NewBot(lp, &log, mxc, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
+	bot, err = matrix.NewBot(lp, &log, mxc, psd, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
 	return err
 }
 
@@ -135,7 +139,7 @@ func shutdown() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	srv.Shutdown(ctx) //nolint:errcheck // nobody cares
+	e.Shutdown(ctx) //nolint:errcheck // nobody cares
 }
 
 func recovery() {

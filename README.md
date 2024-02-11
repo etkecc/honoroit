@@ -93,6 +93,9 @@ env vars
 * **HONOROIT_NOENCRYPTION** - disable e2e encryption support
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
+* **HONOROIT_METRICS_LOGIN** - /metrics login
+* **HONOROIT_METRICS_PASSWORD** - /metrics password
+* **HONOROIT_METRICS_IPS** - /metrics allowed ips
 
 You can find default values in [config/defaults.go](config/defaults.go)
 

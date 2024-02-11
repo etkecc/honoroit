@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
 	"gitlab.com/etke.cc/go/env"
 )
 
@@ -25,6 +26,18 @@ func New() *Config {
 		DB: DB{
 			DSN:     env.String("db.dsn", defaultConfig.DB.DSN),
 			Dialect: env.String("db.dialect", defaultConfig.DB.Dialect),
+		},
+		Auth: Auth{
+			Metrics: &echobasicauth.Auth{
+				Login:    env.String("auth.metrics.login"),
+				Password: env.String("auth.metrics.password"),
+				IPs:      env.Slice("auth.metrics.ips"),
+			},
+			PSD: PSDAuth{
+				URL:      env.String("auth.psd.url"),
+				Login:    env.String("auth.psd.login"),
+				Password: env.String("auth.psd.password"),
+			},
 		},
 		Monitoring: Monitoring{
 			SentryDSN:          env.String("monitoring.sentry.dsn", env.String("sentry", "")),

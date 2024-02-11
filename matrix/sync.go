@@ -1,13 +1,13 @@
 package matrix
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"gitlab.com/etke.cc/go/mxidwc"
 	"gitlab.com/etke.cc/linkpearl"
 	"golang.org/x/exp/slices"
-	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
@@ -18,27 +18,27 @@ func (b *Bot) initSync() {
 	b.lp.SetJoinPermit(b.joinPermit)
 	b.lp.OnEventType(
 		event.StateMember,
-		func(_ mautrix.EventSource, evt *event.Event) {
-			go b.onMembership(evt)
+		func(ctx context.Context, evt *event.Event) {
+			go b.onMembership(ctx, evt)
 		},
 	)
 	b.lp.OnEventType(
 		event.EventReaction,
-		func(_ mautrix.EventSource, evt *event.Event) {
-			go b.onReaction(evt)
+		func(ctx context.Context, evt *event.Event) {
+			go b.onReaction(ctx, evt)
 		},
 	)
 	b.lp.OnEventType(
 		event.EventMessage,
-		func(_ mautrix.EventSource, evt *event.Event) {
-			go b.onMessage(evt)
+		func(ctx context.Context, evt *event.Event) {
+			go b.onMessage(ctx, evt)
 		},
 	)
 }
 
 // joinPermit is called by linkpearl when processing "invite" events and deciding if rooms should be auto-joined or not
-func (b *Bot) joinPermit(evt *event.Event) bool {
-	allowed, err := parseMXIDpatterns(b.cfg.Get(config.AllowedUsers.Key))
+func (b *Bot) joinPermit(ctx context.Context, evt *event.Event) bool {
+	allowed, err := parseMXIDpatterns(b.cfg.Get(ctx, config.AllowedUsers.Key))
 	if err != nil {
 		b.log.Error().Err(err).Msg("cannot parse MXID patterns")
 		return false
@@ -52,18 +52,18 @@ func (b *Bot) joinPermit(evt *event.Event) bool {
 	return true
 }
 
-func (b *Bot) onJoin(evt *event.Event, threadID id.EventID) {
-	b.SendNotice(b.roomID, fmt.Sprintf(b.cfg.Get(config.TextJoin.Key), b.getName(evt.Sender)), nil, linkpearl.RelatesTo(threadID))
+func (b *Bot) onJoin(ctx context.Context, evt *event.Event, threadID id.EventID) {
+	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextJoin.Key), b.getName(ctx, evt.Sender)), nil, linkpearl.RelatesTo(threadID))
 }
 
-func (b *Bot) onInvite(evt *event.Event, threadID id.EventID) {
-	b.SendNotice(b.roomID, fmt.Sprintf(b.cfg.Get(config.TextInvite.Key), b.getName(evt.Sender), b.getName(id.UserID(evt.GetStateKey()))), nil, linkpearl.RelatesTo(threadID))
+func (b *Bot) onInvite(ctx context.Context, evt *event.Event, threadID id.EventID) {
+	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextInvite.Key), b.getName(ctx, evt.Sender), b.getName(ctx, id.UserID(evt.GetStateKey()))), nil, linkpearl.RelatesTo(threadID))
 }
 
-func (b *Bot) onLeave(evt *event.Event, threadID id.EventID) {
-	b.SendNotice(b.roomID, fmt.Sprintf(b.cfg.Get(config.TextLeave.Key), b.getName(id.UserID(evt.GetStateKey()))), nil, linkpearl.RelatesTo(threadID))
+func (b *Bot) onLeave(ctx context.Context, evt *event.Event, threadID id.EventID) {
+	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextLeave.Key), b.getName(ctx, id.UserID(evt.GetStateKey()))), nil, linkpearl.RelatesTo(threadID))
 
-	members, err := b.lp.GetClient().StateStore.GetRoomJoinedOrInvitedMembers(evt.RoomID)
+	members, err := b.lp.GetClient().StateStore.GetRoomJoinedOrInvitedMembers(ctx, evt.RoomID)
 	if err != nil {
 		b.log.Error().Err(err).Str("roomID", evt.RoomID.String()).Msg("cannot get joined or invited members")
 		return
@@ -71,11 +71,11 @@ func (b *Bot) onLeave(evt *event.Event, threadID id.EventID) {
 
 	count := len(members)
 	if count == 1 && members[0] == b.lp.GetClient().UserID {
-		b.SendNotice(b.roomID, b.cfg.Get(config.TextEmptyRoom.Key), nil, linkpearl.RelatesTo(threadID))
+		b.SendNotice(ctx, b.roomID, b.cfg.Get(ctx, config.TextEmptyRoom.Key), nil, linkpearl.RelatesTo(threadID))
 	}
 }
 
-func (b *Bot) onMembership(evt *event.Event) {
+func (b *Bot) onMembership(ctx context.Context, evt *event.Event) {
 	// ignore own events
 	if evt.Sender == b.lp.GetClient().UserID {
 		return
@@ -87,10 +87,10 @@ func (b *Bot) onMembership(evt *event.Event) {
 	}
 
 	// ignore any events in ignored rooms
-	if slices.Contains(strings.Split(b.cfg.Get(config.IgnoredRooms.Key), ","), evt.RoomID.String()) {
+	if slices.Contains(strings.Split(b.cfg.Get(ctx, config.IgnoredRooms.Key), ","), evt.RoomID.String()) {
 		return
 	}
-	eventID, err := b.findEventID(evt.RoomID)
+	eventID, err := b.findEventID(ctx, evt.RoomID)
 	// there is no thread for that room
 	if err == errNotMapped {
 		return
@@ -102,15 +102,15 @@ func (b *Bot) onMembership(evt *event.Event) {
 
 	switch evt.Content.AsMember().Membership {
 	case event.MembershipJoin:
-		b.onJoin(evt, eventID)
+		b.onJoin(ctx, evt, eventID)
 	case event.MembershipInvite:
-		b.onInvite(evt, eventID)
+		b.onInvite(ctx, evt, eventID)
 	case event.MembershipLeave, event.MembershipBan:
-		b.onLeave(evt, eventID)
+		b.onLeave(ctx, evt, eventID)
 	}
 }
 
-func (b *Bot) onReaction(evt *event.Event) {
+func (b *Bot) onReaction(ctx context.Context, evt *event.Event) {
 	// ignore own messages
 	if evt.Sender == b.lp.GetClient().UserID {
 		return
@@ -122,14 +122,14 @@ func (b *Bot) onReaction(evt *event.Event) {
 	}
 
 	// ignore any events in ignored rooms
-	if slices.Contains(strings.Split(b.cfg.Get(config.IgnoredRooms.Key), ","), evt.RoomID.String()) {
+	if slices.Contains(strings.Split(b.cfg.Get(ctx, config.IgnoredRooms.Key), ","), evt.RoomID.String()) {
 		return
 	}
 
-	b.forwardReaction(evt)
+	b.forwardReaction(ctx, evt)
 }
 
-func (b *Bot) onMessage(evt *event.Event) {
+func (b *Bot) onMessage(ctx context.Context, evt *event.Event) {
 	// ignore own messages
 	if evt.Sender == b.lp.GetClient().UserID {
 		return
@@ -141,9 +141,9 @@ func (b *Bot) onMessage(evt *event.Event) {
 	}
 
 	// ignore any events in ignored rooms
-	if slices.Contains(strings.Split(b.cfg.Get(config.IgnoredRooms.Key), ","), evt.RoomID.String()) {
+	if slices.Contains(strings.Split(b.cfg.Get(ctx, config.IgnoredRooms.Key), ","), evt.RoomID.String()) {
 		return
 	}
 
-	b.handle(evt)
+	b.handle(ctx, evt)
 }

@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"context"
 	"regexp"
 	"strings"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix/id"
 
+	"gitlab.com/etke.cc/honoroit/ext"
 	"gitlab.com/etke.cc/honoroit/matrix/config"
 )
 
@@ -21,6 +23,7 @@ const TypingTimeout = 5_000
 type Bot struct {
 	cfg          *config.Manager
 	log          *zerolog.Logger
+	psd          *ext.PSD
 	lp           *linkpearl.Linkpearl
 	mu           map[string]*sync.Mutex
 	eventsCache  *lru.Cache[id.EventID, id.EventID]
@@ -34,6 +37,7 @@ func NewBot(
 	lp *linkpearl.Linkpearl,
 	log *zerolog.Logger,
 	cfg *config.Manager,
+	psd *ext.PSD,
 	prefix string,
 	roomID string,
 	cacheSize int,
@@ -48,18 +52,18 @@ func NewBot(
 		mu:          make(map[string]*sync.Mutex),
 		cfg:         cfg,
 		log:         log,
+		psd:         psd,
 		eventsCache: cache,
 		prefix:      prefix,
 		roomID:      id.RoomID(roomID),
 	}
-	bot.ignoreBefore = bot.cfg.Mautrix015Migration()
+	bot.ignoreBefore = bot.cfg.Mautrix015Migration(context.Background())
 
 	return bot, nil
 }
 
 // Start performs matrix /sync
 func (b *Bot) Start() error {
-	b.migrateMappings()
 	b.initSync()
 	return b.lp.Start()
 }

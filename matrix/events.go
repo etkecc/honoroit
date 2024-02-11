@@ -1,22 +1,18 @@
 package matrix
 
 import (
+	"context"
+
 	"gitlab.com/etke.cc/linkpearl"
-	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
 
-type RespThreads struct {
-	Chunk     []*event.Event `json:"chunk"`
-	NextBatch string         `json:"next_batch"`
-}
-
-func (b *Bot) countCustomerRequests(userID id.UserID) (int, int, error) {
+func (b *Bot) countCustomerRequests(ctx context.Context, userID id.UserID) (int, int, error) {
 	var user int
 	var hs int
 	var from string
 	for {
-		resp, err := b.lp.Threads(b.roomID)
+		resp, err := b.lp.Threads(ctx, b.roomID)
 		if err != nil {
 			b.log.Error().Err(err).Str("from", from).Str("roomID", b.roomID.String()).Msg("cannot request threads for the room")
 			return user, hs, err
@@ -38,9 +34,9 @@ func (b *Bot) countCustomerRequests(userID id.UserID) (int, int, error) {
 	return user, hs, nil
 }
 
-func (b *Bot) getName(userID id.UserID) string {
+func (b *Bot) getName(ctx context.Context, userID id.UserID) string {
 	name := userID.String()
-	dnresp, err := b.lp.GetClient().GetDisplayName(userID)
+	dnresp, err := b.lp.GetClient().GetDisplayName(ctx, userID)
 	if err != nil {
 		b.log.Warn().Err(err).Str("userID", userID.String()).Msg("cannot get display name")
 	}
@@ -49,4 +45,17 @@ func (b *Bot) getName(userID id.UserID) string {
 	}
 
 	return name
+}
+
+func (b *Bot) getStatus(userID id.UserID) string {
+	status := ""
+	ok, err := b.psd.Contains(userID.Homeserver())
+	if err != nil {
+		b.log.Warn().Err(err).Str("userID", userID.String()).Msg("cannot check psd")
+	}
+	if ok {
+		status = "👥"
+	}
+
+	return status
 }

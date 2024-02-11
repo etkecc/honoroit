@@ -1,12 +1,17 @@
 package config
 
 import (
+	"context"
+	"strconv"
 	"sync"
 
 	"gitlab.com/etke.cc/linkpearl"
 )
 
-const configKey = "cc.etke.honoroit.config"
+const (
+	configKey     = "cc.etke.honoroit.config"
+	mautrix015key = "mautrix015migration"
+)
 
 // Manager of configs
 type Manager struct {
@@ -22,16 +27,15 @@ func New(lp *linkpearl.Linkpearl) *Manager {
 		cfg: make(map[string]string),
 		lp:  lp,
 	}
-	m.migrate()
 
 	return m
 }
 
-func (m *Manager) getConfig() map[string]string {
+func (m *Manager) getConfig(ctx context.Context) map[string]string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	cfg, err := m.lp.GetAccountData(configKey)
+	cfg, err := m.lp.GetAccountData(ctx, configKey)
 	if err == nil {
 		m.cfg = cfg
 	}
@@ -39,9 +43,14 @@ func (m *Manager) getConfig() map[string]string {
 	return m.cfg
 }
 
+func (m *Manager) Mautrix015Migration(ctx context.Context) int64 {
+	migratedInt, _ := strconv.Atoi(m.getConfig(ctx)[mautrix015key]) //nolint:errcheck // no need
+	return int64(migratedInt)
+}
+
 // Get config value
-func (m *Manager) Get(key string) string {
-	v := m.getConfig()[key]
+func (m *Manager) Get(ctx context.Context, key string) string {
+	v := m.getConfig(ctx)[key]
 	if v != "" {
 		return v
 	}
@@ -63,9 +72,9 @@ func (m *Manager) Set(key, value string) *Manager { //nolint:unparam // lies
 }
 
 // Save config
-func (m *Manager) Save() {
+func (m *Manager) Save(ctx context.Context) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.lp.SetAccountData(configKey, m.cfg) //nolint:errcheck // we have logs already
+	m.lp.SetAccountData(ctx, configKey, m.cfg) //nolint:errcheck // we have logs already
 }

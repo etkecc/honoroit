@@ -1,7 +1,7 @@
 package matrix
 
 import (
-	"database/sql"
+	"context"
 	"errors"
 
 	"gitlab.com/etke.cc/linkpearl"
@@ -34,8 +34,8 @@ func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 	return threadID, nil
 }
 
-func (b *Bot) getMapping(id string) (string, error) {
-	data, err := b.lp.GetAccountData(mappingPrefix + id)
+func (b *Bot) getMapping(ctx context.Context, id string) (string, error) {
+	data, err := b.lp.GetAccountData(ctx, mappingPrefix+id)
 	if err != nil {
 		return "", err
 	}
@@ -50,76 +50,34 @@ func (b *Bot) getMapping(id string) (string, error) {
 	return v, nil
 }
 
-func (b *Bot) setMapping(from, to string) {
-	err := b.lp.SetAccountData(mappingPrefix+from, map[string]string{"id": to})
+func (b *Bot) setMapping(ctx context.Context, from, to string) {
+	err := b.lp.SetAccountData(ctx, mappingPrefix+from, map[string]string{"id": to})
 	if err != nil {
 		b.log.Error().Err(err).Msg("cannot set mapping")
 	}
 }
 
-func (b *Bot) removeMapping(id string) {
-	b.lp.SetAccountData(mappingPrefix+id, map[string]string{}) //nolint:errcheck // doesn't matter
-}
-
-// TODO remove after some time
-// nolint:gocognit
-func (b *Bot) migrateMappings() {
-	query := "SELECT * FROM mappings"
-	rows, err := b.lp.GetDB().Query(query)
-	if err != nil {
-		b.log.Info().Err(err).Msg("query of the old db mappings table failed, nothing to migrate")
-		return
-	}
-	for rows.Next() {
-		var roomID id.RoomID
-		var email string
-		var eventID id.EventID
-		err := rows.Scan(&roomID, &email, &eventID)
-		if err != nil && err != sql.ErrNoRows {
-			b.log.Warn().Err(err).Msg("cannot load mapping from the old db")
-			continue
-		}
-
-		if roomID == "" || eventID == "" {
-			continue
-		}
-
-		b.setMapping(roomID.String(), eventID.String())
-		b.setMapping(eventID.String(), roomID.String())
-
-		// remove old mapping
-		tx, err := b.lp.GetDB().Begin()
-		if err != nil {
-			continue
-		}
-		query := "DELETE FROM mappings WHERE room_id = $1"
-		_, err = tx.Exec(query, roomID)
-		if err != nil {
-			tx.Rollback() //nolint:errcheck
-			continue
-		}
-
-		tx.Commit() //nolint:errcheck
-	}
+func (b *Bot) removeMapping(ctx context.Context, id string) {
+	b.lp.SetAccountData(ctx, mappingPrefix+id, map[string]string{}) //nolint:errcheck // doesn't matter
 }
 
 // findRoomID by eventID
-func (b *Bot) findRoomID(eventID id.EventID) (id.RoomID, error) {
-	roomID, err := b.getMapping(eventID.String())
+func (b *Bot) findRoomID(ctx context.Context, eventID id.EventID) (id.RoomID, error) {
+	roomID, err := b.getMapping(ctx, eventID.String())
 
 	return id.RoomID(roomID), err
 }
 
 // findEventID by roomID
-func (b *Bot) findEventID(roomID id.RoomID) (id.EventID, error) {
-	eventID, err := b.getMapping(roomID.String())
+func (b *Bot) findEventID(ctx context.Context, roomID id.RoomID) (id.EventID, error) {
+	eventID, err := b.getMapping(ctx, roomID.String())
 	if eventID == "" {
 		return "", err
 	}
-	_, err = b.lp.GetClient().GetEvent(b.roomID, id.EventID(eventID))
+	_, err = b.lp.GetClient().GetEvent(ctx, b.roomID, id.EventID(eventID))
 	if err != nil {
-		b.removeMapping(roomID.String())
-		b.removeMapping(eventID)
+		b.removeMapping(ctx, roomID.String())
+		b.removeMapping(ctx, eventID)
 		return "", errNotMapped
 	}
 

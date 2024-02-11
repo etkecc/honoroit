@@ -141,7 +141,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 }
 
 func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (id.EventID, error) {
-	status := b.getStatus(userID)
+	customerStatus, hsStatus := b.getStatus(userID)
 	customerRequests, hsRequests, err := b.countCustomerRequests(ctx, userID)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot calculate count of the support requests")
@@ -153,9 +153,9 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 		"homeserver": userID.Homeserver(),
 	}
 
-	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s%s (%s by %s)", prefix, hsRequestsStr, status, userID.Homeserver(), customerRequestsStr, b.getName(ctx, userID)), raw)
+	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s%s (%s by %s%s)", prefix, hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, b.getName(ctx, userID)), raw)
 	if eventID == "" {
-		b.SendNotice(ctx, b.roomID, "user "+status+userID.String()+" tried to send a message, but thread creation failed", nil)
+		b.SendNotice(ctx, b.roomID, "user "+userID.String()+" tried to send a message, but thread creation failed", nil)
 		return "", err
 	}
 	return eventID, nil

@@ -124,7 +124,7 @@ var (
 	}
 
 	// Options is full list of the all available options
-	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetings, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount}
+	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetings, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone}
 )
 
 type Option struct {

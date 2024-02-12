@@ -2,7 +2,6 @@ package matrix
 
 import (
 	"context"
-	"slices"
 
 	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix/id"
@@ -51,14 +50,18 @@ func (b *Bot) getName(ctx context.Context, userID id.UserID) string {
 func (b *Bot) getStatus(userID id.UserID) (string, string) {
 	hostStatus := ""
 	userStatus := ""
-	mxids, err := b.psd.GetMXIDs(userID.Homeserver())
+	hostOK, err := b.psd.Contains(userID.Homeserver())
+	if err != nil {
+		b.log.Warn().Err(err).Str("host", userID.Homeserver()).Msg("cannot check psd")
+	}
+	userOK, err := b.psd.Contains(userID.String())
 	if err != nil {
 		b.log.Warn().Err(err).Str("userID", userID.String()).Msg("cannot check psd")
 	}
-	if len(mxids) > 0 {
+	if hostOK {
 		hostStatus = "👥"
 	}
-	if slices.Contains(mxids, userID.String()) {
+	if userOK {
 		userStatus = "👤"
 	}
 

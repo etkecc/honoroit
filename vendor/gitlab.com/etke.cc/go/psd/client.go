@@ -1,4 +1,4 @@
-package ext
+package psd
 
 import (
 	"context"
@@ -10,57 +10,54 @@ import (
 	"time"
 )
 
-type PSD struct {
+type Client struct {
 	url      *url.URL
 	login    string
 	password string
 }
 
-type PSDTarget struct {
-	Targets []string          `json:"targets"`
-	Labels  map[string]string `json:"labels"`
-}
-
-func NewPSD(baseURL, login, password string) *PSD {
+// NewClient returns a new PSD client
+func NewClient(baseURL, login, password string) *Client {
 	uri, err := url.Parse(baseURL)
 	if err != nil || login == "" || password == "" {
-		return &PSD{}
+		return &Client{}
 	}
-	return &PSD{url: uri, login: login, password: password}
+	return &Client{url: uri, login: login, password: password}
 }
 
-func (p *PSD) Contains(identifier string) (bool, error) {
+// Get returns the list of targets for the given identifier
+func (p *Client) Get(identifier string) ([]*Target, error) {
 	if p.url == nil {
-		return false, nil
+		return nil, nil
 	}
 	cloned := *p.url
 	uri := cloned.JoinPath("/node/" + identifier)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), http.NoBody)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	req.SetBasicAuth(p.login, p.password)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("%s", resp.Status)
-		return false, err
+		err = fmt.Errorf("%s", resp.Status) //nolint:goerr113 // that's ok
+		return nil, err
 	}
 	datab, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	var psd []*PSDTarget
+	var psd []*Target
 	err = json.Unmarshal(datab, &psd)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	return len(psd) > 0, nil
+	return psd, nil
 }

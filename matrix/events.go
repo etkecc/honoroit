@@ -50,18 +50,18 @@ func (b *Bot) getName(ctx context.Context, userID id.UserID) string {
 func (b *Bot) getStatus(userID id.UserID) (string, string) {
 	hostStatus := ""
 	userStatus := ""
-	hostOK, err := b.psd.Contains(userID.Homeserver())
+	hostTargets, err := b.psd.Get(userID.Homeserver())
 	if err != nil {
 		b.log.Warn().Err(err).Str("host", userID.Homeserver()).Msg("cannot check psd")
 	}
-	userOK, err := b.psd.Contains(userID.String())
+	userTargets, err := b.psd.Get(userID.String())
 	if err != nil {
 		b.log.Warn().Err(err).Str("userID", userID.String()).Msg("cannot check psd")
 	}
-	if hostOK {
+	if len(hostTargets) > 0 {
 		hostStatus = "👥"
 	}
-	if userOK {
+	if len(userTargets) > 0 {
 		userStatus = "👤"
 	}
 

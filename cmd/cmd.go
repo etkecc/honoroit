@@ -17,11 +17,11 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
 	"gitlab.com/etke.cc/go/healthchecks"
+	"gitlab.com/etke.cc/go/psd"
 	"gitlab.com/etke.cc/linkpearl"
 
 	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/controllers"
-	"gitlab.com/etke.cc/honoroit/ext"
 	"gitlab.com/etke.cc/honoroit/matrix"
 	mxconfig "gitlab.com/etke.cc/honoroit/matrix/config"
 	"gitlab.com/etke.cc/honoroit/metrics"
@@ -112,7 +112,7 @@ func initBot(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	psd := ext.NewPSD(cfg.Auth.PSD.URL, cfg.Auth.PSD.Login, cfg.Auth.PSD.Password)
+	psd := psd.NewClient(cfg.Auth.PSD.URL, cfg.Auth.PSD.Login, cfg.Auth.PSD.Password)
 	mxc := mxconfig.New(lp)
 	bot, err = matrix.NewBot(lp, &log, mxc, psd, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
 	return err

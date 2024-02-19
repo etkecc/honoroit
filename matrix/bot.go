@@ -9,10 +9,10 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/rs/zerolog"
 	"gitlab.com/etke.cc/go/mxidwc"
+	"gitlab.com/etke.cc/go/psd"
 	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix/id"
 
-	"gitlab.com/etke.cc/honoroit/ext"
 	"gitlab.com/etke.cc/honoroit/matrix/config"
 )
 
@@ -23,7 +23,7 @@ const TypingTimeout = 5_000
 type Bot struct {
 	cfg          *config.Manager
 	log          *zerolog.Logger
-	psd          *ext.PSD
+	psd          *psd.Client
 	lp           *linkpearl.Linkpearl
 	mu           map[string]*sync.Mutex
 	eventsCache  *lru.Cache[id.EventID, id.EventID]
@@ -37,7 +37,7 @@ func NewBot(
 	lp *linkpearl.Linkpearl,
 	log *zerolog.Logger,
 	cfg *config.Manager,
-	psd *ext.PSD,
+	psd *psd.Client,
 	prefix string,
 	roomID string,
 	cacheSize int,

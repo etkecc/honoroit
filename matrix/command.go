@@ -163,7 +163,6 @@ func (b *Bot) inviteRequest(ctx context.Context, evt *event.Event) {
 		Reason: "you've asked for that",
 		UserID: evt.Sender,
 	})
-
 	if err != nil {
 		b.SendNotice(ctx, evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}

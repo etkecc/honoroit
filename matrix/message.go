@@ -14,7 +14,19 @@ import (
 	"gitlab.com/etke.cc/honoroit/metrics"
 )
 
-func (b *Bot) greetings(ctx context.Context, roomID id.RoomID) {
+func (b *Bot) greetings(ctx context.Context, userID id.UserID, roomID id.RoomID) {
+	customerStatus, hsStatus := b.getStatus(userID)
+	identified := customerStatus != "" || hsStatus != ""
+	ownServer := userID.Homeserver() == b.lp.GetClient().UserID.Homeserver()
+	if identified && !ownServer {
+		_, requests, err := b.countCustomerRequests(ctx, userID)
+		if err != nil {
+			b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot calculate count of the support requests")
+		}
+		requestsStr := humanize.Ordinal(requests + 1) // including current request
+		b.SendNotice(ctx, roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextGreetingsCustomer.Key), requestsStr), nil)
+		return
+	}
 	b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextGreetings.Key), nil)
 }
 
@@ -135,7 +147,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 	b.setMapping(ctx, roomID.String(), eventID.String())
 	b.setMapping(ctx, eventID.String(), roomID.String())
 	if greet {
-		b.greetings(ctx, roomID)
+		b.greetings(ctx, userID, roomID)
 	}
 	return eventID, nil
 }

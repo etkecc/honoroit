@@ -74,6 +74,12 @@ var (
 		Description: "message sent to the customer on the first contact",
 		Sanitizer:   strings.TrimSpace,
 	}
+	TextGreetingsCustomer = &Option{
+		Key:         "text.greetings.customer",
+		Default:     "Thank you for contacting us! This is your %s request.",
+		Description: "message sent to the identified customer on the first contact",
+		Sanitizer:   strings.TrimSpace,
+	}
 	TextJoin = &Option{
 		Key:         "text.join",
 		Default:     "%s joined the room",
@@ -124,7 +130,7 @@ var (
 	}
 
 	// Options is full list of the all available options
-	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetings, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone}
+	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone}
 )
 
 type Option struct {

@@ -1,4 +1,4 @@
-# github.com/VictoriaMetrics/metrics v1.32.0
+# github.com/VictoriaMetrics/metrics v1.33.0
 ## explicit; go 1.17
 github.com/VictoriaMetrics/metrics
 # github.com/archdx/zerolog-sentry v1.8.2
@@ -108,7 +108,7 @@ github.com/yuin/goldmark/util
 # github.com/ziflex/lecho/v3 v3.5.0
 ## explicit; go 1.17
 github.com/ziflex/lecho/v3
-# gitlab.com/etke.cc/go/echo-basic-auth v1.0.0
+# gitlab.com/etke.cc/go/echo-basic-auth v1.1.0
 ## explicit; go 1.21.0
 gitlab.com/etke.cc/go/echo-basic-auth
 # gitlab.com/etke.cc/go/env v1.1.0
@@ -120,7 +120,7 @@ gitlab.com/etke.cc/go/healthchecks
 # gitlab.com/etke.cc/go/mxidwc v1.0.0
 ## explicit; go 1.19
 gitlab.com/etke.cc/go/mxidwc
-# gitlab.com/etke.cc/go/psd v1.0.0
+# gitlab.com/etke.cc/go/psd v1.1.1
 ## explicit; go 1.21.0
 gitlab.com/etke.cc/go/psd
 # gitlab.com/etke.cc/linkpearl v0.0.0-20240211143445-bddf907d137a
@@ -135,7 +135,7 @@ go.mau.fi/util/exgjson
 go.mau.fi/util/jsontime
 go.mau.fi/util/random
 go.mau.fi/util/retryafter
-# golang.org/x/crypto v0.19.0
+# golang.org/x/crypto v0.21.0
 ## explicit; go 1.18
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
@@ -143,12 +143,12 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
+# golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.21.0
+# golang.org/x/net v0.22.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -157,7 +157,7 @@ golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.17.0
+# golang.org/x/sys v0.18.0
 ## explicit; go 1.18
 golang.org/x/sys/execabs
 golang.org/x/sys/unix

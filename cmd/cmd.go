@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -16,7 +17,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
-	"gitlab.com/etke.cc/go/healthchecks"
+	"gitlab.com/etke.cc/go/healthchecks/v2"
 	"gitlab.com/etke.cc/go/psd"
 	"gitlab.com/etke.cc/linkpearl"
 
@@ -78,14 +79,18 @@ func initLog(cfg *config.Config) {
 }
 
 func initHealthchecks(cfg *config.Config) {
-	if cfg.Monitoring.HealchecksUUID == "" {
+	if cfg.Monitoring.HealthchecksUUID == "" {
 		return
 	}
-	hc = healthchecks.New(cfg.Monitoring.HealchecksUUID, func(operation string, err error) {
-		log.Error().Err(err).Str("op", operation).Msg("healthchecks operation failed")
-	})
+	hc = healthchecks.New(
+		healthchecks.WithBaseURL(cfg.Monitoring.HealthchecksURL),
+		healthchecks.WithCheckUUID(cfg.Monitoring.HealthchecksUUID),
+		healthchecks.WithErrLog(func(operation string, err error) {
+			log.Error().Err(err).Str("op", operation).Msg("healthchecks operation failed")
+		}),
+	)
 	hc.Start(strings.NewReader("starting honoroit"))
-	go hc.Auto(cfg.Monitoring.HealthechsDuration)
+	go hc.Auto(cfg.Monitoring.HealthchecksDuration)
 }
 
 func initHTTP(cfg *config.Config) {
@@ -149,5 +154,8 @@ func recovery() {
 		return
 	}
 
+	if hc != nil {
+		hc.ExitStatus(1, strings.NewReader(fmt.Sprintf("panic: %v", err)))
+	}
 	log.Error().Err(err.(error)).Msg("panic")
 }

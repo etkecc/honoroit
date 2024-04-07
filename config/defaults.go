@@ -10,7 +10,8 @@ var defaultConfig = &Config{
 		Dialect: "sqlite3",
 	},
 	Monitoring: Monitoring{
-		SentrySampleRate:   20,
-		HealthechsDuration: 5,
+		SentrySampleRate:     20,
+		HealthchecksDuration: 60,
+		HealthchecksURL:      "https://hc-ping.com",
 	},
 }

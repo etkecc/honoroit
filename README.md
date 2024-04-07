@@ -86,6 +86,7 @@ env vars
 * **HONOROIT_DATA_SECRET** - secure key (password) to encrypt account data, must be 16, 24, or 32 bytes long
 * **HONOROIT_MONITORING_SENTRY_DSN** - sentry DSN
 * **HONOROIT_MONITORING_SENTRY_RATE** - sentry sample rate, from 0 to 100 (default: 20)
+* **HONOROIT_MONITORING_HEALTHCHECKS_URL** - healthchecks.io url, default: `https://hc-ping.com`
 * **HONOROIT_MONITORING_HEALTHCHECKS_UUID** - healthchecks.io UUID
 * **HONOROIT_MONITORING_HEALTHCHECKS_DURATION** - heathchecks.io duration between pings in seconds (default: 5)
 * **HONOROIT_LOGLEVEL** - log level

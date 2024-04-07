@@ -1,4 +1,4 @@
-# github.com/VictoriaMetrics/metrics v1.33.0
+# github.com/VictoriaMetrics/metrics v1.33.1
 ## explicit; go 1.17
 github.com/VictoriaMetrics/metrics
 # github.com/archdx/zerolog-sentry v1.8.2
@@ -65,8 +65,8 @@ github.com/pmezard/go-difflib/difflib
 github.com/rs/zerolog
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
-# github.com/stretchr/testify v1.8.4
-## explicit; go 1.20
+# github.com/stretchr/testify v1.9.0
+## explicit; go 1.17
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 github.com/stretchr/testify/suite
@@ -94,7 +94,7 @@ github.com/valyala/fasttemplate
 # github.com/valyala/histogram v1.2.0
 ## explicit; go 1.12
 github.com/valyala/histogram
-# github.com/yuin/goldmark v1.7.0
+# github.com/yuin/goldmark v1.7.1
 ## explicit; go 1.19
 github.com/yuin/goldmark
 github.com/yuin/goldmark/ast
@@ -114,28 +114,29 @@ gitlab.com/etke.cc/go/echo-basic-auth
 # gitlab.com/etke.cc/go/env v1.1.0
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/env
-# gitlab.com/etke.cc/go/healthchecks v1.0.1
+# gitlab.com/etke.cc/go/healthchecks/v2 v2.0.0
 ## explicit; go 1.18
-gitlab.com/etke.cc/go/healthchecks
+gitlab.com/etke.cc/go/healthchecks/v2
 # gitlab.com/etke.cc/go/mxidwc v1.0.0
 ## explicit; go 1.19
 gitlab.com/etke.cc/go/mxidwc
 # gitlab.com/etke.cc/go/psd v1.1.1
 ## explicit; go 1.21.0
 gitlab.com/etke.cc/go/psd
-# gitlab.com/etke.cc/linkpearl v0.0.0-20240211143445-bddf907d137a
-## explicit; go 1.18
+# gitlab.com/etke.cc/linkpearl v0.0.0-20240316115913-106577b88942
+## explicit; go 1.21
 gitlab.com/etke.cc/linkpearl
-# go.mau.fi/util v0.4.0
+# go.mau.fi/util v0.4.1
 ## explicit; go 1.21
 go.mau.fi/util/base58
 go.mau.fi/util/dbutil
 go.mau.fi/util/exerrors
 go.mau.fi/util/exgjson
+go.mau.fi/util/jsonbytes
 go.mau.fi/util/jsontime
 go.mau.fi/util/random
 go.mau.fi/util/retryafter
-# golang.org/x/crypto v0.21.0
+# golang.org/x/crypto v0.22.0
 ## explicit; go 1.18
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
@@ -143,12 +144,12 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
+# golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.22.0
+# golang.org/x/net v0.24.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -157,7 +158,7 @@ golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.18.0
+# golang.org/x/sys v0.19.0
 ## explicit; go 1.18
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
@@ -182,15 +183,13 @@ golang.org/x/time/rate
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# maunium.net/go/maulogger/v2 v2.4.1
-## explicit; go 1.19
-maunium.net/go/maulogger/v2
-maunium.net/go/maulogger/v2/maulogadapt
-# maunium.net/go/mautrix v0.17.0
-## explicit; go 1.20
+# maunium.net/go/mautrix v0.18.0
+## explicit; go 1.21
 maunium.net/go/mautrix
 maunium.net/go/mautrix/crypto
+maunium.net/go/mautrix/crypto/aescbc
 maunium.net/go/mautrix/crypto/attachment
+maunium.net/go/mautrix/crypto/backup
 maunium.net/go/mautrix/crypto/canonicaljson
 maunium.net/go/mautrix/crypto/cryptohelper
 maunium.net/go/mautrix/crypto/goolm
@@ -202,10 +201,11 @@ maunium.net/go/mautrix/crypto/goolm/megolm
 maunium.net/go/mautrix/crypto/goolm/message
 maunium.net/go/mautrix/crypto/goolm/olm
 maunium.net/go/mautrix/crypto/goolm/pk
-maunium.net/go/mautrix/crypto/goolm/sas
 maunium.net/go/mautrix/crypto/goolm/session
 maunium.net/go/mautrix/crypto/goolm/utilities
 maunium.net/go/mautrix/crypto/olm
+maunium.net/go/mautrix/crypto/pkcs7
+maunium.net/go/mautrix/crypto/signatures
 maunium.net/go/mautrix/crypto/sql_store_upgrade
 maunium.net/go/mautrix/crypto/ssss
 maunium.net/go/mautrix/crypto/utils

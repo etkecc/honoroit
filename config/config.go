@@ -40,10 +40,11 @@ func New() *Config {
 			},
 		},
 		Monitoring: Monitoring{
-			SentryDSN:          env.String("monitoring.sentry.dsn", env.String("sentry", "")),
-			SentrySampleRate:   env.Int("monitoring.sentry.rate", env.Int("sentry.rate", 0)),
-			HealchecksUUID:     env.String("monitoring.healthchecks.uuid", ""),
-			HealthechsDuration: time.Duration(env.Int("monitoring.healthchecks.duration", int(defaultConfig.Monitoring.HealthechsDuration))) * time.Second,
+			SentryDSN:            env.String("monitoring.sentry.dsn", env.String("sentry", "")),
+			SentrySampleRate:     env.Int("monitoring.sentry.rate", env.Int("sentry.rate", 0)),
+			HealthchecksURL:      env.String("monitoring.healthchecks.url", defaultConfig.Monitoring.HealthchecksURL),
+			HealthchecksUUID:     env.String("monitoring.healthchecks.uuid", ""),
+			HealthchecksDuration: time.Duration(env.Int("monitoring.healthchecks.duration", int(defaultConfig.Monitoring.HealthchecksDuration))) * time.Second,
 		},
 	}
 }

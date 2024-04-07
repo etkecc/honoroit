@@ -60,8 +60,9 @@ type PSDAuth struct {
 
 // Monitoring config
 type Monitoring struct {
-	SentryDSN          string
-	SentrySampleRate   int
-	HealchecksUUID     string
-	HealthechsDuration time.Duration
+	SentryDSN            string
+	SentrySampleRate     int
+	HealthchecksURL      string
+	HealthchecksUUID     string
+	HealthchecksDuration time.Duration
 }

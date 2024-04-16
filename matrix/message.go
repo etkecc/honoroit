@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -190,6 +191,10 @@ func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *
 
 	roomID, err := b.findRoomID(ctx, threadID)
 	if err != nil {
+		if errors.Is(err, errNotMapped) {
+			b.help(ctx, evt, linkpearl.UnwrapError(err).Error())
+			return
+		}
 		b.SendNotice(ctx, evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}

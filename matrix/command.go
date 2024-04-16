@@ -305,7 +305,7 @@ func (b *Bot) setConfigOption(ctx context.Context, evt *event.Event, key, value 
 	b.SendNotice(ctx, b.roomID, key+" has been updated, new value: `"+value+"`", nil, linkpearl.EventRelatesTo(evt))
 }
 
-func (b *Bot) help(ctx context.Context, evt *event.Event) {
+func (b *Bot) help(ctx context.Context, evt *event.Event, preamble ...string) {
 	text := `Honoroit can perform following actions (note that all of them should be sent in a thread:
 
 ` + b.prefix + ` done - close the current request. Customer will receive a message about that and bot will leave the customer's room, thead topic will be prefixed with "[DONE]" suffixed with timestamp
@@ -326,5 +326,10 @@ func (b *Bot) help(ctx context.Context, evt *event.Event) {
 
 ` + b.prefix + ` config KEY VALUE - set config KEY's value to VALUE
 `
+
+	if len(preamble) > 0 {
+		text = preamble[0] + "\n\n" + text
+	}
+
 	b.SendNotice(ctx, b.roomID, text, nil, linkpearl.EventRelatesTo(evt))
 }

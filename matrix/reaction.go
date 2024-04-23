@@ -47,7 +47,7 @@ func (b *Bot) forwardReactionToCustomer(ctx context.Context, evt *event.Event) {
 
 	targetID, ok := sourceEvt.Content.Raw["event_id"].(string)
 	if !ok { // message by operator doesn't contain metadata, try to find the same event in the customer's room
-		targetEvent := b.lp.FindEventBy(ctx, roomID, "event_id", sourceID.String())
+		targetEvent := b.lp.FindEventBy(ctx, roomID, map[string]string{"event_id": sourceID.String()})
 		if targetEvent == nil {
 			b.log.Error().Err(err).Str("sourceID", sourceID.String()).Msg("event found neither in operators nor in customers room")
 			return

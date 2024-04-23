@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/mileusna/crontab"
 	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
 	"gitlab.com/etke.cc/go/healthchecks/v2"
@@ -29,10 +30,11 @@ import (
 )
 
 var (
-	e   *echo.Echo
-	hc  *healthchecks.Client
-	bot *matrix.Bot
-	log zerolog.Logger
+	e    *echo.Echo
+	hc   *healthchecks.Client
+	bot  *matrix.Bot
+	ctab *crontab.Crontab
+	log  zerolog.Logger
 )
 
 func main() {
@@ -51,7 +53,13 @@ func main() {
 		log.Error().Err(err).Msg("cannot initialize the bot")
 		return
 	}
+	ctab = crontab.New()
 	initShutdown()
+
+	if err := ctab.AddJob("0 15 * * *", bot.AutoCloseRequests); err != nil {
+		log.Error().Err(err).Msg("cannot add cron job")
+		return
+	}
 
 	go e.Start(cfg.Port) //nolint:errcheck // nobody cares
 
@@ -117,9 +125,9 @@ func initBot(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	psd := psd.NewClient(cfg.Auth.PSD.URL, cfg.Auth.PSD.Login, cfg.Auth.PSD.Password)
+	psdc := psd.NewClient(cfg.Auth.PSD.URL, cfg.Auth.PSD.Login, cfg.Auth.PSD.Password)
 	mxc := mxconfig.New(lp)
-	bot, err = matrix.NewBot(lp, &log, mxc, psd, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
+	bot, err = matrix.NewBot(lp, &log, mxc, psdc, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
 	return err
 }
 
@@ -136,6 +144,7 @@ func initShutdown() {
 
 func shutdown() {
 	bot.Stop()
+	ctab.Shutdown()
 
 	if hc != nil {
 		hc.Shutdown()
@@ -148,14 +157,19 @@ func shutdown() {
 }
 
 func recovery() {
-	err := recover()
+	r := recover()
 	// no problem just shutdown
-	if err == nil {
+	if r == nil {
 		return
 	}
 
 	if hc != nil {
-		hc.ExitStatus(1, strings.NewReader(fmt.Sprintf("panic: %v", err)))
+		hc.ExitStatus(1, strings.NewReader(fmt.Sprintf("panic: %v", r)))
 	}
-	log.Error().Err(err.(error)).Msg("panic")
+	err, ok := r.(error)
+	if !ok {
+		log.Error().Interface("panic", r).Msg("panic")
+		return
+	}
+	log.Error().Err(err).Msg("panic")
 }

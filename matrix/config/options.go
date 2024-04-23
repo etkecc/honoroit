@@ -128,9 +128,15 @@ var (
 		Description: "message sent to customer when request marked as done in the threads room",
 		Sanitizer:   strings.TrimSpace,
 	}
+	TextDoneAuto = &Option{
+		Key:         "text.done.auto",
+		Default:     "There were no activity for a while. I've marked this request as completed. If you think that it's not done yet, please start another 1:1 chat with me to open a new request.",
+		Description: "message sent to customer when request automatically marked as done",
+		Sanitizer:   strings.TrimSpace,
+	}
 
 	// Options is full list of the all available options
-	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone}
+	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone, TextDoneAuto}
 )
 
 type Option struct {

@@ -9,20 +9,21 @@ require (
 	github.com/archdx/zerolog-sentry v1.8.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/labstack/echo/v4 v4.11.4
+	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/mileusna/crontab v1.2.0
 	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.9.0
 	github.com/ziflex/lecho/v3 v3.5.0
 	gitlab.com/etke.cc/go/echo-basic-auth v1.1.0
 	gitlab.com/etke.cc/go/env v1.1.0
-	gitlab.com/etke.cc/go/healthchecks/v2 v2.0.0
+	gitlab.com/etke.cc/go/healthchecks/v2 v2.2.0
 	gitlab.com/etke.cc/go/mxidwc v1.0.0
-	gitlab.com/etke.cc/go/psd v1.1.1
-	gitlab.com/etke.cc/linkpearl v0.0.0-20240316115913-106577b88942
-	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
-	maunium.net/go/mautrix v0.18.0
+	gitlab.com/etke.cc/go/psd v1.1.2
+	gitlab.com/etke.cc/linkpearl v0.0.0-20240423201638-04d4ee361d74
+	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
+	maunium.net/go/mautrix v0.18.1
 )
 
 require (
@@ -45,7 +46,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/yuin/goldmark v1.7.1 // indirect
-	go.mau.fi/util v0.4.1 // indirect
+	go.mau.fi/util v0.4.2 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect

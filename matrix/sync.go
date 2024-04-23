@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -53,15 +54,19 @@ func (b *Bot) joinPermit(ctx context.Context, evt *event.Event) bool {
 }
 
 func (b *Bot) onJoin(ctx context.Context, evt *event.Event, threadID id.EventID) {
-	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextJoin.Key), b.getName(ctx, evt.Sender)), nil, linkpearl.RelatesTo(threadID))
+	name, _ := b.getName(ctx, evt.Sender)
+	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextJoin.Key), name), nil, linkpearl.RelatesTo(threadID))
 }
 
 func (b *Bot) onInvite(ctx context.Context, evt *event.Event, threadID id.EventID) {
-	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextInvite.Key), b.getName(ctx, evt.Sender), b.getName(ctx, id.UserID(evt.GetStateKey()))), nil, linkpearl.RelatesTo(threadID))
+	nameSender, _ := b.getName(ctx, evt.Sender)
+	nameTarget, _ := b.getName(ctx, id.UserID(evt.GetStateKey()))
+	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextInvite.Key), nameSender, nameTarget), nil, linkpearl.RelatesTo(threadID))
 }
 
 func (b *Bot) onLeave(ctx context.Context, evt *event.Event, threadID id.EventID) {
-	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextLeave.Key), b.getName(ctx, id.UserID(evt.GetStateKey()))), nil, linkpearl.RelatesTo(threadID))
+	name, _ := b.getName(ctx, id.UserID(evt.GetStateKey()))
+	b.SendNotice(ctx, b.roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextLeave.Key), name), nil, linkpearl.RelatesTo(threadID))
 
 	members, err := b.lp.GetClient().StateStore.GetRoomJoinedOrInvitedMembers(ctx, evt.RoomID)
 	if err != nil {
@@ -92,7 +97,7 @@ func (b *Bot) onMembership(ctx context.Context, evt *event.Event) {
 	}
 	eventID, err := b.findEventID(ctx, evt.RoomID)
 	// there is no thread for that room
-	if err == errNotMapped {
+	if errors.Is(err, errNotMapped) {
 		return
 	}
 	if err != nil {
@@ -100,7 +105,7 @@ func (b *Bot) onMembership(ctx context.Context, evt *event.Event) {
 		return
 	}
 
-	switch evt.Content.AsMember().Membership {
+	switch evt.Content.AsMember().Membership { //nolint:exhaustive // we don't care about other membership types
 	case event.MembershipJoin:
 		b.onJoin(ctx, evt, eventID)
 	case event.MembershipInvite:

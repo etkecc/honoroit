@@ -10,7 +10,7 @@ import (
 )
 
 // SendNotice is a copy of linkpearl.SendNotice, but with raw content support
-func (b *Bot) SendNotice(ctx context.Context, roomID id.RoomID, message string, raw map[string]interface{}, relates ...*event.RelatesTo) id.EventID {
+func (b *Bot) SendNotice(ctx context.Context, roomID id.RoomID, message string, raw map[string]any, relates ...*event.RelatesTo) id.EventID {
 	var relatesTo *event.RelatesTo
 	if len(relates) > 0 {
 		relatesTo = relates[0]

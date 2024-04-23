@@ -34,8 +34,8 @@ func (b *Bot) findThread(evt *event.Event) (id.EventID, error) {
 	return threadID, nil
 }
 
-func (b *Bot) getMapping(ctx context.Context, id string) (string, error) {
-	data, err := b.lp.GetAccountData(ctx, mappingPrefix+id)
+func (b *Bot) getMapping(ctx context.Context, identifier string) (string, error) {
+	data, err := b.lp.GetAccountData(ctx, mappingPrefix+identifier)
 	if err != nil {
 		return "", err
 	}
@@ -57,8 +57,8 @@ func (b *Bot) setMapping(ctx context.Context, from, to string) {
 	}
 }
 
-func (b *Bot) removeMapping(ctx context.Context, id string) {
-	b.lp.SetAccountData(ctx, mappingPrefix+id, map[string]string{}) //nolint:errcheck // doesn't matter
+func (b *Bot) removeMapping(ctx context.Context, identifier string) {
+	b.lp.SetAccountData(ctx, mappingPrefix+identifier, map[string]string{}) //nolint:errcheck // doesn't matter
 }
 
 // findRoomID by eventID

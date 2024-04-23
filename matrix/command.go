@@ -39,7 +39,7 @@ func (b *Bot) runCommand(ctx context.Context, command string, evt *event.Event) 
 	switch command {
 	case "done", "complete", "close":
 		go metrics.RequestDone()
-		b.closeRequest(ctx, evt)
+		b.closeRequest(ctx, evt, false)
 	case "rename":
 		b.renameRequest(ctx, evt)
 	case "invite":
@@ -91,7 +91,7 @@ func (b *Bot) renameRequest(ctx context.Context, evt *event.Event) {
 	}
 }
 
-func (b *Bot) closeRequest(ctx context.Context, evt *event.Event) {
+func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 	b.log.Debug().Msg("closing a request")
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
@@ -118,7 +118,11 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event) {
 		return
 	}
 
-	b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextDone.Key), nil, relatesTo)
+	if auto {
+		b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextDoneAuto.Key), nil)
+	} else {
+		b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextDone.Key), nil)
+	}
 
 	var oldbody string
 	if threadEvt.Content.AsMessage() != nil {
@@ -229,7 +233,7 @@ func (b *Bot) countRequest(ctx context.Context, evt *event.Event) {
 		return
 	}
 
-	b.SendNotice(ctx, b.roomID, b.cfg.Get(ctx, config.TextCount.Key), map[string]interface{}{"event_id": evt.ID}, linkpearl.RelatesTo(eventID))
+	b.SendNotice(ctx, b.roomID, b.cfg.Get(ctx, config.TextCount.Key), map[string]any{"event_id": evt.ID}, linkpearl.RelatesTo(eventID))
 }
 
 func (b *Bot) handleConfig(ctx context.Context, evt *event.Event) {

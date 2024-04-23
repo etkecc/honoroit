@@ -9,6 +9,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix/event"
+	"maunium.net/go/mautrix/format"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/matrix/config"
@@ -67,7 +68,7 @@ func (b *Bot) handle(ctx context.Context, evt *event.Event) {
 	b.forwardToCustomer(ctx, evt, content)
 }
 
-func (b *Bot) replace(ctx context.Context, eventID id.EventID, prefix string, suffix string, body string, formattedBody string) error {
+func (b *Bot) replace(ctx context.Context, eventID id.EventID, prefix, suffix, body, formattedBody string) error {
 	evt, err := b.lp.GetClient().GetEvent(ctx, b.roomID, eventID)
 	if err != nil {
 		b.log.Error().Err(err).Str("eventID", eventID.String()).Msg("cannot find event to replace")
@@ -130,7 +131,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 	defer b.unlock(mukey)
 
 	eventID, err := b.findEventID(ctx, roomID)
-	if err != nil && err != errNotMapped {
+	if err != nil && !errors.Is(err, errNotMapped) {
 		b.log.Error().Err(err).Str("userID", userID.String()).Str("roomID", roomID.String()).Msg("user tried to send a message from the room, but account data operation failed")
 		b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 		return "", err
@@ -161,12 +162,13 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 	}
 	customerRequestsStr := humanize.Ordinal(customerRequests + 1) // including current request
 	hsRequestsStr := humanize.Ordinal(hsRequests + 1)             // including current request
-	raw := map[string]interface{}{
+	raw := map[string]any{
 		"customer":   userID,
 		"homeserver": userID.Homeserver(),
 	}
 
-	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s%s (%s by %s%s)", prefix, hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, b.getName(ctx, userID)), raw)
+	name, _ := b.getName(ctx, userID)
+	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s%s (%s by %s%s)", prefix, hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, name), raw)
 	if eventID == "" {
 		b.SendNotice(ctx, b.roomID, "user "+userID.String()+" tried to send a message, but thread creation failed", nil)
 		return "", err
@@ -203,7 +205,7 @@ func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *
 	b.clearReply(content)
 	fullContent := &event.Content{
 		Parsed: content,
-		Raw: map[string]interface{}{
+		Raw: map[string]any{
 			"event_id": evt.ID,
 		},
 	}
@@ -223,10 +225,28 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 		return
 	}
 
+	bodyMD := content.Body
+	nameMD, nameHTML := b.getName(ctx, evt.Sender)
+	if content.Body != "" {
+		content.Body = nameMD + ":\n" + content.Body
+	}
+	content.Format = event.FormatHTML
+	if content.FormattedBody != "" {
+		content.FormattedBody = nameHTML + ":<br>" + content.FormattedBody
+	} else {
+		var formattedBody string
+		formatted := format.RenderMarkdown(bodyMD, true, true)
+		if formatted.FormattedBody == "" {
+			formattedBody = nameHTML + ":<br>" + bodyMD
+		} else {
+			formattedBody = nameHTML + ":<br>" + formatted.FormattedBody
+		}
+		content.FormattedBody = formattedBody
+	}
 	content.RelatesTo = linkpearl.RelatesTo(eventID)
 	fullContent := &event.Content{
 		Parsed: content,
-		Raw: map[string]interface{}{
+		Raw: map[string]any{
 			"event_id": evt.ID,
 		},
 	}

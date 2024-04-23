@@ -12,7 +12,6 @@ default:
 # update go deps
 update *flags:
     go get {{flags}} ./cmd
-    go get gitlab.com/etke.cc/linkpearl@latest
     go mod tidy
     go mod vendor
 

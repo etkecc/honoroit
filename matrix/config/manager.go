@@ -62,7 +62,7 @@ func (m *Manager) Get(ctx context.Context, key string) string {
 }
 
 // Set config value without saving
-func (m *Manager) Set(key, value string) *Manager { //nolint:unparam // lies
+func (m *Manager) Set(key, value string) *Manager {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

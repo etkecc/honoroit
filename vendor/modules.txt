@@ -34,7 +34,7 @@ github.com/hashicorp/golang-lru/v2/internal
 github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/kr/pretty v0.1.0
 ## explicit
-# github.com/labstack/echo/v4 v4.11.4
+# github.com/labstack/echo/v4 v4.12.0
 ## explicit; go 1.18
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
@@ -57,6 +57,9 @@ github.com/mattn/go-isatty
 # github.com/mattn/go-sqlite3 v1.14.22
 ## explicit; go 1.19
 github.com/mattn/go-sqlite3
+# github.com/mileusna/crontab v1.2.0
+## explicit; go 1.14
+github.com/mileusna/crontab
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
@@ -114,19 +117,19 @@ gitlab.com/etke.cc/go/echo-basic-auth
 # gitlab.com/etke.cc/go/env v1.1.0
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/env
-# gitlab.com/etke.cc/go/healthchecks/v2 v2.0.0
+# gitlab.com/etke.cc/go/healthchecks/v2 v2.2.0
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/healthchecks/v2
 # gitlab.com/etke.cc/go/mxidwc v1.0.0
 ## explicit; go 1.19
 gitlab.com/etke.cc/go/mxidwc
-# gitlab.com/etke.cc/go/psd v1.1.1
+# gitlab.com/etke.cc/go/psd v1.1.2
 ## explicit; go 1.21.0
 gitlab.com/etke.cc/go/psd
-# gitlab.com/etke.cc/linkpearl v0.0.0-20240316115913-106577b88942
+# gitlab.com/etke.cc/linkpearl v0.0.0-20240423201638-04d4ee361d74
 ## explicit; go 1.21
 gitlab.com/etke.cc/linkpearl
-# go.mau.fi/util v0.4.1
+# go.mau.fi/util v0.4.2
 ## explicit; go 1.21
 go.mau.fi/util/base58
 go.mau.fi/util/dbutil
@@ -144,7 +147,7 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
+# golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
@@ -183,7 +186,7 @@ golang.org/x/time/rate
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# maunium.net/go/mautrix v0.18.0
+# maunium.net/go/mautrix v0.18.1
 ## explicit; go 1.21
 maunium.net/go/mautrix
 maunium.net/go/mautrix/crypto

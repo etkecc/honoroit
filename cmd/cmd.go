@@ -14,13 +14,13 @@ import (
 	zlogsentry "github.com/archdx/zerolog-sentry"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/mileusna/crontab"
 	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
 	"gitlab.com/etke.cc/go/healthchecks/v2"
 	"gitlab.com/etke.cc/go/psd"
 	"gitlab.com/etke.cc/linkpearl"
+	_ "modernc.org/sqlite"
 
 	"gitlab.com/etke.cc/honoroit/config"
 	"gitlab.com/etke.cc/honoroit/controllers"
@@ -108,6 +108,9 @@ func initHTTP(cfg *config.Config) {
 }
 
 func initBot(cfg *config.Config) error {
+	if cfg.DB.Dialect == "sqlite3" {
+		cfg.DB.Dialect = "sqlite"
+	}
 	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
 	if err != nil {
 		return err

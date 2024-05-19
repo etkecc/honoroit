@@ -1,7 +1,7 @@
 # github.com/VictoriaMetrics/metrics v1.33.1
 ## explicit; go 1.17
 github.com/VictoriaMetrics/metrics
-# github.com/archdx/zerolog-sentry v1.8.2
+# github.com/archdx/zerolog-sentry v1.8.3
 ## explicit; go 1.20
 github.com/archdx/zerolog-sentry
 # github.com/buger/jsonparser v1.1.1
@@ -111,7 +111,7 @@ github.com/yuin/goldmark/renderer
 github.com/yuin/goldmark/renderer/html
 github.com/yuin/goldmark/text
 github.com/yuin/goldmark/util
-# github.com/ziflex/lecho/v3 v3.5.0
+# github.com/ziflex/lecho/v3 v3.6.0
 ## explicit; go 1.17
 github.com/ziflex/lecho/v3
 # gitlab.com/etke.cc/go/echo-basic-auth v1.1.0
@@ -129,7 +129,7 @@ gitlab.com/etke.cc/go/mxidwc
 # gitlab.com/etke.cc/go/psd v1.1.2
 ## explicit; go 1.21.0
 gitlab.com/etke.cc/go/psd
-# gitlab.com/etke.cc/linkpearl v0.0.0-20240423201638-04d4ee361d74
+# gitlab.com/etke.cc/linkpearl v0.0.0-20240425105001-435ae2720365
 ## explicit; go 1.21
 gitlab.com/etke.cc/linkpearl
 # go.mau.fi/util v0.4.2
@@ -142,7 +142,7 @@ go.mau.fi/util/jsonbytes
 go.mau.fi/util/jsontime
 go.mau.fi/util/random
 go.mau.fi/util/retryafter
-# golang.org/x/crypto v0.22.0
+# golang.org/x/crypto v0.23.0
 ## explicit; go 1.18
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
@@ -150,12 +150,12 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
+# golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.24.0
+# golang.org/x/net v0.25.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -164,12 +164,12 @@ golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.19.0
+# golang.org/x/sys v0.20.0
 ## explicit; go 1.18
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.14.0
+# golang.org/x/text v0.15.0
 ## explicit; go 1.18
 golang.org/x/text/cases
 golang.org/x/text/internal
@@ -225,7 +225,7 @@ maunium.net/go/mautrix/sqlstatestore
 # modernc.org/gc/v3 v3.0.0-20240304020402-f0dba7c97c2b
 ## explicit; go 1.20
 modernc.org/gc/v3
-# modernc.org/libc v1.50.2
+# modernc.org/libc v1.50.7
 ## explicit; go 1.20
 modernc.org/libc
 modernc.org/libc/errno
@@ -259,7 +259,7 @@ modernc.org/mathutil
 # modernc.org/memory v1.8.0
 ## explicit; go 1.18
 modernc.org/memory
-# modernc.org/sqlite v1.29.8
+# modernc.org/sqlite v1.29.10
 ## explicit; go 1.20
 modernc.org/sqlite
 modernc.org/sqlite/lib

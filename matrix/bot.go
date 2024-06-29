@@ -23,18 +23,19 @@ const TypingTimeout = 5_000
 
 // Bot represents matrix bot
 type Bot struct {
-	cfg          *config.Manager
-	log          *zerolog.Logger
-	psdc         *psd.Client
-	redmine      *redmine.Redmine
-	lp           *linkpearl.Linkpearl
-	mu           map[string]*sync.Mutex
-	syncing      bool
-	namesCache   *lru.Cache[id.UserID, [2]string]
-	eventsCache  *lru.Cache[id.EventID, id.EventID]
-	prefix       string
-	roomID       id.RoomID
-	ignoreBefore int64 // TODO remove after some time
+	cfg           *config.Manager
+	log           *zerolog.Logger
+	psdc          *psd.Client
+	redmine       *redmine.Redmine
+	lp            *linkpearl.Linkpearl
+	mu            map[string]*sync.Mutex
+	syncing       bool
+	namesCache    *lru.Cache[id.UserID, [2]string]
+	profilesCache *lru.Cache[id.UserID, *MSC4144Profile]
+	eventsCache   *lru.Cache[id.EventID, id.EventID]
+	prefix        string
+	roomID        id.RoomID
+	ignoreBefore  int64 // TODO remove after some time
 }
 
 // NewBot creates a new matrix bot
@@ -52,22 +53,27 @@ func NewBot(
 	if err != nil {
 		return nil, err
 	}
+	profilesCache, err := lru.New[id.UserID, *MSC4144Profile](cacheSize)
+	if err != nil {
+		return nil, err
+	}
 	eventsCache, err := lru.New[id.EventID, id.EventID](cacheSize)
 	if err != nil {
 		return nil, err
 	}
 
 	bot := &Bot{
-		lp:          lp,
-		mu:          make(map[string]*sync.Mutex),
-		cfg:         cfg,
-		log:         log,
-		psdc:        psdc,
-		redmine:     rdm,
-		namesCache:  namesCache,
-		eventsCache: eventsCache,
-		prefix:      prefix,
-		roomID:      id.RoomID(roomID),
+		lp:            lp,
+		mu:            make(map[string]*sync.Mutex),
+		cfg:           cfg,
+		log:           log,
+		psdc:          psdc,
+		redmine:       rdm,
+		namesCache:    namesCache,
+		profilesCache: profilesCache,
+		eventsCache:   eventsCache,
+		prefix:        prefix,
+		roomID:        id.RoomID(roomID),
 	}
 	bot.ignoreBefore = bot.cfg.Mautrix015Migration(context.Background())
 

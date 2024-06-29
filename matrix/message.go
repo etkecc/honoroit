@@ -279,6 +279,10 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 			"event_id": evt.ID,
 		},
 	}
+	if profile := b.getMSC4144Profie(ctx, evt.Sender); profile != nil {
+		fullContent.Raw["com.beeper.per_message_profile"] = profile
+	}
+
 	_, err = b.lp.Send(ctx, b.roomID, fullContent)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", evt.Sender.String()).Str("roomID", evt.RoomID.String()).Msg("user tried to send a message, but creation of the thread failed")

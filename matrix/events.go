@@ -12,6 +12,14 @@ import (
 	"gitlab.com/etke.cc/honoroit/matrix/config"
 )
 
+// MSC4144Profile represents the profile of the user according to MSC4144
+// ref: https://github.com/beeper/matrix-spec-proposals/blob/per-message-profile/proposals/4144-per-message-profile.md
+type MSC4144Profile struct {
+	ID          string        `json:"id"`          // The id field is required and is an opaque string. Clients may use it to group messages with the same ID like they would group messages from the same sender. For example, bridges would likely set it to the immutable remote user ID.
+	DisplayName string        `json:"displayname"` // The displayname field represents the human-readable display name of the user who sent the message. It is recommended that clients use this display name when showing messages to end users.
+	AvatarURL   id.ContentURI `json:"avatar_url"`  // The avatar_url field represents the URL of the avatar image that should be used when rendering the message. This URL must be an MXC URI.
+}
+
 func (b *Bot) countCustomerRequests(ctx context.Context, userID id.UserID) (user, hs int, err error) {
 	var from string
 	for {
@@ -56,6 +64,26 @@ func (b *Bot) getName(ctx context.Context, userID id.UserID) (md, html string) {
 
 	b.namesCache.Add(userID, [2]string{md, html})
 	return md, html
+}
+
+// getMSC4144Profie returns the MSC4144 profile of the user
+func (b *Bot) getMSC4144Profie(ctx context.Context, userID id.UserID) *MSC4144Profile {
+	if profile, ok := b.profilesCache.Get(userID); ok {
+		return profile
+	}
+
+	remoteProfile, err := b.lp.GetClient().GetProfile(ctx, userID)
+	if err != nil {
+		b.log.Warn().Err(err).Str("userID", userID.String()).Msg("cannot get profile")
+		return nil
+	}
+	profile := &MSC4144Profile{
+		ID:          userID.String(),
+		DisplayName: remoteProfile.DisplayName,
+		AvatarURL:   remoteProfile.AvatarURL,
+	}
+	b.profilesCache.Add(userID, profile)
+	return profile
 }
 
 func (b *Bot) getStatus(userID id.UserID) (userStatus, hostStatus string) {

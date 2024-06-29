@@ -10,8 +10,8 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 * chat-based configuration
 * prometheus metrics on `/metrics` endpoint
-* redmine 2-way sync
-* [MSC4144 integration](https://github.com/matrix-org/matrix-spec-proposals/pull/4144)
+* [Redmine integration](./docs/redmine.md)
+* [MSC4144 integration](./docs/msc4144.md)
 * End-to-End encryption
 * Get a message from any matrix user proxied to a specific room. Any message that user will send in his 1:1 room with Honoroit will be proxied as thread messages
 * Chat with that user through the honoroit bot in a thread inside your special room. Any member of that special room can participate in discussion

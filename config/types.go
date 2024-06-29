@@ -35,6 +35,9 @@ type Config struct {
 	// Auth Config
 	Auth Auth
 
+	// Redmine config
+	Redmine Redmine
+
 	// Monitoring config
 	Monitoring Monitoring
 }
@@ -56,6 +59,16 @@ type PSDAuth struct {
 	URL      string
 	Login    string
 	Password string
+}
+
+type Redmine struct {
+	Host             string
+	APIKey           string
+	ProjectID        string
+	TrackerID        int
+	NewStatus        int
+	InProgressStatus int
+	DoneStatus       int
 }
 
 // Monitoring config

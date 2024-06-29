@@ -27,6 +27,7 @@ import (
 	"gitlab.com/etke.cc/honoroit/matrix"
 	mxconfig "gitlab.com/etke.cc/honoroit/matrix/config"
 	"gitlab.com/etke.cc/honoroit/metrics"
+	"gitlab.com/etke.cc/honoroit/redmine"
 )
 
 var (
@@ -49,7 +50,15 @@ func main() {
 	log.Info().Msg("Honoroit")
 	log.Info().Msg("#############################")
 
-	if err := initBot(cfg); err != nil {
+	rdm, err := redmine.New(cfg.Redmine.Host, cfg.Redmine.APIKey, cfg.Redmine.ProjectID, cfg.Redmine.TrackerID, cfg.Redmine.NewStatus, cfg.Redmine.InProgressStatus, cfg.Redmine.DoneStatus)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot initialize redmine")
+	}
+	if rdm.Enabled() {
+		log.Info().Msg("redmine integration enabled")
+	}
+
+	if err := initBot(cfg, rdm); err != nil {
 		log.Error().Err(err).Msg("cannot initialize the bot")
 		return
 	}
@@ -57,6 +66,10 @@ func main() {
 	initShutdown()
 
 	if err := ctab.AddJob("0 15 * * *", bot.AutoCloseRequests); err != nil {
+		log.Error().Err(err).Msg("cannot add cron job")
+		return
+	}
+	if err := ctab.AddJob("* * * * *", bot.SyncIssues); err != nil {
 		log.Error().Err(err).Msg("cannot add cron job")
 		return
 	}
@@ -107,7 +120,7 @@ func initHTTP(cfg *config.Config) {
 	controllers.ConfigureRouter(e, cfg.Auth.Metrics)
 }
 
-func initBot(cfg *config.Config) error {
+func initBot(cfg *config.Config, rdm *redmine.Redmine) error {
 	if cfg.DB.Dialect == "sqlite3" {
 		cfg.DB.Dialect = "sqlite"
 	}
@@ -130,7 +143,7 @@ func initBot(cfg *config.Config) error {
 	}
 	psdc := psd.NewClient(cfg.Auth.PSD.URL, cfg.Auth.PSD.Login, cfg.Auth.PSD.Password)
 	mxc := mxconfig.New(lp)
-	bot, err = matrix.NewBot(lp, &log, mxc, psdc, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
+	bot, err = matrix.NewBot(lp, &log, mxc, psdc, rdm, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
 	return err
 }
 

@@ -9,7 +9,10 @@ import (
 	"maunium.net/go/mautrix/id"
 )
 
-const mappingPrefix = "cc.etke.honoroit.mapping."
+const (
+	mappingPrefix        = "cc.etke.honoroit.mapping."
+	mappingPrefixRedmine = "cc.etke.honoroit.redmine."
+)
 
 var (
 	// errNotMapped returned if roomID or eventID doesn't exist in room<->event map (yet)
@@ -59,6 +62,33 @@ func (b *Bot) setMapping(ctx context.Context, from, to string) {
 
 func (b *Bot) removeMapping(ctx context.Context, identifier string) {
 	b.lp.SetAccountData(ctx, mappingPrefix+identifier, map[string]string{}) //nolint:errcheck // doesn't matter
+}
+
+func (b *Bot) getRedmineMapping(ctx context.Context, identifier string) (string, error) {
+	data, err := b.lp.GetAccountData(ctx, mappingPrefixRedmine+identifier)
+	if err != nil {
+		return "", err
+	}
+	if data == nil {
+		return "", errNotMapped
+	}
+
+	v, ok := data["id"]
+	if !ok {
+		return "", errNotMapped
+	}
+	return v, nil
+}
+
+func (b *Bot) setRedmineMapping(ctx context.Context, from, to string) {
+	err := b.lp.SetAccountData(ctx, mappingPrefixRedmine+from, map[string]string{"id": to})
+	if err != nil {
+		b.log.Error().Err(err).Msg("cannot set mapping")
+	}
+}
+
+func (b *Bot) removeRedmineMapping(ctx context.Context, identifier string) {
+	b.lp.SetAccountData(ctx, mappingPrefixRedmine+identifier, map[string]string{}) //nolint:errcheck // doesn't matter
 }
 
 // findRoomID by eventID

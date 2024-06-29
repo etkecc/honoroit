@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/dustin/go-humanize"
@@ -125,7 +126,7 @@ func (b *Bot) clearReply(content *event.MessageEventContent) {
 	}
 }
 
-func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserID, greet bool) (id.EventID, error) {
+func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserID, requestText string, greet bool) (id.EventID, error) {
 	mukey := "start_thread_" + roomID.String()
 	b.lock(mukey)
 	defer b.unlock(mukey)
@@ -141,20 +142,28 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 		return eventID, nil
 	}
 
-	eventID, err = b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixOpen.Key), userID)
+	var issueID int64
+	eventID, issueID, err = b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixOpen.Key), requestText, userID)
 	if err != nil {
 		return "", err
 	}
 
 	b.setMapping(ctx, roomID.String(), eventID.String())
 	b.setMapping(ctx, eventID.String(), roomID.String())
+	if issueID != 0 {
+		issueIDStr := strconv.Itoa(int(issueID))
+		b.setRedmineMapping(ctx, issueIDStr, eventID.String())
+		b.setRedmineMapping(ctx, eventID.String(), issueIDStr)
+		b.setRedmineMapping(ctx, roomID.String(), issueIDStr)
+	}
+
 	if greet {
 		b.greetings(ctx, userID, roomID)
 	}
 	return eventID, nil
 }
 
-func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (id.EventID, error) {
+func (b *Bot) newThread(ctx context.Context, prefix, requestText string, userID id.UserID) (id.EventID, int64, error) {
 	customerStatus, hsStatus := b.getStatus(userID)
 	customerRequests, hsRequests, err := b.countCustomerRequests(ctx, userID)
 	if err != nil {
@@ -167,13 +176,31 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 		"homeserver": userID.Homeserver(),
 	}
 
+	key := "redmine_" + userID.Homeserver()
+	b.lock(key)
+	defer b.unlock(key)
+
+	issueID, err := b.redmine.NewIssue(
+		fmt.Sprintf("Request from %s%s (%s by %s%s)", hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, userID),
+		"Matrix",
+		userID.String(),
+		requestText,
+	)
+	if err != nil {
+		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot create a new issue in Redmine")
+	}
+
+	if issueID != 0 {
+		raw["issue_id"] = issueID
+	}
+
 	name, _ := b.getName(ctx, userID)
 	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s%s (%s by %s%s)", prefix, hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, name), raw)
 	if eventID == "" {
 		b.SendNotice(ctx, b.roomID, "user "+userID.String()+" tried to send a message, but thread creation failed", nil)
-		return "", err
+		return "", 0, err
 	}
-	return eventID, nil
+	return eventID, issueID, nil
 }
 
 func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *event.MessageEventContent) {
@@ -203,6 +230,7 @@ func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *
 
 	content.RelatesTo = nil
 	b.clearReply(content)
+	b.updateIssue(ctx, threadID, content.Body)
 	fullContent := &event.Content{
 		Parsed: content,
 		Raw: map[string]any{
@@ -218,12 +246,6 @@ func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *
 func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *event.MessageEventContent) {
 	b.lock(evt.RoomID.String())
 	defer b.unlock(evt.RoomID.String())
-
-	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, true)
-	if err != nil {
-		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
-		return
-	}
 
 	bodyMD := content.Body
 	nameMD, nameHTML := b.getName(ctx, evt.Sender)
@@ -243,7 +265,14 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 		}
 		content.FormattedBody = formattedBody
 	}
+
+	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, content.Body, true)
+	if err != nil {
+		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
+		return
+	}
 	content.RelatesTo = linkpearl.RelatesTo(eventID)
+	b.updateIssue(ctx, eventID, content.Body)
 	fullContent := &event.Content{
 		Parsed: content,
 		Raw: map[string]any{

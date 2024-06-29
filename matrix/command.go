@@ -118,11 +118,14 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 		return
 	}
 
+	var text string
 	if auto {
-		b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextDoneAuto.Key), nil)
+		text = b.cfg.Get(ctx, config.TextDoneAuto.Key)
 	} else {
-		b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextDone.Key), nil)
+		text = b.cfg.Get(ctx, config.TextDone.Key)
 	}
+	b.SendNotice(ctx, roomID, text, nil)
+	b.closeIssue(ctx, roomID, threadID, text)
 
 	var oldbody string
 	if threadEvt.Content.AsMessage() != nil {
@@ -140,6 +143,7 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 			b.SendNotice(ctx, evt.RoomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		}
 	}
+
 	b.removeMapping(ctx, threadID.String())
 	b.removeMapping(ctx, roomID.String())
 }
@@ -204,7 +208,7 @@ func (b *Bot) startRequest(ctx context.Context, evt *event.Event) {
 		return
 	}
 	roomID := resp.RoomID
-	_, err = b.startThread(ctx, roomID, userID, false)
+	_, err = b.startThread(ctx, roomID, userID, "created by operator", false)
 	if err != nil {
 		// log handled in the startThread
 		return
@@ -228,7 +232,7 @@ func (b *Bot) countRequest(ctx context.Context, evt *event.Event) {
 	}
 	userID := id.UserID(command[1])
 
-	eventID, err := b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixDone.Key), userID)
+	eventID, _, err := b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixDone.Key), "", userID)
 	if err != nil {
 		return
 	}

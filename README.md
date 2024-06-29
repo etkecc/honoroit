@@ -10,6 +10,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 * chat-based configuration
 * prometheus metrics on `/metrics` endpoint
+* redmine 2-way sync
 * End-to-End encryption
 * Get a message from any matrix user proxied to a specific room. Any message that user will send in his 1:1 room with Honoroit will be proxied as thread messages
 * Chat with that user through the honoroit bot in a thread inside your special room. Any member of that special room can participate in discussion
@@ -97,6 +98,18 @@ env vars
 * **HONOROIT_METRICS_LOGIN** - /metrics login
 * **HONOROIT_METRICS_PASSWORD** - /metrics password
 * **HONOROIT_METRICS_IPS** - /metrics allowed ips
+
+#### redmine
+
+Optional 2-way sync with redmine
+
+* **HONOROIT_REDMINE_HOST** - redmine host, e.g. `https://redmine.example.com`
+* **HONOROIT_REDMINE_APIKEY** - redmine API key
+* **HONOROIT_REDMINE_PROJECT** - redmine project identifier, e.g. `internal-project`
+* **HONOROIT_REDMINE_TRACKERID** - redmine tracker ID, e.g. `1`
+* **HONOROIT_REDMINE_NEWSTATUSID** - redmine "new" status ID, e.g. `1`
+* **HONOROIT_REDMINE_INPROGRESSSTATUSID** - redmine "in progress" status ID, e.g. `2`
+* **HONOROIT_REDMINE_DONESTATUSID** - redmine "done" status ID, e.g. `3`
 
 You can find default values in [config/defaults.go](config/defaults.go)
 

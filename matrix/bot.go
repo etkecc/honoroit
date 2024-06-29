@@ -15,6 +15,7 @@ import (
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/matrix/config"
+	"gitlab.com/etke.cc/honoroit/redmine"
 )
 
 // TypingTimeout in milliseconds, used to avoid stuck typing status
@@ -25,8 +26,10 @@ type Bot struct {
 	cfg          *config.Manager
 	log          *zerolog.Logger
 	psdc         *psd.Client
+	redmine      *redmine.Redmine
 	lp           *linkpearl.Linkpearl
 	mu           map[string]*sync.Mutex
+	syncing      bool
 	namesCache   *lru.Cache[id.UserID, [2]string]
 	eventsCache  *lru.Cache[id.EventID, id.EventID]
 	prefix       string
@@ -40,6 +43,7 @@ func NewBot(
 	log *zerolog.Logger,
 	cfg *config.Manager,
 	psdc *psd.Client,
+	rdm *redmine.Redmine,
 	prefix string,
 	roomID string,
 	cacheSize int,
@@ -59,6 +63,7 @@ func NewBot(
 		cfg:         cfg,
 		log:         log,
 		psdc:        psdc,
+		redmine:     rdm,
 		namesCache:  namesCache,
 		eventsCache: eventsCache,
 		prefix:      prefix,

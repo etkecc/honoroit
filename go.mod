@@ -12,6 +12,7 @@ require (
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9
 	github.com/mileusna/crontab v1.2.0
+	github.com/nixys/nxs-go-redmine/v5 v5.1.0
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 	github.com/ziflex/lecho/v3 v3.7.0
@@ -36,6 +37,7 @@ require (
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect

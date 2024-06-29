@@ -39,6 +39,15 @@ func New() *Config {
 				Password: env.String("auth.psd.password"),
 			},
 		},
+		Redmine: Redmine{
+			Host:             env.String("redmine.host"),
+			APIKey:           env.String("redmine.apikey"),
+			ProjectID:        env.String("redmine.project"),
+			TrackerID:        env.Int("redmine.trackerid"),
+			NewStatus:        env.Int("redmine.newstatusid"),
+			InProgressStatus: env.Int("redmine.inprogressstatusid"),
+			DoneStatus:       env.Int("redmine.donestatusid"),
+		},
 		Monitoring: Monitoring{
 			SentryDSN:            env.String("monitoring.sentry.dsn", env.String("sentry", "")),
 			SentrySampleRate:     env.Int("monitoring.sentry.rate", env.Int("sentry.rate", 0)),

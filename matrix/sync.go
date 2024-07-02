@@ -9,7 +9,6 @@ import (
 	"gitlab.com/etke.cc/go/mxidwc"
 	"gitlab.com/etke.cc/linkpearl"
 	"golang.org/x/exp/slices"
-	"maunium.net/go/mautrix/crypto"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
@@ -151,16 +150,5 @@ func (b *Bot) onMessage(ctx context.Context, evt *event.Event) {
 		return
 	}
 
-	decrypted, err := b.lp.GetClient().Crypto.Decrypt(ctx, evt)
-	if err != nil {
-		if errors.Is(err, crypto.IncorrectEncryptedContentType) {
-			b.log.Debug().Err(err).Msg("ignoring non-encrypted message")
-			b.handle(ctx, evt)
-			return
-		}
-		b.log.Error().Err(err).Msg("cannot decrypt message")
-		return
-	}
-
-	b.handle(ctx, decrypted)
+	b.handle(ctx, evt)
 }

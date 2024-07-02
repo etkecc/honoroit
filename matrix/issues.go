@@ -37,6 +37,7 @@ func (b *Bot) SyncIssues() {
 		threadID := threadID
 		roomID, err := b.findRoomID(ctx, threadID)
 		if err != nil || roomID == "" {
+			b.log.Warn().Err(err).Str("thread_id", threadID.String()).Msg("cannot find room ID")
 			continue
 		}
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	redmine "github.com/nixys/nxs-go-redmine/v5"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 )
 
 type Redmine struct {
+	log                *zerolog.Logger
 	api                *redmine.Context
 	userID             int64
 	projectID          int64
@@ -26,7 +28,7 @@ type Redmine struct {
 }
 
 // New creates a new Redmine client
-func New(host, apikey, projectIdentifier string, trackerID, newStatusID, inProgressStatusID, doneStatusID int) (*Redmine, error) {
+func New(log *zerolog.Logger, host, apikey, projectIdentifier string, trackerID, newStatusID, inProgressStatusID, doneStatusID int) (*Redmine, error) {
 	if host == "" || apikey == "" {
 		return &Redmine{}, nil
 	}
@@ -36,6 +38,7 @@ func New(host, apikey, projectIdentifier string, trackerID, newStatusID, inProgr
 			Endpoint: host,
 			APIKey:   apikey,
 		}),
+		log:                log,
 		trackerID:          int64(trackerID),
 		newStatusID:        int64(newStatusID),
 		inProgressStatusID: int64(inProgressStatusID),
@@ -61,11 +64,13 @@ func (r *Redmine) Enabled() bool {
 }
 
 // NewIssue creates a new issue in Redmine
-func (r *Redmine) NewIssue(subject, senderMedium, senderAddress, text string) (int64, error) {
+func (r *Redmine) NewIssue(threadID, subject, senderMedium, senderAddress, text string) (int64, error) {
 	if !r.Enabled() {
+		r.log.Debug().Msg("redmine is disabled, ignoring NewIssue() call")
 		return 0, nil
 	}
 	if subject == "" || senderMedium == "" || senderAddress == "" || text == "" {
+		r.log.Warn().Str("thread_id", threadID).Msg("missing required fields, ignoring NewIssue() call")
 		return 0, nil
 	}
 
@@ -83,16 +88,21 @@ func (r *Redmine) NewIssue(subject, senderMedium, senderAddress, text string) (i
 		},
 	})
 	if err != nil {
+		r.log.Error().Err(err).Str("thread_id", threadID).Msg("failed to create issue")
 		return 0, err
 	}
+	r.log.Info().Str("thread_id", threadID).Int64("issue_id", issue.ID).Msg("issue created")
 	return issue.ID, nil
 }
 
+// UpdateIssue updates the status and notes of an issue
 func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 	if !r.Enabled() {
+		r.log.Debug().Msg("redmine is disabled, ignoring UpdateIssue() call")
 		return nil
 	}
 	if issueID == 0 || text == "" {
+		r.log.Debug().Msg("missing required fields, ignoring UpdateIssue() call")
 		return nil
 	}
 
@@ -105,6 +115,7 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 	case StatusDone:
 		statusID = r.doneStatusID
 	default:
+		r.log.Error().Int("status", status).Msg("unknown status")
 		return fmt.Errorf("unknown status: %d", status)
 	}
 
@@ -116,9 +127,11 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 		},
 	})
 	if statusCode == http.StatusNotFound {
+		r.log.Warn().Int64("issue_id", issueID).Msg("issue not found")
 		return nil
 	}
 	if err != nil {
+		r.log.Error().Err(err).Int64("issue_id", issueID).Msg("failed to update issue")
 		return err
 	}
 	return err
@@ -127,6 +140,7 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 // IsClosed returns true if the issue is closed
 func (r *Redmine) IsClosed(issueID int64) (bool, error) {
 	if !r.Enabled() {
+		r.log.Debug().Msg("redmine is disabled, ignoring IsClosed() call")
 		return false, nil
 	}
 	if issueID == 0 {
@@ -135,9 +149,11 @@ func (r *Redmine) IsClosed(issueID int64) (bool, error) {
 
 	issue, statusCode, err := r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{})
 	if statusCode == http.StatusNotFound {
+		r.log.Warn().Int64("issue_id", issueID).Msg("issue not found")
 		return true, nil
 	}
 	if err != nil {
+		r.log.Error().Err(err).Int64("issue_id", issueID).Msg("failed to get issue")
 		return false, err
 	}
 	return issue.Status.IsClosed || issue.Status.ID == r.doneStatusID, nil
@@ -146,6 +162,7 @@ func (r *Redmine) IsClosed(issueID int64) (bool, error) {
 // GetNotes returns the notes of an issue
 func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error) {
 	if !r.Enabled() {
+		r.log.Debug().Msg("redmine is disabled, ignoring GetNotes() call")
 		return nil, nil
 	}
 	if issueID == 0 {
@@ -156,12 +173,15 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 		Includes: []redmine.IssueInclude{redmine.IssueIncludeJournals},
 	})
 	if statusCode == http.StatusNotFound {
+		r.log.Warn().Int64("issue_id", issueID).Msg("issue not found")
 		return nil, nil
 	}
 	if err != nil {
+		r.log.Error().Err(err).Int64("issue_id", issueID).Msg("failed to get issue")
 		return nil, err
 	}
 	if issue.Journals == nil {
+		r.log.Debug().Int64("issue_id", issueID).Msg("no journals found")
 		return nil, nil
 	}
 	journals := *issue.Journals
@@ -180,5 +200,6 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 		}
 		eligibleJournals = append(eligibleJournals, &journal)
 	}
+	r.log.Debug().Int("journals", len(eligibleJournals)).Int64("issue_id", issueID).Msg("journals found")
 	return eligibleJournals, nil
 }

@@ -233,7 +233,7 @@ maunium.net/go/mautrix/sqlstatestore
 # modernc.org/gc/v3 v3.0.0-20240304020402-f0dba7c97c2b
 ## explicit; go 1.20
 modernc.org/gc/v3
-# modernc.org/libc v1.54.0
+# modernc.org/libc v1.54.1
 ## explicit; go 1.20
 modernc.org/libc
 modernc.org/libc/errno

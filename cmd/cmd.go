@@ -50,7 +50,7 @@ func main() {
 	log.Info().Msg("Honoroit")
 	log.Info().Msg("#############################")
 
-	rdm, err := redmine.New(cfg.Redmine.Host, cfg.Redmine.APIKey, cfg.Redmine.ProjectID, cfg.Redmine.TrackerID, cfg.Redmine.NewStatus, cfg.Redmine.InProgressStatus, cfg.Redmine.DoneStatus)
+	rdm, err := redmine.New(&log, cfg.Redmine.Host, cfg.Redmine.APIKey, cfg.Redmine.ProjectID, cfg.Redmine.TrackerID, cfg.Redmine.NewStatus, cfg.Redmine.InProgressStatus, cfg.Redmine.DoneStatus)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot initialize redmine")
 	}
@@ -136,7 +136,7 @@ func initBot(cfg *config.Config, rdm *redmine.Redmine) error {
 		DB:                db,
 		Dialect:           cfg.DB.Dialect,
 		AccountDataSecret: cfg.DataSecret,
-		Logger:            log,
+		Logger:            log.Level(zerolog.InfoLevel),
 	})
 	if err != nil {
 		return err

@@ -107,7 +107,7 @@ func (t *threadAdapter) run() uintptr {
 
 	t.tls.token = t.token
 	r := (t.threadFunc(t.tls, t.param))
-	t.tls.endthread(r, false)
+	t.tls.endthread(r)
 	return uintptr(r)
 }
 
@@ -158,7 +158,7 @@ func X_beginthreadex(tls *TLS, __Security uintptr, __StackSize uint32, __StartAd
 
 // __attribute__ ((__dllimport__)) void __attribute__((__cdecl__)) _endthreadex(unsigned _Retval) __attribute__ ((__noreturn__));
 func X_endthreadex(tls *TLS, __Retval uint32) {
-	tls.endthread(__Retval, true)
+	tls.endthread(__Retval)
 }
 
 func Start(main func(*TLS, int32, uintptr) int32) {
@@ -223,7 +223,7 @@ func Xexit(tls *TLS, __Code int32) {
 	syscall.SyscallN(procexit.Addr(), uintptr(__Code))
 }
 
-func (tls *TLS) endthread(retval uint32, goexit bool) {
+func (tls *TLS) endthread(retval uint32) {
 	if tls == nil || tls.exited {
 		return
 	}
@@ -233,9 +233,6 @@ func (tls *TLS) endthread(retval uint32, goexit bool) {
 	tls.Close()
 	removeObject(tls.token)
 	runtime.UnlockOSThread()
-	if goexit {
-		runtime.Goexit()
-	}
 }
 
 func (tls *TLS) SetLastError(_dwErrCode uint32) {
@@ -855,6 +852,10 @@ func X__ms_vsnprintf(tls *TLS, str uintptr, size Tsize_t, format, va uintptr) in
 	return Xsnprintf(tls, str, size, format, va)
 }
 
+func X_vsnprintf(tls *TLS, str uintptr, size Tsize_t, format, va uintptr) int32 {
+	return Xsnprintf(tls, str, size, format, va)
+}
+
 // int snprintf(char *str, size_t size, const char *format, ...);
 func Xsnprintf(t *TLS, str uintptr, size Tsize_t, format, args uintptr) (r int32) {
 	if __ccgo_strace {
@@ -1402,6 +1403,21 @@ func X_stati64(t *TLS, path, buffer uintptr) int32 {
 // int _fstati64(int fd, struct _stati64 *buffer);
 func X_fstati64(t *TLS, fd int32, buffer uintptr) int32 {
 	return X_fstat64(t, fd, buffer)
+}
+
+func X_strcmpi(tls *TLS, __Str1 uintptr, __Str2 uintptr) (r int32) {
+	if __ccgo_strace {
+		trc("_Str1=%+v _Str2=%+v", __Str1, __Str2)
+		defer func() { trc(`X_strcmpi->%+v`, r) }()
+	}
+	r0, r1, err := syscall.SyscallN(proc_stricmp.Addr(), __Str1, __Str2)
+	if err != 0 {
+		if __ccgo_strace {
+			trc(`r0=%v r1=%v err=%v`, r0, r1, err)
+		}
+		tls.setErrno(int32(err))
+	}
+	return int32(r0)
 }
 
 // ------------------------------------------------------------------------ (A)

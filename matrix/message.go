@@ -189,6 +189,7 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 
 	threadURL := fmt.Sprintf("https://matrix.to/#/%s/%s", b.roomID, eventID)
 	issueID, err := b.redmine.NewIssue(
+		eventID.String(),
 		fmt.Sprintf("%s request from %s%s (%s by %s%s)", hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, name),
 		"Matrix",
 		userID.String(),
@@ -244,6 +245,13 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 	b.lock(evt.RoomID.String())
 	defer b.unlock(evt.RoomID.String())
 
+	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, true)
+	if err != nil {
+		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
+		return
+	}
+	b.updateIssue(ctx, false, eventID, content)
+
 	bodyMD := content.Body
 	nameMD, nameHTML := b.getName(ctx, evt.Sender)
 	if content.Body != "" {
@@ -262,15 +270,8 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 		}
 		content.FormattedBody = formattedBody
 	}
-
-	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, true)
-	if err != nil {
-		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
-		return
-	}
 	content.RelatesTo = linkpearl.RelatesTo(eventID)
 
-	b.updateIssue(ctx, false, eventID, content)
 	fullContent := &event.Content{
 		Parsed: content,
 		Raw: map[string]any{

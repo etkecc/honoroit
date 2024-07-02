@@ -35,3 +35,27 @@ func (b *Bot) SendNotice(ctx context.Context, roomID id.RoomID, message string, 
 	}
 	return eventID
 }
+
+func GetFileURL(content *event.MessageEventContent) (fileName string, fileURL id.ContentURIString) {
+	if content == nil {
+		return "", ""
+	}
+
+	fileName = content.Body
+	if content.FileName != "" {
+		fileName = content.FileName
+	}
+
+	if content.URL != "" {
+		return fileName, content.URL
+	}
+
+	if content.GetInfo().ThumbnailURL != "" {
+		return fileName, content.GetInfo().ThumbnailURL
+	}
+
+	if content.GetFile().URL != "" {
+		return fileName, content.GetFile().URL
+	}
+	return "", ""
+}

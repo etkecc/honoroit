@@ -2,6 +2,7 @@ package redmine
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 
@@ -9,8 +10,9 @@ import (
 )
 
 const (
-	InProgress = iota
-	Done
+	StatusNew = iota
+	StatusInProgress
+	StatusDone
 )
 
 type Redmine struct {
@@ -96,21 +98,26 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 
 	var statusID int64
 	switch status {
-	case InProgress:
+	case StatusNew:
+		statusID = r.newStatusID
+	case StatusInProgress:
 		statusID = r.inProgressStatusID
-	case Done:
+	case StatusDone:
 		statusID = r.doneStatusID
 	default:
 		return fmt.Errorf("unknown status: %d", status)
 	}
 
-	_, err := r.api.IssueUpdate(issueID, redmine.IssueUpdate{
+	statusCode, err := r.api.IssueUpdate(issueID, redmine.IssueUpdate{
 		Issue: redmine.IssueUpdateObject{
 			ProjectID: redmine.Int64Ptr(r.projectID),
 			StatusID:  redmine.Int64Ptr(statusID),
 			Notes:     redmine.StringPtr(text),
 		},
 	})
+	if statusCode == http.StatusNotFound {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -126,7 +133,10 @@ func (r *Redmine) IsClosed(issueID int64) (bool, error) {
 		return false, nil
 	}
 
-	issue, _, err := r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{})
+	issue, statusCode, err := r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{})
+	if statusCode == http.StatusNotFound {
+		return true, nil
+	}
 	if err != nil {
 		return false, err
 	}
@@ -142,9 +152,12 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 		return nil, nil
 	}
 
-	issue, _, err := r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{
+	issue, statusCode, err := r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{
 		Includes: []redmine.IssueInclude{redmine.IssueIncludeJournals},
 	})
+	if statusCode == http.StatusNotFound {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

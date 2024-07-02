@@ -130,7 +130,7 @@ func (b *Bot) syncIssueNote(ctx context.Context, threadID id.EventID, roomID id.
 	}
 }
 
-func (b *Bot) updateIssue(ctx context.Context, threadID id.EventID, text string) {
+func (b *Bot) updateIssue(ctx context.Context, byOperator bool, threadID id.EventID, content *event.MessageEventContent) {
 	key := "redmine_" + threadID.String()
 	b.lock(key)
 	defer b.unlock(key)
@@ -143,7 +143,20 @@ func (b *Bot) updateIssue(ctx context.Context, threadID id.EventID, text string)
 	if err != nil || issueID == 0 {
 		return
 	}
-	if updateErr := b.redmine.UpdateIssue(int64(issueID), redmine.InProgress, text); updateErr != nil {
+	status := redmine.StatusNew
+	if byOperator {
+		status = redmine.StatusInProgress
+	}
+
+	text := content.Body
+	fileName, fileMXCURL := GetFileURL(content)
+	if fileMXCURL != "" {
+		fileURL := b.lp.GetClient().GetDownloadURL(fileMXCURL.ParseOrIgnore())
+		fileText := fmt.Sprintf("[attachment: %s](%s)", fileName, fileURL)
+		text = fmt.Sprintf("%s\n\n%s", text, fileText)
+	}
+
+	if updateErr := b.redmine.UpdateIssue(int64(issueID), status, text); updateErr != nil {
 		b.log.Error().Err(updateErr).Msg("cannot update redmine issue")
 	}
 }
@@ -161,7 +174,7 @@ func (b *Bot) closeIssue(ctx context.Context, roomID id.RoomID, threadID id.Even
 	if err != nil || issueID == 0 {
 		return
 	}
-	if updateErr := b.redmine.UpdateIssue(int64(issueID), redmine.Done, text); updateErr != nil {
+	if updateErr := b.redmine.UpdateIssue(int64(issueID), redmine.StatusDone, text); updateErr != nil {
 		b.log.Error().Err(updateErr).Msg("cannot close redmine issue")
 		return
 	}

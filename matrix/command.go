@@ -208,7 +208,7 @@ func (b *Bot) startRequest(ctx context.Context, evt *event.Event) {
 		return
 	}
 	roomID := resp.RoomID
-	_, err = b.startThread(ctx, roomID, userID, "created by operator", false)
+	_, err = b.startThread(ctx, roomID, userID, false)
 	if err != nil {
 		// log handled in the startThread
 		return
@@ -232,7 +232,7 @@ func (b *Bot) countRequest(ctx context.Context, evt *event.Event) {
 	}
 	userID := id.UserID(command[1])
 
-	eventID, _, err := b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixDone.Key), "", userID)
+	eventID, _, err := b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixDone.Key), userID)
 	if err != nil {
 		return
 	}

@@ -126,7 +126,7 @@ func (b *Bot) clearReply(content *event.MessageEventContent) {
 	}
 }
 
-func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserID, requestText string, greet bool) (id.EventID, error) {
+func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserID, greet bool) (id.EventID, error) {
 	mukey := "start_thread_" + roomID.String()
 	b.lock(mukey)
 	defer b.unlock(mukey)
@@ -143,7 +143,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 	}
 
 	var issueID int64
-	eventID, issueID, err = b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixOpen.Key), requestText, userID)
+	eventID, issueID, err = b.newThread(ctx, b.cfg.Get(ctx, config.TextPrefixOpen.Key), userID)
 	if err != nil {
 		return "", err
 	}
@@ -163,7 +163,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 	return eventID, nil
 }
 
-func (b *Bot) newThread(ctx context.Context, prefix, requestText string, userID id.UserID) (id.EventID, int64, error) {
+func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (id.EventID, int64, error) {
 	customerStatus, hsStatus := b.getStatus(userID)
 	customerRequests, hsRequests, err := b.countCustomerRequests(ctx, userID)
 	if err != nil {
@@ -176,29 +176,26 @@ func (b *Bot) newThread(ctx context.Context, prefix, requestText string, userID 
 		"homeserver": userID.Homeserver(),
 	}
 
-	key := "redmine_" + userID.Homeserver()
-	b.lock(key)
-	defer b.unlock(key)
-
-	issueID, err := b.redmine.NewIssue(
-		fmt.Sprintf("Request from %s%s (%s by %s%s)", hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, userID),
-		"Matrix",
-		userID.String(),
-		requestText,
-	)
-	if err != nil {
-		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot create a new issue in Redmine")
-	}
-
-	if issueID != 0 {
-		raw["issue_id"] = issueID
-	}
-
 	name, _ := b.getName(ctx, userID)
 	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s%s (%s by %s%s)", prefix, hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, name), raw)
 	if eventID == "" {
 		b.SendNotice(ctx, b.roomID, "user "+userID.String()+" tried to send a message, but thread creation failed", nil)
 		return "", 0, err
+	}
+
+	key := "redmine_" + userID.Homeserver()
+	b.lock(key)
+	defer b.unlock(key)
+
+	threadURL := fmt.Sprintf("https://matrix.to/#/%s/%s", b.roomID, eventID)
+	issueID, err := b.redmine.NewIssue(
+		fmt.Sprintf("%s request from %s%s (%s by %s%s)", hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, name),
+		"Matrix",
+		userID.String(),
+		fmt.Sprintf("Matrix thread: [%s](%s)", threadURL, threadURL),
+	)
+	if err != nil {
+		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot create a new issue in Redmine")
 	}
 	return eventID, issueID, nil
 }
@@ -230,7 +227,7 @@ func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *
 
 	content.RelatesTo = nil
 	b.clearReply(content)
-	b.updateIssue(ctx, threadID, content.Body)
+	b.updateIssue(ctx, true, threadID, content)
 	fullContent := &event.Content{
 		Parsed: content,
 		Raw: map[string]any{
@@ -266,13 +263,14 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 		content.FormattedBody = formattedBody
 	}
 
-	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, content.Body, true)
+	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, true)
 	if err != nil {
 		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 		return
 	}
 	content.RelatesTo = linkpearl.RelatesTo(eventID)
-	b.updateIssue(ctx, eventID, content.Body)
+
+	b.updateIssue(ctx, false, eventID, content)
 	fullContent := &event.Content{
 		Parsed: content,
 		Raw: map[string]any{

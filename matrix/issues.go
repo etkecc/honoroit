@@ -152,7 +152,7 @@ func (b *Bot) syncIssueNote(ctx context.Context, threadID id.EventID, roomID id.
 	}
 }
 
-func (b *Bot) updateIssue(ctx context.Context, byOperator bool, threadID id.EventID, content *event.MessageEventContent) {
+func (b *Bot) updateIssue(ctx context.Context, byOperator bool, sender string, threadID id.EventID, content *event.MessageEventContent) {
 	key := "redmine_" + threadID.String()
 	b.lock(key)
 	defer b.unlock(key)
@@ -165,12 +165,16 @@ func (b *Bot) updateIssue(ctx context.Context, byOperator bool, threadID id.Even
 	if err != nil || issueID == 0 {
 		return
 	}
-	status := redmine.StatusNew
+	var status int
+	var text string
 	if byOperator {
 		status = redmine.StatusInProgress
+		text = fmt.Sprintf("_%s (👩‍💼 operator)_\n\n%s", sender, content.Body)
+	} else {
+		status = redmine.StatusNew
+		text = fmt.Sprintf("_%s (🧑‍🦱customer)_\n\n%s", sender, content.Body)
 	}
 
-	text := content.Body
 	fileName, fileMXCURL := GetFileURL(content)
 	if fileMXCURL != "" {
 		fileURL := b.lp.GetClient().GetDownloadURL(fileMXCURL.ParseOrIgnore())

@@ -29,8 +29,9 @@ type Redmine struct {
 
 // New creates a new Redmine client
 func New(log *zerolog.Logger, host, apikey, projectIdentifier string, trackerID, newStatusID, inProgressStatusID, doneStatusID int) (*Redmine, error) {
+	empty := &Redmine{log: log}
 	if host == "" || apikey == "" {
-		return &Redmine{}, nil
+		return empty, nil
 	}
 
 	r := &Redmine{
@@ -46,13 +47,13 @@ func New(log *zerolog.Logger, host, apikey, projectIdentifier string, trackerID,
 	}
 	project, _, err := r.api.ProjectSingleGet(projectIdentifier, redmine.ProjectSingleGetRequest{})
 	if err != nil {
-		return &Redmine{}, err
+		return empty, err
 	}
 	r.projectID = project.ID
 
 	user, _, err := r.api.UserCurrentGet(redmine.UserCurrentGetRequest{})
 	if err != nil {
-		return &Redmine{}, err
+		return empty, err
 	}
 	r.userID = user.ID
 	return r, nil

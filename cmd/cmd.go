@@ -52,7 +52,7 @@ func main() {
 
 	rdm, err := redmine.New(&log, cfg.Redmine.Host, cfg.Redmine.APIKey, cfg.Redmine.ProjectID, cfg.Redmine.TrackerID, cfg.Redmine.NewStatus, cfg.Redmine.InProgressStatus, cfg.Redmine.DoneStatus)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot initialize redmine")
+		log.Warn().Err(err).Msg("cannot initialize redmine")
 	}
 	if rdm.Enabled() {
 		log.Info().Msg("redmine integration enabled")

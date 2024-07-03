@@ -46,13 +46,13 @@ func New(log *zerolog.Logger, host, apikey, projectIdentifier string, trackerID,
 	}
 	project, _, err := r.api.ProjectSingleGet(projectIdentifier, redmine.ProjectSingleGetRequest{})
 	if err != nil {
-		return nil, err
+		return &Redmine{}, err
 	}
 	r.projectID = project.ID
 
 	user, _, err := r.api.UserCurrentGet(redmine.UserCurrentGetRequest{})
 	if err != nil {
-		return nil, err
+		return &Redmine{}, err
 	}
 	r.userID = user.ID
 	return r, nil

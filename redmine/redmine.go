@@ -150,7 +150,7 @@ func (r *Redmine) IsClosed(issueID int64) (bool, error) {
 	issue, statusCode, err := r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{})
 	if statusCode == http.StatusNotFound {
 		r.log.Warn().Int64("issue_id", issueID).Msg("issue not found")
-		return true, nil
+		return false, nil
 	}
 	if err != nil {
 		r.log.Error().Err(err).Int64("issue_id", issueID).Msg("failed to get issue")

@@ -103,10 +103,8 @@ type threadAdapter struct {
 }
 
 func (t *threadAdapter) run() uintptr {
-	runtime.LockOSThread()
-
 	t.tls.token = t.token
-	r := (t.threadFunc(t.tls, t.param))
+	r := t.threadFunc(t.tls, t.param)
 	t.tls.endthread(r)
 	return uintptr(r)
 }
@@ -232,7 +230,6 @@ func (tls *TLS) endthread(retval uint32) {
 	tls.retval = retval
 	tls.Close()
 	removeObject(tls.token)
-	runtime.UnlockOSThread()
 }
 
 func (tls *TLS) SetLastError(_dwErrCode uint32) {

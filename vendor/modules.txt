@@ -150,12 +150,11 @@ go.mau.fi/util/jsonbytes
 go.mau.fi/util/jsontime
 go.mau.fi/util/random
 go.mau.fi/util/retryafter
-# golang.org/x/crypto v0.24.0
-## explicit; go 1.18
+# golang.org/x/crypto v0.25.0
+## explicit; go 1.20
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/curve25519
-golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
 # golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
@@ -163,7 +162,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.26.0
+# golang.org/x/net v0.27.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -172,7 +171,7 @@ golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.21.0
+# golang.org/x/sys v0.22.0
 ## explicit; go 1.18
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
@@ -233,7 +232,7 @@ maunium.net/go/mautrix/sqlstatestore
 # modernc.org/gc/v3 v3.0.0-20240304020402-f0dba7c97c2b
 ## explicit; go 1.20
 modernc.org/gc/v3
-# modernc.org/libc v1.54.1
+# modernc.org/libc v1.54.2
 ## explicit; go 1.20
 modernc.org/libc
 modernc.org/libc/errno

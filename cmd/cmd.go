@@ -128,6 +128,10 @@ func initBot(cfg *config.Config, rdm *redmine.Redmine) error {
 	if err != nil {
 		return err
 	}
+	// workaround for sqlite's SQLITE_BUSY
+	if cfg.DB.Dialect == "sqlite" {
+		db.SetMaxOpenConns(1)
+	}
 	lp, err := linkpearl.New(&linkpearl.Config{
 		Homeserver:        cfg.Homeserver,
 		Login:             cfg.Login,

@@ -68,6 +68,12 @@ var (
 		Description: "prefix added to the completed thread topics",
 		Sanitizer:   strings.TrimSpace,
 	}
+	TextGreetingsBeforeEncryption = &Option{
+		Key:         "text.greetings.before.encryption",
+		Default:     "Warning! This is an encrypted room, there is a high chance that we won't be able to read your messages. Please, **consider using a non-encrypted room**. If there is no other greetings message, that means that we can't read your messages.",
+		Description: "message sent to the customer before the greetings text in the encrypted room",
+		Sanitizer:   strings.TrimSpace,
+	}
 	TextGreetings = &Option{
 		Key:         "text.greetings",
 		Default:     "Thank you for contacting us!",
@@ -136,7 +142,7 @@ var (
 	}
 
 	// Options is full list of the all available options
-	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone, TextDoneAuto}
+	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetingsBeforeEncryption, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone, TextDoneAuto}
 )
 
 type Option struct {

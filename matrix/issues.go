@@ -177,7 +177,7 @@ func (b *Bot) updateIssue(ctx context.Context, byOperator bool, sender string, t
 
 	fileName, fileMXCURL := GetFileURL(content)
 	if fileMXCURL != "" {
-		fileURL := b.lp.GetClient().GetDownloadURL(fileMXCURL.ParseOrIgnore())
+		fileURL := b.lp.GetClient().GetDownloadURL(fileMXCURL.ParseOrIgnore()) //nolint // ignoring deprecation for now
 		fileText := fmt.Sprintf("[attachment: %s](%s)", fileName, fileURL)
 		text = fmt.Sprintf("%s\n\n%s", text, fileText)
 	}

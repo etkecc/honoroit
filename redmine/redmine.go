@@ -148,6 +148,8 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 			r.log.Error().Err(err).Int64("issue_id", issueID).Msg("failed to update issue")
 			return err
 		}
+
+		break
 	}
 	return nil
 }

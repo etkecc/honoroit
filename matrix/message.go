@@ -228,7 +228,7 @@ func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *
 
 	content.RelatesTo = nil
 	b.clearReply(content)
-	b.updateIssue(ctx, true, evt.Sender.String(), threadID, content)
+	go b.updateIssue(ctx, true, evt.Sender.String(), threadID, content)
 	fullContent := &event.Content{
 		Parsed: content,
 		Raw: map[string]any{
@@ -250,7 +250,7 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 		return
 	}
-	b.updateIssue(ctx, false, evt.Sender.String(), eventID, content)
+	go b.updateIssue(ctx, false, evt.Sender.String(), eventID, content)
 
 	bodyMD := content.Body
 	nameMD, nameHTML := b.getName(ctx, evt.Sender)

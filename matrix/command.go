@@ -125,7 +125,7 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 		text = b.cfg.Get(ctx, config.TextDone.Key)
 	}
 	b.SendNotice(ctx, roomID, text, nil)
-	b.closeIssue(ctx, roomID, threadID, text)
+	go b.closeIssue(ctx, roomID, threadID, text)
 
 	var oldbody string
 	if threadEvt.Content.AsMessage() != nil {

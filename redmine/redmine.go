@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	redmine "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/rs/zerolog"
@@ -120,22 +121,35 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 		return fmt.Errorf("unknown status: %d", status)
 	}
 
-	statusCode, err := r.api.IssueUpdate(issueID, redmine.IssueUpdate{
-		Issue: redmine.IssueUpdateObject{
-			ProjectID: redmine.Int64Ptr(r.projectID),
-			StatusID:  redmine.Int64Ptr(statusID),
-			Notes:     redmine.StringPtr(text),
-		},
-	})
-	if statusCode == http.StatusNotFound {
-		r.log.Warn().Int64("issue_id", issueID).Msg("issue not found")
-		return nil
+	maxRetries := 5
+	delay := 5 * time.Second
+	for i := 1; i <= maxRetries; i++ {
+		statusCode, err := r.api.IssueUpdate(issueID, redmine.IssueUpdate{
+			Issue: redmine.IssueUpdateObject{
+				ProjectID: redmine.Int64Ptr(r.projectID),
+				StatusID:  redmine.Int64Ptr(statusID),
+				Notes:     redmine.StringPtr(text),
+			},
+		})
+		if statusCode == http.StatusNotFound {
+			r.log.Warn().Int64("issue_id", issueID).Msg("issue not found")
+			return nil
+		}
+		if statusCode > 499 {
+			if i < maxRetries {
+				r.log.Warn().Int("retries", i).Int("status_code", int(statusCode)).Err(err).Int64("issue_id", issueID).Msg("failed to update issue, retrying")
+				time.Sleep(delay * time.Duration(i))
+				continue
+			}
+			r.log.Warn().Int("retries", i).Int("status_code", int(statusCode)).Err(err).Int64("issue_id", issueID).Msg("failed to update issue, giving up")
+		}
+
+		if err != nil {
+			r.log.Error().Err(err).Int64("issue_id", issueID).Msg("failed to update issue")
+			return err
+		}
 	}
-	if err != nil {
-		r.log.Error().Err(err).Int64("issue_id", issueID).Msg("failed to update issue")
-		return err
-	}
-	return err
+	return nil
 }
 
 // IsClosed returns true if the issue is closed

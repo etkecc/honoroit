@@ -33,6 +33,7 @@ import (
 var (
 	e    *echo.Echo
 	hc   *healthchecks.Client
+	rdm  *redmine.Redmine
 	bot  *matrix.Bot
 	ctab *crontab.Crontab
 	log  zerolog.Logger
@@ -50,7 +51,8 @@ func main() {
 	log.Info().Msg("Honoroit")
 	log.Info().Msg("#############################")
 
-	rdm, err := redmine.New(&log, cfg.Redmine.Host, cfg.Redmine.APIKey, cfg.Redmine.ProjectID, cfg.Redmine.TrackerID, cfg.Redmine.NewStatus, cfg.Redmine.InProgressStatus, cfg.Redmine.DoneStatus)
+	var err error
+	rdm, err = redmine.New(&log, cfg.Redmine.Host, cfg.Redmine.APIKey, cfg.Redmine.ProjectID, cfg.Redmine.TrackerID, cfg.Redmine.NewStatus, cfg.Redmine.InProgressStatus, cfg.Redmine.DoneStatus)
 	if err != nil {
 		log.Warn().Err(err).Msg("cannot initialize redmine")
 	}
@@ -165,6 +167,7 @@ func initShutdown() {
 func shutdown() {
 	bot.Stop()
 	ctab.Shutdown()
+	rdm.Shutdown()
 
 	if hc != nil {
 		hc.Shutdown()

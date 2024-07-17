@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	redmine "github.com/nixys/nxs-go-redmine/v5"
@@ -18,6 +19,7 @@ const (
 )
 
 type Redmine struct {
+	wg                 sync.WaitGroup
 	log                *zerolog.Logger
 	api                *redmine.Context
 	userID             int64
@@ -76,6 +78,9 @@ func (r *Redmine) NewIssue(threadID, subject, senderMedium, senderAddress, text 
 		return 0, nil
 	}
 
+	r.wg.Add(1)
+	defer r.wg.Done()
+
 	var description strings.Builder
 	description.WriteString(fmt.Sprintf("Sender: `%s` (%s)\n\n", senderAddress, senderMedium))
 	description.WriteString(text)
@@ -121,6 +126,9 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 		return fmt.Errorf("unknown status: %d", status)
 	}
 
+	r.wg.Add(1)
+	defer r.wg.Done()
+
 	maxRetries := 5
 	delay := 5 * time.Second
 	for i := 1; i <= maxRetries; i++ {
@@ -164,6 +172,9 @@ func (r *Redmine) IsClosed(issueID int64) (bool, error) {
 		return false, nil
 	}
 
+	r.wg.Add(1)
+	defer r.wg.Done()
+
 	issue, statusCode, err := r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{})
 	if statusCode == http.StatusNotFound {
 		r.log.Warn().Int64("issue_id", issueID).Msg("issue not found")
@@ -185,6 +196,9 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 	if issueID == 0 {
 		return nil, nil
 	}
+
+	r.wg.Add(1)
+	defer r.wg.Done()
 
 	issue, statusCode, err := r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{
 		Includes: []redmine.IssueInclude{redmine.IssueIncludeJournals},
@@ -219,4 +233,9 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 	}
 	r.log.Debug().Int("journals", len(eligibleJournals)).Int64("issue_id", issueID).Msg("journals found")
 	return eligibleJournals, nil
+}
+
+// Shutdown waits for all goroutines to finish
+func (r *Redmine) Shutdown() {
+	r.wg.Wait()
 }

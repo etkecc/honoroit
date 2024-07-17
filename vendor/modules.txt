@@ -1,4 +1,4 @@
-# github.com/VictoriaMetrics/metrics v1.35.0
+# github.com/VictoriaMetrics/metrics v1.35.1
 ## explicit; go 1.17
 github.com/VictoriaMetrics/metrics
 # github.com/archdx/zerolog-sentry v1.8.3
@@ -160,7 +160,7 @@ golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20240707233637-46b078467d37
+# golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps

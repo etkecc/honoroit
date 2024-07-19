@@ -19,6 +19,7 @@ import (
 	"github.com/ziflex/lecho/v3"
 	"gitlab.com/etke.cc/go/healthchecks/v2"
 	"gitlab.com/etke.cc/go/psd"
+	"gitlab.com/etke.cc/go/redmine"
 	"gitlab.com/etke.cc/linkpearl"
 	_ "modernc.org/sqlite"
 
@@ -27,7 +28,6 @@ import (
 	"gitlab.com/etke.cc/honoroit/matrix"
 	mxconfig "gitlab.com/etke.cc/honoroit/matrix/config"
 	"gitlab.com/etke.cc/honoroit/metrics"
-	"gitlab.com/etke.cc/honoroit/redmine"
 )
 
 var (
@@ -52,7 +52,16 @@ func main() {
 	log.Info().Msg("#############################")
 
 	var err error
-	rdm, err = redmine.New(&log, cfg.Redmine.Host, cfg.Redmine.APIKey, cfg.Redmine.ProjectID, cfg.Redmine.TrackerID, cfg.Redmine.NewStatus, cfg.Redmine.InProgressStatus, cfg.Redmine.DoneStatus)
+	rdm, err = redmine.New(
+		redmine.WithLog(&log),
+		redmine.WithHost(cfg.Redmine.Host),
+		redmine.WithAPIKey(cfg.Redmine.APIKey),
+		redmine.WithProjectIdentifier(cfg.Redmine.ProjectID),
+		redmine.WithTrackerID(cfg.Redmine.TrackerID),
+		redmine.WithWaitingForOperatorStatusID(cfg.Redmine.NewStatus),
+		redmine.WithWaitingForCustomerStatusID(cfg.Redmine.InProgressStatus),
+		redmine.WithDoneStatusID(cfg.Redmine.DoneStatus),
+	)
 	if err != nil {
 		log.Warn().Err(err).Msg("cannot initialize redmine")
 	}

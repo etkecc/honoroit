@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	redminelib "github.com/nixys/nxs-go-redmine/v5"
-	"gitlab.com/etke.cc/honoroit/redmine"
+	"gitlab.com/etke.cc/go/redmine"
 	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/format"
@@ -165,13 +165,13 @@ func (b *Bot) updateIssue(ctx context.Context, byOperator bool, sender string, t
 	if err != nil || issueID == 0 {
 		return
 	}
-	var status int
+	var status redmine.Status
 	var text string
 	if byOperator {
-		status = redmine.StatusInProgress
+		status = redmine.WaitingForCustomer
 		text = fmt.Sprintf("_%s (👩‍💼 operator)_\n\n%s", sender, content.Body)
 	} else {
-		status = redmine.StatusNew
+		status = redmine.WaitingForOperator
 		text = fmt.Sprintf("_%s (🧑‍🦱customer)_\n\n%s", sender, content.Body)
 	}
 
@@ -200,7 +200,7 @@ func (b *Bot) closeIssue(ctx context.Context, roomID id.RoomID, threadID id.Even
 	if err != nil || issueID == 0 {
 		return
 	}
-	if updateErr := b.redmine.UpdateIssue(int64(issueID), redmine.StatusDone, text); updateErr != nil {
+	if updateErr := b.redmine.UpdateIssue(int64(issueID), redmine.Done, text); updateErr != nil {
 		b.log.Error().Err(updateErr).Msg("cannot close redmine issue")
 		return
 	}

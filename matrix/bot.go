@@ -11,11 +11,11 @@ import (
 	"github.com/rs/zerolog"
 	"gitlab.com/etke.cc/go/mxidwc"
 	"gitlab.com/etke.cc/go/psd"
+	"gitlab.com/etke.cc/go/redmine"
 	"gitlab.com/etke.cc/linkpearl"
 	"maunium.net/go/mautrix/id"
 
 	"gitlab.com/etke.cc/honoroit/matrix/config"
-	"gitlab.com/etke.cc/honoroit/redmine"
 )
 
 // TypingTimeout in milliseconds, used to avoid stuck typing status

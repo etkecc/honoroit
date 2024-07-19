@@ -189,7 +189,6 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 
 	threadURL := fmt.Sprintf("https://matrix.to/#/%s/%s", b.roomID, eventID)
 	issueID, err := b.redmine.NewIssue(
-		eventID.String(),
 		fmt.Sprintf("%s request from %s%s (%s by %s%s)", hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, name),
 		"Matrix",
 		userID.String(),
@@ -250,7 +249,8 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 		return
 	}
-	go b.updateIssue(ctx, false, evt.Sender.String(), eventID, content)
+	originalContent := *content
+	go b.updateIssue(ctx, false, evt.Sender.String(), eventID, &originalContent)
 
 	bodyMD := content.Body
 	nameMD, nameHTML := b.getName(ctx, evt.Sender)

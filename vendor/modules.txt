@@ -138,6 +138,9 @@ gitlab.com/etke.cc/go/mxidwc
 # gitlab.com/etke.cc/go/psd v1.1.2
 ## explicit; go 1.21.0
 gitlab.com/etke.cc/go/psd
+# gitlab.com/etke.cc/go/redmine v0.0.0-20240719115127-31be40501712
+## explicit; go 1.21
+gitlab.com/etke.cc/go/redmine
 # gitlab.com/etke.cc/linkpearl v0.0.0-20240716084747-f2a547f02d54
 ## explicit; go 1.21
 gitlab.com/etke.cc/linkpearl
@@ -235,7 +238,7 @@ maunium.net/go/mautrix/sqlstatestore
 # modernc.org/gc/v3 v3.0.0-20240304020402-f0dba7c97c2b
 ## explicit; go 1.20
 modernc.org/gc/v3
-# modernc.org/libc v1.55.2
+# modernc.org/libc v1.55.3
 ## explicit; go 1.20
 modernc.org/libc
 modernc.org/libc/errno

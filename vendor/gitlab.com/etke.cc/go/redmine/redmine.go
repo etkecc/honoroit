@@ -7,67 +7,72 @@ import (
 	"sync"
 
 	redmine "github.com/nixys/nxs-go-redmine/v5"
-	"github.com/rs/zerolog"
 )
 
 const (
-	StatusNew = iota
-	StatusInProgress
-	StatusDone
+	WaitingForOperator Status = iota
+	WaitingForCustomer
+	Done
 )
 
+// Status is a type for issue statuses
+// it should be used instead of sending raw status IDs
+// to allow dynamic (re-)configuration
+type Status int
+
+// API is an interface for Redmine API
+type API interface {
+	ProjectSingleGet(identifier string, req redmine.ProjectSingleGetRequest) (redmine.ProjectObject, redmine.StatusCode, error)
+	UserCurrentGet(req redmine.UserCurrentGetRequest) (redmine.UserObject, redmine.StatusCode, error)
+	IssueCreate(req redmine.IssueCreate) (redmine.IssueObject, redmine.StatusCode, error)
+	IssueUpdate(id int64, req redmine.IssueUpdate) (redmine.StatusCode, error)
+	IssueSingleGet(id int64, req redmine.IssueSingleGetRequest) (redmine.IssueObject, redmine.StatusCode, error)
+}
+
+// Redmine is a Redmine client
 type Redmine struct {
-	wg                 sync.WaitGroup
-	log                *zerolog.Logger
-	api                *redmine.Context
-	userID             int64
-	projectID          int64
-	trackerID          int64
-	newStatusID        int64
-	inProgressStatusID int64
-	doneStatusID       int64
+	wg  sync.WaitGroup
+	cfg *Config
 }
 
 // New creates a new Redmine client
-func New(log *zerolog.Logger, host, apikey, projectIdentifier string, trackerID, newStatusID, inProgressStatusID, doneStatusID int) (*Redmine, error) {
-	empty := &Redmine{log: log}
-	if host == "" || apikey == "" {
-		return empty, nil
+func New(options ...Option) (*Redmine, error) {
+	cfg := NewConfig(options...)
+	r := &Redmine{cfg: cfg}
+	if !cfg.Enabled() {
+		return r, nil
 	}
 
-	r := &Redmine{
-		api: redmine.Init(redmine.Settings{
-			Endpoint: host,
-			APIKey:   apikey,
-		}),
-		log:                log,
-		trackerID:          int64(trackerID),
-		newStatusID:        int64(newStatusID),
-		inProgressStatusID: int64(inProgressStatusID),
-		doneStatusID:       int64(doneStatusID),
+	if cfg.ProjectID == 0 {
+		project, _, err := r.cfg.api.ProjectSingleGet(cfg.ProjectIdentifier, redmine.ProjectSingleGetRequest{})
+		if err != nil {
+			return r, err
+		}
+		r.cfg.ProjectID = project.ID
 	}
-	project, _, err := r.api.ProjectSingleGet(projectIdentifier, redmine.ProjectSingleGetRequest{})
-	if err != nil {
-		return empty, err
-	}
-	r.projectID = project.ID
 
-	user, _, err := r.api.UserCurrentGet(redmine.UserCurrentGetRequest{})
-	if err != nil {
-		return empty, err
+	if cfg.UserID == 0 {
+		user, _, err := r.cfg.api.UserCurrentGet(redmine.UserCurrentGetRequest{})
+		if err != nil {
+			return r, err
+		}
+		r.cfg.UserID = user.ID
 	}
-	r.userID = user.ID
 	return r, nil
 }
 
 // Enabled returns true if the Redmine client is enabled
 func (r *Redmine) Enabled() bool {
-	return r.api != nil
+	return r.cfg.Enabled()
+}
+
+func (r *Redmine) Configure(options ...Option) {
+	r.cfg.apply(options...)
 }
 
 // NewIssue creates a new issue in Redmine
-func (r *Redmine) NewIssue(threadID, subject, senderMedium, senderAddress, text string) (int64, error) {
-	log := r.log.With().Str("thread_id", threadID).Logger()
+func (r *Redmine) NewIssue(subject, senderMedium, senderAddress, text string) (int64, error) {
+	log := r.cfg.Log.With().Str(senderMedium, senderAddress).Logger()
 	if !r.Enabled() {
 		log.Debug().Msg("redmine is disabled, ignoring NewIssue() call")
 		return 0, nil
@@ -85,11 +90,11 @@ func (r *Redmine) NewIssue(threadID, subject, senderMedium, senderAddress, text 
 	description.WriteString(text)
 	text = description.String()
 	issue, err := retryResult(&log, func() (redmine.IssueObject, redmine.StatusCode, error) {
-		return r.api.IssueCreate(redmine.IssueCreate{
+		return r.cfg.api.IssueCreate(redmine.IssueCreate{
 			Issue: redmine.IssueCreateObject{
-				ProjectID:   r.projectID,
-				TrackerID:   redmine.Int64Ptr(r.trackerID),
-				StatusID:    redmine.Int64Ptr(r.newStatusID),
+				ProjectID:   r.cfg.ProjectID,
+				TrackerID:   redmine.Int64Ptr(r.cfg.TrackerID),
+				StatusID:    redmine.Int64Ptr(r.cfg.WaitingForOperatorStatusID),
 				Subject:     subject,
 				Description: redmine.StringPtr(text),
 			},
@@ -103,9 +108,9 @@ func (r *Redmine) NewIssue(threadID, subject, senderMedium, senderAddress, text 
 	return issue.ID, nil
 }
 
-// UpdateIssue updates the status and notes of an issue
-func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
-	log := r.log.With().Int64("issue_id", issueID).Logger()
+// UpdateIssue updates the status using one of the constants and notes of an issue
+func (r *Redmine) UpdateIssue(issueID int64, status Status, text string) error {
+	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
 	if !r.Enabled() {
 		log.Debug().Msg("redmine is disabled, ignoring UpdateIssue() call")
 		return nil
@@ -117,14 +122,14 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 
 	var statusID int64
 	switch status {
-	case StatusNew:
-		statusID = r.newStatusID
-	case StatusInProgress:
-		statusID = r.inProgressStatusID
-	case StatusDone:
-		statusID = r.doneStatusID
+	case WaitingForOperator:
+		statusID = r.cfg.WaitingForOperatorStatusID
+	case WaitingForCustomer:
+		statusID = r.cfg.WaitingForCustomerStatusID
+	case Done:
+		statusID = r.cfg.DoneStatusID
 	default:
-		log.Error().Int("status", status).Msg("unknown status")
+		log.Error().Int("status", int(status)).Msg("unknown status")
 		return fmt.Errorf("unknown status: %d", status)
 	}
 
@@ -132,9 +137,9 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 	defer r.wg.Done()
 
 	err := retry(&log, func() (redmine.StatusCode, error) {
-		return r.api.IssueUpdate(issueID, redmine.IssueUpdate{
+		return r.cfg.api.IssueUpdate(issueID, redmine.IssueUpdate{
 			Issue: redmine.IssueUpdateObject{
-				ProjectID: redmine.Int64Ptr(r.projectID),
+				ProjectID: redmine.Int64Ptr(r.cfg.ProjectID),
 				StatusID:  redmine.Int64Ptr(statusID),
 				Notes:     redmine.StringPtr(text),
 			},
@@ -149,7 +154,7 @@ func (r *Redmine) UpdateIssue(issueID int64, status int, text string) error {
 
 // IsClosed returns true if the issue is closed
 func (r *Redmine) IsClosed(issueID int64) (bool, error) {
-	log := r.log.With().Int64("issue_id", issueID).Logger()
+	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
 	if !r.Enabled() {
 		log.Debug().Msg("redmine is disabled, ignoring IsClosed() call")
 		return false, nil
@@ -162,18 +167,18 @@ func (r *Redmine) IsClosed(issueID int64) (bool, error) {
 	defer r.wg.Done()
 
 	issue, err := retryResult(&log, func() (redmine.IssueObject, redmine.StatusCode, error) {
-		return r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{})
+		return r.cfg.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{})
 	})
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get issue")
 		return false, err
 	}
-	return issue.Status.IsClosed || issue.Status.ID == r.doneStatusID, nil
+	return issue.Status.IsClosed || issue.Status.ID == r.cfg.DoneStatusID, nil
 }
 
 // GetNotes returns the notes of an issue
 func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error) {
-	log := r.log.With().Int64("issue_id", issueID).Logger()
+	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
 	if !r.Enabled() {
 		log.Debug().Msg("redmine is disabled, ignoring GetNotes() call")
 		return nil, nil
@@ -186,7 +191,7 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 	defer r.wg.Done()
 
 	issue, err := retryResult(&log, func() (redmine.IssueObject, redmine.StatusCode, error) {
-		return r.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{
+		return r.cfg.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{
 			Includes: []redmine.IssueInclude{redmine.IssueIncludeJournals},
 		})
 	})
@@ -209,7 +214,7 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 	eligibleJournals := []*redmine.IssueJournalObject{}
 	for _, journal := range journals {
 		journal := journal
-		if journal.User.ID == r.userID {
+		if journal.User.ID == r.cfg.UserID {
 			continue
 		}
 		if journal.Notes == "" {

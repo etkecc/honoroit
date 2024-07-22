@@ -19,11 +19,11 @@ require (
 	gitlab.com/etke.cc/go/healthchecks/v2 v2.2.0
 	gitlab.com/etke.cc/go/mxidwc v1.0.0
 	gitlab.com/etke.cc/go/psd v1.1.2
-	gitlab.com/etke.cc/go/redmine v0.0.0-20240719115127-31be40501712
+	gitlab.com/etke.cc/go/redmine v0.0.0-20240722123615-e5d35c63624e
 	gitlab.com/etke.cc/linkpearl v0.0.0-20240716084747-f2a547f02d54
-	golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	maunium.net/go/mautrix v0.19.0
-	modernc.org/sqlite v1.30.2
+	modernc.org/sqlite v1.31.1
 )
 
 require (

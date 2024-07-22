@@ -138,7 +138,7 @@ gitlab.com/etke.cc/go/mxidwc
 # gitlab.com/etke.cc/go/psd v1.1.2
 ## explicit; go 1.21.0
 gitlab.com/etke.cc/go/psd
-# gitlab.com/etke.cc/go/redmine v0.0.0-20240719115127-31be40501712
+# gitlab.com/etke.cc/go/redmine v0.0.0-20240722123615-e5d35c63624e
 ## explicit; go 1.21
 gitlab.com/etke.cc/go/redmine
 # gitlab.com/etke.cc/linkpearl v0.0.0-20240716084747-f2a547f02d54
@@ -163,7 +163,7 @@ golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7
+# golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
@@ -272,7 +272,7 @@ modernc.org/mathutil
 # modernc.org/memory v1.8.0
 ## explicit; go 1.18
 modernc.org/memory
-# modernc.org/sqlite v1.30.2
+# modernc.org/sqlite v1.31.1
 ## explicit; go 1.20
 modernc.org/sqlite
 modernc.org/sqlite/lib

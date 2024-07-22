@@ -1,12 +1,15 @@
 package redmine
 
 import (
+	"sync"
+
 	redmine "github.com/nixys/nxs-go-redmine/v5"
 	"github.com/rs/zerolog"
 )
 
 // Config is a configuration for Redmine
 type Config struct {
+	mu                         sync.Mutex
 	api                        API             // API interface
 	Log                        *zerolog.Logger // Logger, defaults to discard
 	Host                       string          // Redmine host, e.g. "https://redmine.example.com"
@@ -29,6 +32,9 @@ func NewConfig(opts ...Option) *Config {
 }
 
 func (cfg *Config) apply(opts ...Option) *Config {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+
 	for _, opt := range opts {
 		opt(cfg)
 	}
@@ -52,10 +58,7 @@ func (cfg *Config) Enabled() bool {
 	return cfg.Host != "" &&
 		cfg.APIKey != "" &&
 		(cfg.ProjectIdentifier != "" || cfg.ProjectID != 0) &&
-		cfg.TrackerID != 0 &&
-		cfg.WaitingForOperatorStatusID != 0 &&
-		cfg.WaitingForCustomerStatusID != 0 &&
-		cfg.DoneStatusID != 0
+		cfg.TrackerID != 0
 }
 
 // withAPI sets the API interface

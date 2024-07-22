@@ -18,7 +18,7 @@ import (
 )
 
 func (b *Bot) greetings(ctx context.Context, userID id.UserID, roomID id.RoomID) {
-	customerStatus, hsStatus := b.getStatus(userID)
+	customerStatus, hsStatus, _ := b.getStatus(userID)
 	identified := customerStatus != "" || hsStatus != ""
 	ownServer := userID.Homeserver() == b.lp.GetClient().UserID.Homeserver()
 	if identified && !ownServer {
@@ -164,7 +164,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 }
 
 func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (id.EventID, int64, error) {
-	customerStatus, hsStatus := b.getStatus(userID)
+	customerStatus, hsStatus, orderIssueID := b.getStatus(userID)
 	customerRequests, hsRequests, err := b.countCustomerRequests(ctx, userID)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot calculate count of the support requests")
@@ -196,6 +196,11 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 	)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot create a new issue in Redmine")
+	}
+	if issueID != 0 && orderIssueID != 0 {
+		if err := b.redmine.NewIssueRelation(issueID, orderIssueID, ""); err != nil {
+			b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot create a relation between issues in Redmine")
+		}
 	}
 	return eventID, issueID, nil
 }

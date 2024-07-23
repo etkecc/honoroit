@@ -152,6 +152,52 @@ func (b *Bot) syncIssueNote(ctx context.Context, threadID id.EventID, roomID id.
 	}
 }
 
+// getFileUploadReq returns a redmine.UploadRequest for the given content (if it's a file)
+func (b *Bot) getFileUploadReq(ctx context.Context, content *event.MessageEventContent) *redmine.UploadRequest {
+	var fileEncrypted bool
+	fileName, fileMXCURL := GetFileURL(content)
+	if fileMXCURL == "" {
+		return nil
+	}
+
+	if content.GetFile().URL == fileMXCURL {
+		fileEncrypted = true
+	}
+	fileContentURI, err := fileMXCURL.Parse()
+	if err != nil {
+		b.log.Warn().Err(err).Str("filename", fileName).Str("url", string(fileMXCURL)).Msg("cannot parse file MXC URI")
+		return nil
+	}
+
+	if fileContentURI.IsEmpty() {
+		return nil
+	}
+
+	resp, err := b.lp.GetClient().Download(ctx, fileContentURI)
+	if err != nil {
+		b.log.Warn().Err(err).Str("filename", fileName).Str("url", string(fileMXCURL)).Msg("cannot download file")
+		return nil
+	}
+
+	if !fileEncrypted {
+		return &redmine.UploadRequest{
+			Path:   fileName,
+			Stream: resp.Body,
+		}
+	}
+
+	defer resp.Body.Close()
+	if err := content.File.PrepareForDecryption(); err != nil {
+		b.log.Warn().Err(err).Msg("cannot prepare file for decryption")
+		return nil
+	}
+	encStream := content.File.DecryptStream(resp.Body)
+	return &redmine.UploadRequest{
+		Path:   fileName,
+		Stream: encStream,
+	}
+}
+
 func (b *Bot) updateIssue(ctx context.Context, byOperator bool, sender string, threadID id.EventID, content *event.MessageEventContent) {
 	key := "redmine_" + threadID.String()
 	b.lock(key)
@@ -165,24 +211,17 @@ func (b *Bot) updateIssue(ctx context.Context, byOperator bool, sender string, t
 	if err != nil || issueID == 0 {
 		return
 	}
-	var status redmine.Status
+	var statusID int64
 	var text string
 	if byOperator {
-		status = redmine.WaitingForCustomer
+		statusID = b.redmine.StatusToID(redmine.WaitingForCustomer)
 		text = fmt.Sprintf("_%s (👩‍💼 operator)_\n\n%s", sender, content.Body)
 	} else {
-		status = redmine.WaitingForOperator
+		statusID = b.redmine.StatusToID(redmine.WaitingForOperator)
 		text = fmt.Sprintf("_%s (🧑‍🦱customer)_\n\n%s", sender, content.Body)
 	}
 
-	fileName, fileMXCURL := GetFileURL(content)
-	if fileMXCURL != "" {
-		fileURL := b.lp.GetClient().GetDownloadURL(fileMXCURL.ParseOrIgnore()) //nolint // ignoring deprecation for now
-		fileText := fmt.Sprintf("[attachment: %s](%s)", fileName, fileURL)
-		text = fmt.Sprintf("%s\n\n%s", text, fileText)
-	}
-
-	if updateErr := b.redmine.UpdateIssue(int64(issueID), status, text); updateErr != nil {
+	if updateErr := b.redmine.UpdateIssue(int64(issueID), statusID, text, b.getFileUploadReq(ctx, content)); updateErr != nil {
 		b.log.Error().Err(updateErr).Msg("cannot update redmine issue")
 	}
 }
@@ -200,8 +239,22 @@ func (b *Bot) closeIssue(ctx context.Context, roomID id.RoomID, threadID id.Even
 	if err != nil || issueID == 0 {
 		return
 	}
-	if updateErr := b.redmine.UpdateIssue(int64(issueID), redmine.Done, text); updateErr != nil {
-		b.log.Error().Err(updateErr).Msg("cannot close redmine issue")
+	log := b.log.With().Int("issue_id", issueID).Logger()
+	issue, err := b.redmine.GetIssue(int64(issueID), "attachments")
+	if err != nil {
+		log.Warn().Err(err).Msg("cannot get redmine issue")
+		return
+	}
+	if issue.Attachments != nil {
+		//nolint:gocritic // we can't do anything with it
+		for _, attachment := range *issue.Attachments {
+			if err := b.redmine.DeleteAttachment(attachment.ID); err != nil {
+				log.Warn().Err(err).Int("attachment_id", int(attachment.ID)).Msg("cannot delete attachment")
+			}
+		}
+	}
+	if updateErr := b.redmine.UpdateIssue(int64(issueID), b.redmine.StatusToID(redmine.Done), text); updateErr != nil {
+		log.Warn().Err(updateErr).Msg("cannot close redmine issue")
 		return
 	}
 	b.removeRedmineMapping(ctx, threadID.String())

@@ -105,10 +105,14 @@ func (r *Redmine) uploadAttachments(files ...*UploadRequest) *[]redmine.Attachme
 	for _, req := range files {
 		if req == nil {
 			r.cfg.Log.Warn().Msg("nil upload request")
+			continue
 		}
 		upload, err := retryResult(r.cfg.Log, func() (redmine.AttachmentUploadObject, redmine.StatusCode, error) {
 			if req.Stream == nil {
 				return r.cfg.api.AttachmentUpload(req.Path)
+			}
+			if streamCloser, ok := req.Stream.(io.Closer); ok {
+				defer streamCloser.Close()
 			}
 			return r.cfg.api.AttachmentUploadStream(req.Stream, req.Path)
 		})
@@ -122,6 +126,24 @@ func (r *Redmine) uploadAttachments(files ...*UploadRequest) *[]redmine.Attachme
 		*uploads = append(*uploads, upload)
 	}
 	return uploads
+}
+
+// StatusToID converts a Status-typed number to actual status ID
+func (r *Redmine) StatusToID(status Status) int64 {
+	var statusID int64
+	switch status {
+	case WaitingForOperator:
+		statusID = r.cfg.WaitingForOperatorStatusID
+	case WaitingForCustomer:
+		statusID = r.cfg.WaitingForCustomerStatusID
+	case Done:
+		statusID = r.cfg.DoneStatusID
+	default:
+		statusID = int64(status)
+		r.cfg.Log.Warn().Int("status", int(status)).Msg("unknown status")
+	}
+
+	return statusID
 }
 
 // NewIssue creates a new issue in Redmine
@@ -189,7 +211,7 @@ func (r *Redmine) GetIssue(issueID int64, includes ...redmine.IssueInclude) (red
 }
 
 // UpdateIssue updates the status using one of the constants and notes of an issue
-func (r *Redmine) UpdateIssue(issueID int64, status Status, text string, files ...*UploadRequest) error {
+func (r *Redmine) UpdateIssue(issueID, statusID int64, text string, files ...*UploadRequest) error {
 	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
 	if !r.Enabled() {
 		log.Debug().Msg("redmine is disabled, ignoring UpdateIssue() call")
@@ -198,19 +220,6 @@ func (r *Redmine) UpdateIssue(issueID int64, status Status, text string, files .
 	if issueID == 0 || text == "" {
 		log.Debug().Msg("missing required fields, ignoring UpdateIssue() call")
 		return nil
-	}
-
-	var statusID int64
-	switch status {
-	case WaitingForOperator:
-		statusID = r.cfg.WaitingForOperatorStatusID
-	case WaitingForCustomer:
-		statusID = r.cfg.WaitingForCustomerStatusID
-	case Done:
-		statusID = r.cfg.DoneStatusID
-	default:
-		statusID = int64(status)
-		log.Warn().Int("status", int(status)).Msg("unknown status")
 	}
 
 	r.wg.Add(1)

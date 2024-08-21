@@ -1,13 +1,14 @@
-FROM registry.gitlab.com/etke.cc/base/build AS builder
+FROM ghcr.io/etkecc/base/build AS builder
 
 WORKDIR /app
 COPY . .
 RUN just build
 
-FROM registry.gitlab.com/etke.cc/base/app
+FROM scratch
 
 ENV HONOROIT_DB_DSN /data/honoroit.db
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/honoroit /bin/honoroit
 
 USER app

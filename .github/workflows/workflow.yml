@@ -4,7 +4,7 @@ on:
     branches: [ "main" ]
     tags: [ "v*" ]
   schedule:
-    - cron: '0 0 * * 1'
+    - cron: '0 8 * * 1'
 permissions:
   checks: write
   contents: write

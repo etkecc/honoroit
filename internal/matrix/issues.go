@@ -36,7 +36,6 @@ func (b *Bot) SyncIssues() {
 
 	threadIDs := b.getThreadIDs(ctx)
 	for _, threadID := range threadIDs {
-		threadID := threadID
 		b.syncIssue(ctx, threadID)
 	}
 }
@@ -94,7 +93,6 @@ func (b *Bot) syncIssueNotes(ctx context.Context, threadID id.EventID, roomID id
 	}
 	b.log.Debug().Int("issue_id", issueID).Int("notes", len(notes)).Msg("syncing notes")
 	for _, note := range notes {
-		note := note
 		acID := issueNotePrefix + threadID.String() + "_" + strconv.Itoa(int(note.ID))
 		data, err := b.lp.GetAccountData(ctx, acID)
 		if err != nil {

@@ -153,12 +153,17 @@ func (b *Bot) onEncryptedMessage(ctx context.Context, evt *event.Event) {
 		return
 	}
 
+	// if that's an operator room, ignore
+	if b.roomID == evt.RoomID {
+		return
+	}
+
 	// ignore any events in ignored rooms
 	if slices.Contains(strings.Split(b.cfg.Get(ctx, config.IgnoredRooms.Key), ","), evt.RoomID.String()) {
 		return
 	}
 
-	// if the room already mappend, i.e. it already has own thread, ignore, and handle it in the onMessage
+	// if the room already mapped, i.e. it already has own thread, ignore, and handle it in the onMessage
 	mapping, err := b.getMapping(ctx, evt.RoomID.String())
 	if mapping != "" || err == nil {
 		return

@@ -4,7 +4,7 @@ default:
 
 # update go deps
 update *flags:
-    go get {{ flags }} ./cmd
+    go get {{ flags }} ./cmd/honoroit
     go mod tidy
     go mod vendor
 
@@ -22,11 +22,11 @@ mocks:
 
 # generate swagger docks
 swagger:
-    @swag init --dir ./cmd,./
+    @swag init --parseDependency --dir ./cmd/honoroit,./
 
 # automatically fix swagger issues
 swaggerfix: && swagger
-    @swag fmt --dir ./cmd,./
+    @swag fmt --dir ./cmd/honoroit,./
 
 # run unit tests
 test packages="./...":
@@ -36,8 +36,11 @@ test packages="./...":
 
 # run app
 run:
-    @go run ./cmd
+    @go run ./cmd/honoroit
+
+install:
+    @CGO_ENABLED=0 go install -ldflags '-extldflags "-static"' -tags timetzdata,goolm -v ./cmd/honoroit
 
 # build app
 build:
-    CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata,goolm -v -o honoroit ./cmd
+    @CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata,goolm -v ./cmd/honoroit

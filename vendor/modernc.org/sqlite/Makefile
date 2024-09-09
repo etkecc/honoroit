@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-.PHONY:	all build_all_targets clean edit editor test vendor work
+.PHONY:	all build_all_targets clean edit editor test vendor work libc
 
 all: editor
 	golint 2>&1
@@ -68,6 +68,7 @@ editor:
 test:
 	go test -v -timeout 24h 2>&1 | tee log-test
 	
+# Checkout the desired libsqlite3 version in ../libsqlite3/ and run '$ make vendor'.
 vendor:
 	go run vendor_libsqlite3.go && make build_all_targets
 	make build_all_targets
@@ -83,3 +84,25 @@ work:
 	go work use ../libtcl8.6
 	go work use ../libsqlite3
 	go work use ../libz
+
+# Checkout the desired libc version in ../libc/ and run '$ make libc'.
+libc:
+	rm -rf internal/
+	mkdir internal/
+	cp -r ../libc/ internal/
+	rm -rf \
+		internal/libc/*.gz \
+		internal/libc/*_test.go \
+		internal/libc/.git/ \
+		internal/libc/Makefile \
+		internal/libc/addport.go \
+		internal/libc/builder.json \
+		internal/libc/go.* \
+		internal/libc/internal \
+		internal/libc/log* \
+		internal/libc/surface.* \
+		internal/libc/unconvert.sh \
+	# go install -v modernc.org/uncomment@latest
+	sed -i 's/"modernc.org\/libc/"modernc.org\/sqlite\/internal\/libc/' $(shell find . -name \*.go)
+	uncomment -v -gofmt lib/*.go $(shell find internal -name \*.go)
+	go build -v ./...

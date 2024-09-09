@@ -49,6 +49,8 @@
 //
 // See the discussion at https://gitlab.com/cznic/sqlite/-/issues/177 for more details.
 //
+// Update 2024-09-04: This package now uses its internal libc copy.
+//
 // # Changelog
 //
 // 2024-07-22: v1.31.0

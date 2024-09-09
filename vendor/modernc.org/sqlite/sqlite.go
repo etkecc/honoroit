@@ -25,8 +25,8 @@ import (
 	"time"
 	"unsafe"
 
-	"modernc.org/libc"
-	"modernc.org/libc/sys/types"
+	"modernc.org/sqlite/internal/libc"
+	"modernc.org/sqlite/internal/libc/sys/types"
 	sqlite3 "modernc.org/sqlite/lib"
 )
 

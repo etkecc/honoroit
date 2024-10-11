@@ -21,27 +21,27 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ### Step 1: a matrix user (customer) sends a message to Honoroit bot in direct 1:1 chat
 
-![step 1](contrib/screenshots/1.customer sends a message.png)
+![step 1](contrib/screenshots/1-customer-sends-a-message.png)
 
 ### Step 2: a new thread created in the backoffice room
 
-![step 2](contrib/screenshots/2.a new thread created in the backoffice room.png)
+![step 2](contrib/screenshots/2-a-new-thread-created-in-the-backoffice-room.png)
 
 ### Step 3: operator(-s) chat with customer in that thread
 
-![step 3](contrib/screenshots/3.operators chat with customer in that thread.png)
+![step 3](contrib/screenshots/3-operators-chat-with-customer-in-that-thread.png)
 
 ### Step 4: customer sees that like a direct 1:1 chat with honoroit user
 
-![step 4](contrib/screenshots/4.customer sees that like a direct 1:1 chat with honoroit user.png)
+![step 4](contrib/screenshots/4-customer-sees-that-like-a-direct-1-1-chat-with-honoroit-user.png)
 
 ### Step 5: operator closes the request
 
-![step 5](contrib/screenshots/5.operator closes the request.png)
+![step 5](contrib/screenshots/5-operator-closes-the-request.png)
 
 ### Step 6: customer receives special message and bot leaves the room
 
-![step 6](contrib/screenshots/6.customer receives special message and bot leaves the room.png)
+![step 6](contrib/screenshots/6-customer-receives-special-message-and-bot-leaves-the-room.png)
 
 ## TODO
 

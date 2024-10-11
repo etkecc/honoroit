@@ -19,9 +19,6 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ## How it looks like
 
-<details>
-<summary>Screenshots</summary>
-
 ### Step 1: a matrix user (customer) sends a message to Honoroit bot in direct 1:1 chat
 
 ![step 1](contrib/screenshots/1.customer sends a message.png)
@@ -45,8 +42,6 @@ The main idea of that bot is to give you the same abilities as with website chat
 ### Step 6: customer receives special message and bot leaves the room
 
 ![step 6](contrib/screenshots/6.customer receives special message and bot leaves the room.png)
-
-</details>
 
 ## TODO
 

@@ -25,7 +25,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 
 ### Step 2: a new thread created in the backoffice room
 
-![step 2](contrib/screenshots/2-a-new-thread-created-in-the-backoffice-room.png)
+![step 2](contrib/screenshots/2-new-thread-created-in-the-backoffice-room.png)
 
 ### Step 3: operator(-s) chat with customer in that thread
 

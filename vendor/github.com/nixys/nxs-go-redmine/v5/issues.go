@@ -241,7 +241,7 @@ func (r *Context) IssuesAllGet(request IssueAllGetRequest) (IssueResult, StatusC
 			&i,
 			url.URL{
 				Path:     "/issues.json",
-				RawQuery: request.url().Encode(),
+				RawQuery: up.Encode(),
 			},
 			http.StatusOK,
 		)

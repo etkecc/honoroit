@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"maunium.net/go/mautrix/crypto/goolm"
 	"maunium.net/go/mautrix/crypto/goolm/crypto"
+	"maunium.net/go/mautrix/crypto/olm"
 )
 
 const (
@@ -20,29 +20,29 @@ type MegolmSessionSharing struct {
 }
 
 // Encode returns the encoded message in the correct format with the signature by key appended.
-func (s MegolmSessionSharing) EncodeAndSign(key crypto.Ed25519KeyPair) []byte {
+func (s MegolmSessionSharing) EncodeAndSign(key crypto.Ed25519KeyPair) ([]byte, error) {
 	output := make([]byte, 229)
 	output[0] = sessionSharingVersion
 	binary.BigEndian.PutUint32(output[1:], s.Counter)
 	copy(output[5:], s.RatchetData[:])
 	copy(output[133:], key.PublicKey)
-	signature := key.Sign(output[:165])
+	signature, err := key.Sign(output[:165])
 	copy(output[165:], signature)
-	return output
+	return output, err
 }
 
 // VerifyAndDecode verifies the input and populates the struct with the data encoded in input.
 func (s *MegolmSessionSharing) VerifyAndDecode(input []byte) error {
 	if len(input) != 229 {
-		return fmt.Errorf("verify: %w", goolm.ErrBadInput)
+		return fmt.Errorf("verify: %w", olm.ErrBadInput)
 	}
 	publicKey := crypto.Ed25519PublicKey(input[133:165])
 	if !publicKey.Verify(input[:165], input[165:]) {
-		return fmt.Errorf("verify: %w", goolm.ErrBadVerification)
+		return fmt.Errorf("verify: %w", olm.ErrBadVerification)
 	}
 	s.PublicKey = publicKey
 	if input[0] != sessionSharingVersion {
-		return fmt.Errorf("verify: %w", goolm.ErrBadVersion)
+		return fmt.Errorf("verify: %w", olm.ErrBadVersion)
 	}
 	s.Counter = binary.BigEndian.Uint32(input[1:5])
 	copy(s.RatchetData[:], input[5:133])

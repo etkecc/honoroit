@@ -2,18 +2,19 @@ package session
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"fmt"
-	"io"
+	"strings"
 
-	"maunium.net/go/mautrix/crypto/goolm"
 	"maunium.net/go/mautrix/crypto/goolm/cipher"
 	"maunium.net/go/mautrix/crypto/goolm/crypto"
+	"maunium.net/go/mautrix/crypto/goolm/goolmbase64"
 	"maunium.net/go/mautrix/crypto/goolm/libolmpickle"
 	"maunium.net/go/mautrix/crypto/goolm/message"
-	"maunium.net/go/mautrix/crypto/goolm/olm"
+	"maunium.net/go/mautrix/crypto/goolm/ratchet"
 	"maunium.net/go/mautrix/crypto/goolm/utilities"
+	"maunium.net/go/mautrix/crypto/olm"
 	"maunium.net/go/mautrix/id"
 )
 
@@ -32,8 +33,10 @@ type OlmSession struct {
 	AliceIdentityKey crypto.Curve25519PublicKey `json:"alice_id_key"`
 	AliceBaseKey     crypto.Curve25519PublicKey `json:"alice_base_key"`
 	BobOneTimeKey    crypto.Curve25519PublicKey `json:"bob_one_time_key"`
-	Ratchet          olm.Ratchet                `json:"ratchet"`
+	Ratchet          ratchet.Ratchet            `json:"ratchet"`
 }
+
+var _ olm.Session = (*OlmSession)(nil)
 
 // SearchOTKFunc is used to retrieve a crypto.OneTimeKey from a public key.
 type SearchOTKFunc = func(crypto.Curve25519PublicKey) *crypto.OneTimeKey
@@ -42,33 +45,25 @@ type SearchOTKFunc = func(crypto.Curve25519PublicKey) *crypto.OneTimeKey
 // the Session using the supplied key.
 func OlmSessionFromJSONPickled(pickled, key []byte) (*OlmSession, error) {
 	if len(pickled) == 0 {
-		return nil, fmt.Errorf("sessionFromPickled: %w", goolm.ErrEmptyInput)
+		return nil, fmt.Errorf("sessionFromPickled: %w", olm.ErrEmptyInput)
 	}
 	a := &OlmSession{}
-	err := a.UnpickleAsJSON(pickled, key)
-	if err != nil {
-		return nil, err
-	}
-	return a, nil
+	return a, a.UnpickleAsJSON(pickled, key)
 }
 
 // OlmSessionFromPickled loads the OlmSession details from a pickled base64 string. The input is decrypted with the supplied key.
 func OlmSessionFromPickled(pickled, key []byte) (*OlmSession, error) {
 	if len(pickled) == 0 {
-		return nil, fmt.Errorf("sessionFromPickled: %w", goolm.ErrEmptyInput)
+		return nil, fmt.Errorf("sessionFromPickled: %w", olm.ErrEmptyInput)
 	}
 	a := &OlmSession{}
-	err := a.Unpickle(pickled, key)
-	if err != nil {
-		return nil, err
-	}
-	return a, nil
+	return a, a.Unpickle(pickled, key)
 }
 
 // NewOlmSession creates a new Session.
 func NewOlmSession() *OlmSession {
 	s := &OlmSession{}
-	s.Ratchet = *olm.New()
+	s.Ratchet = *ratchet.New()
 	return s
 }
 
@@ -77,12 +72,12 @@ func NewOlmSession() *OlmSession {
 func NewOutboundOlmSession(identityKeyAlice crypto.Curve25519KeyPair, identityKeyBob crypto.Curve25519PublicKey, oneTimeKeyBob crypto.Curve25519PublicKey) (*OlmSession, error) {
 	s := NewOlmSession()
 	//generate E_A
-	baseKey, err := crypto.Curve25519GenerateKey(nil)
+	baseKey, err := crypto.Curve25519GenerateKey()
 	if err != nil {
 		return nil, err
 	}
 	//generate T_0
-	ratchetKey, err := crypto.Curve25519GenerateKey(nil)
+	ratchetKey, err := crypto.Curve25519GenerateKey()
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +112,7 @@ func NewOutboundOlmSession(identityKeyAlice crypto.Curve25519KeyPair, identityKe
 
 // NewInboundOlmSession creates a new inbound session from receiving the first message.
 func NewInboundOlmSession(identityKeyAlice *crypto.Curve25519PublicKey, receivedOTKMsg []byte, searchBobOTK SearchOTKFunc, identityKeyBob crypto.Curve25519KeyPair) (*OlmSession, error) {
-	decodedOTKMsg, err := goolm.Base64Decode(receivedOTKMsg)
+	decodedOTKMsg, err := goolmbase64.Decode(receivedOTKMsg)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +125,7 @@ func NewInboundOlmSession(identityKeyAlice *crypto.Curve25519PublicKey, received
 		return nil, fmt.Errorf("OneTimeKeyMessage decode: %w", err)
 	}
 	if !oneTimeMsg.CheckFields(identityKeyAlice) {
-		return nil, fmt.Errorf("OneTimeKeyMessage check fields: %w", goolm.ErrBadMessageFormat)
+		return nil, fmt.Errorf("OneTimeKeyMessage check fields: %w", olm.ErrBadMessageFormat)
 	}
 
 	//Either the identityKeyAlice is set and/or the oneTimeMsg.IdentityKey is set, which is checked
@@ -138,7 +133,7 @@ func NewInboundOlmSession(identityKeyAlice *crypto.Curve25519PublicKey, received
 	if identityKeyAlice != nil && len(oneTimeMsg.IdentityKey) != 0 {
 		//if both are set, compare them
 		if !identityKeyAlice.Equal(oneTimeMsg.IdentityKey) {
-			return nil, fmt.Errorf("OneTimeKeyMessage identity keys: %w", goolm.ErrBadMessageKeyID)
+			return nil, fmt.Errorf("OneTimeKeyMessage identity keys: %w", olm.ErrBadMessageKeyID)
 		}
 	}
 	if identityKeyAlice == nil {
@@ -148,7 +143,7 @@ func NewInboundOlmSession(identityKeyAlice *crypto.Curve25519PublicKey, received
 
 	oneTimeKeyBob := searchBobOTK(oneTimeMsg.OneTimeKey)
 	if oneTimeKeyBob == nil {
-		return nil, fmt.Errorf("ourOneTimeKey: %w", goolm.ErrBadMessageKeyID)
+		return nil, fmt.Errorf("ourOneTimeKey: %w", olm.ErrBadMessageKeyID)
 	}
 
 	//Calculate shared secret via Triple Diffie-Hellman
@@ -179,7 +174,7 @@ func NewInboundOlmSession(identityKeyAlice *crypto.Curve25519PublicKey, received
 	}
 
 	if len(msg.RatchetKey) == 0 {
-		return nil, fmt.Errorf("Message missing ratchet key: %w", goolm.ErrBadMessageFormat)
+		return nil, fmt.Errorf("Message missing ratchet key: %w", olm.ErrBadMessageFormat)
 	}
 	//Init Ratchet
 	s.Ratchet.InitializeAsBob(secret, msg.RatchetKey)
@@ -204,30 +199,54 @@ func (a *OlmSession) UnpickleAsJSON(pickled, key []byte) error {
 
 // ID returns an identifier for this Session.  Will be the same for both ends of the conversation.
 // Generated by hashing the public keys used to create the session.
-func (s OlmSession) ID() id.SessionID {
-	message := make([]byte, 3*crypto.Curve25519KeyLength)
+func (s *OlmSession) ID() id.SessionID {
+	message := make([]byte, 3*crypto.Curve25519PrivateKeyLength)
 	copy(message, s.AliceIdentityKey)
-	copy(message[crypto.Curve25519KeyLength:], s.AliceBaseKey)
-	copy(message[2*crypto.Curve25519KeyLength:], s.BobOneTimeKey)
-	hash := crypto.SHA256(message)
-	res := id.SessionID(goolm.Base64Encode(hash))
+	copy(message[crypto.Curve25519PrivateKeyLength:], s.AliceBaseKey)
+	copy(message[2*crypto.Curve25519PrivateKeyLength:], s.BobOneTimeKey)
+	hash := sha256.Sum256(message)
+	res := id.SessionID(goolmbase64.Encode(hash[:]))
 	return res
 }
 
 // HasReceivedMessage returns true if this session has received any message.
-func (s OlmSession) HasReceivedMessage() bool {
+func (s *OlmSession) HasReceivedMessage() bool {
 	return s.ReceivedMessage
 }
 
-// MatchesInboundSessionFrom checks if the oneTimeKeyMsg message is set for this inbound
-// Session.  This can happen if multiple messages are sent to this Account
-// before this Account sends a message in reply.  Returns true if the session
-// matches.  Returns false if the session does not match.
-func (s OlmSession) MatchesInboundSessionFrom(theirIdentityKeyEncoded *id.Curve25519, receivedOTKMsg []byte) (bool, error) {
-	if len(receivedOTKMsg) == 0 {
-		return false, fmt.Errorf("inbound match: %w", goolm.ErrEmptyInput)
+// MatchesInboundSession checks if the PRE_KEY message is for this in-bound
+// Session. This can happen if multiple messages are sent to this Account
+// before this Account sends a message in reply. Returns true if the session
+// matches. Returns false if the session does not match. Returns error on
+// failure.
+func (s *OlmSession) MatchesInboundSession(oneTimeKeyMsg string) (bool, error) {
+	return s.matchesInboundSession(nil, []byte(oneTimeKeyMsg))
+}
+
+// MatchesInboundSessionFrom checks if the PRE_KEY message is for this in-bound
+// Session. This can happen if multiple messages are sent to this Account
+// before this Account sends a message in reply. Returns true if the session
+// matches. Returns false if the session does not match. Returns error on
+// failure.
+func (s *OlmSession) MatchesInboundSessionFrom(theirIdentityKey, oneTimeKeyMsg string) (bool, error) {
+	var theirKey *id.Curve25519
+	if theirIdentityKey != "" {
+		theirs := id.Curve25519(theirIdentityKey)
+		theirKey = &theirs
 	}
-	decodedOTKMsg, err := goolm.Base64Decode(receivedOTKMsg)
+
+	return s.matchesInboundSession(theirKey, []byte(oneTimeKeyMsg))
+}
+
+// matchesInboundSession checks if the oneTimeKeyMsg message is set for this
+// inbound Session.  This can happen if multiple messages are sent to this
+// Account before this Account sends a message in reply.  Returns true if the
+// session matches.  Returns false if the session does not match.
+func (s *OlmSession) matchesInboundSession(theirIdentityKeyEncoded *id.Curve25519, receivedOTKMsg []byte) (bool, error) {
+	if len(receivedOTKMsg) == 0 {
+		return false, fmt.Errorf("inbound match: %w", olm.ErrEmptyInput)
+	}
+	decodedOTKMsg, err := goolmbase64.Decode(receivedOTKMsg)
 	if err != nil {
 		return false, err
 	}
@@ -266,20 +285,20 @@ func (s OlmSession) MatchesInboundSessionFrom(theirIdentityKeyEncoded *id.Curve2
 // EncryptMsgType returns the type of the next message that Encrypt will
 // return. Returns MsgTypePreKey if the message will be a oneTimeKeyMsg.
 // Returns MsgTypeMsg if the message will be a normal message.
-func (s OlmSession) EncryptMsgType() id.OlmMsgType {
+func (s *OlmSession) EncryptMsgType() id.OlmMsgType {
 	if s.ReceivedMessage {
 		return id.OlmMsgTypeMsg
 	}
 	return id.OlmMsgTypePreKey
 }
 
-// Encrypt encrypts a message using the Session. Returns the encrypted message base64 encoded.  If reader is nil, crypto/rand is used for key generations.
-func (s *OlmSession) Encrypt(plaintext []byte, reader io.Reader) (id.OlmMsgType, []byte, error) {
+// Encrypt encrypts a message using the Session. Returns the encrypted message base64 encoded.
+func (s *OlmSession) Encrypt(plaintext []byte) (id.OlmMsgType, []byte, error) {
 	if len(plaintext) == 0 {
-		return 0, nil, fmt.Errorf("encrypt: %w", goolm.ErrEmptyInput)
+		return 0, nil, fmt.Errorf("encrypt: %w", olm.ErrEmptyInput)
 	}
 	messageType := s.EncryptMsgType()
-	encrypted, err := s.Ratchet.Encrypt(plaintext, reader)
+	encrypted, err := s.Ratchet.Encrypt(plaintext)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -300,15 +319,15 @@ func (s *OlmSession) Encrypt(plaintext []byte, reader io.Reader) (id.OlmMsgType,
 		result = messageBody
 	}
 
-	return messageType, goolm.Base64Encode(result), nil
+	return messageType, goolmbase64.Encode(result), nil
 }
 
 // Decrypt decrypts a base64 encoded message using the Session.
-func (s *OlmSession) Decrypt(crypttext []byte, msgType id.OlmMsgType) ([]byte, error) {
+func (s *OlmSession) Decrypt(crypttext string, msgType id.OlmMsgType) ([]byte, error) {
 	if len(crypttext) == 0 {
-		return nil, fmt.Errorf("decrypt: %w", goolm.ErrEmptyInput)
+		return nil, fmt.Errorf("decrypt: %w", olm.ErrEmptyInput)
 	}
-	decodedCrypttext, err := goolm.Base64Decode(crypttext)
+	decodedCrypttext, err := goolmbase64.Decode([]byte(crypttext))
 	if err != nil {
 		return nil, err
 	}
@@ -333,144 +352,77 @@ func (s *OlmSession) Decrypt(crypttext []byte, msgType id.OlmMsgType) ([]byte, e
 // Unpickle decodes the base64 encoded string and decrypts the result with the key.
 // The decrypted value is then passed to UnpickleLibOlm.
 func (o *OlmSession) Unpickle(pickled, key []byte) error {
+	if len(pickled) == 0 {
+		return olm.ErrEmptyInput
+	}
 	decrypted, err := cipher.Unpickle(key, pickled)
 	if err != nil {
 		return err
 	}
-	_, err = o.UnpickleLibOlm(decrypted)
-	return err
+	return o.UnpickleLibOlm(decrypted)
 }
 
-// UnpickleLibOlm decodes the unencryted value and populates the Session accordingly. It returns the number of bytes read.
-func (o *OlmSession) UnpickleLibOlm(value []byte) (int, error) {
-	//First 4 bytes are the accountPickleVersion
-	pickledVersion, curPos, err := libolmpickle.UnpickleUInt32(value)
-	if err != nil {
-		return 0, err
-	}
-	includesChainIndex := true
+// UnpickleLibOlm unpickles the unencryted value and populates the [OlmSession]
+// accordingly.
+func (o *OlmSession) UnpickleLibOlm(buf []byte) error {
+	decoder := libolmpickle.NewDecoder(buf)
+	pickledVersion, err := decoder.ReadUInt32()
+
+	var includesChainIndex bool
 	switch pickledVersion {
 	case olmSessionPickleVersionLibOlm:
 		includesChainIndex = false
 	case uint32(0x80000001):
 		includesChainIndex = true
 	default:
-		return 0, fmt.Errorf("unpickle olmSession: %w", goolm.ErrBadVersion)
+		return fmt.Errorf("unpickle olmSession: %w (found version %d)", olm.ErrBadVersion, pickledVersion)
 	}
-	var readBytes int
-	o.ReceivedMessage, readBytes, err = libolmpickle.UnpickleBool(value[curPos:])
-	if err != nil {
-		return 0, err
+
+	if o.ReceivedMessage, err = decoder.ReadBool(); err != nil {
+		return err
+	} else if err = o.AliceIdentityKey.UnpickleLibOlm(decoder); err != nil {
+		return err
+	} else if err = o.AliceBaseKey.UnpickleLibOlm(decoder); err != nil {
+		return err
+	} else if err = o.BobOneTimeKey.UnpickleLibOlm(decoder); err != nil {
+		return err
 	}
-	curPos += readBytes
-	readBytes, err = o.AliceIdentityKey.UnpickleLibOlm(value[curPos:])
-	if err != nil {
-		return 0, err
-	}
-	curPos += readBytes
-	readBytes, err = o.AliceBaseKey.UnpickleLibOlm(value[curPos:])
-	if err != nil {
-		return 0, err
-	}
-	curPos += readBytes
-	readBytes, err = o.BobOneTimeKey.UnpickleLibOlm(value[curPos:])
-	if err != nil {
-		return 0, err
-	}
-	curPos += readBytes
-	readBytes, err = o.Ratchet.UnpickleLibOlm(value[curPos:], includesChainIndex)
-	if err != nil {
-		return 0, err
-	}
-	curPos += readBytes
-	return curPos, nil
+	return o.Ratchet.UnpickleLibOlm(decoder, includesChainIndex)
 }
 
-// Pickle returns a base64 encoded and with key encrypted pickled olmSession using PickleLibOlm().
-func (o OlmSession) Pickle(key []byte) ([]byte, error) {
-	pickeledBytes := make([]byte, o.PickleLen())
-	written, err := o.PickleLibOlm(pickeledBytes)
-	if err != nil {
-		return nil, err
+// Pickle returns a base64 encoded and with key encrypted pickled olmSession
+// using PickleLibOlm().
+func (s *OlmSession) Pickle(key []byte) ([]byte, error) {
+	if len(key) == 0 {
+		return nil, olm.ErrNoKeyProvided
 	}
-	if written != len(pickeledBytes) {
-		return nil, errors.New("number of written bytes not correct")
-	}
-	encrypted, err := cipher.Pickle(key, pickeledBytes)
-	if err != nil {
-		return nil, err
-	}
-	return encrypted, nil
+	return cipher.Pickle(key, s.PickleLibOlm())
 }
 
-// PickleLibOlm encodes the session into target. target has to have a size of at least PickleLen() and is written to from index 0.
-// It returns the number of bytes written.
-func (o OlmSession) PickleLibOlm(target []byte) (int, error) {
-	if len(target) < o.PickleLen() {
-		return 0, fmt.Errorf("pickle MegolmOutboundSession: %w", goolm.ErrValueTooShort)
-	}
-	written := libolmpickle.PickleUInt32(olmSessionPickleVersionLibOlm, target)
-	written += libolmpickle.PickleBool(o.ReceivedMessage, target[written:])
-	writtenRatchet, err := o.AliceIdentityKey.PickleLibOlm(target[written:])
-	if err != nil {
-		return 0, fmt.Errorf("pickle MegolmOutboundSession: %w", err)
-	}
-	written += writtenRatchet
-	writtenRatchet, err = o.AliceBaseKey.PickleLibOlm(target[written:])
-	if err != nil {
-		return 0, fmt.Errorf("pickle MegolmOutboundSession: %w", err)
-	}
-	written += writtenRatchet
-	writtenRatchet, err = o.BobOneTimeKey.PickleLibOlm(target[written:])
-	if err != nil {
-		return 0, fmt.Errorf("pickle MegolmOutboundSession: %w", err)
-	}
-	written += writtenRatchet
-	writtenRatchet, err = o.Ratchet.PickleLibOlm(target[written:])
-	if err != nil {
-		return 0, fmt.Errorf("pickle MegolmOutboundSession: %w", err)
-	}
-	written += writtenRatchet
-	return written, nil
-}
-
-// PickleLen returns the actual number of bytes the pickled session will have.
-func (o OlmSession) PickleLen() int {
-	length := libolmpickle.PickleUInt32Len(olmSessionPickleVersionLibOlm)
-	length += libolmpickle.PickleBoolLen(o.ReceivedMessage)
-	length += o.AliceIdentityKey.PickleLen()
-	length += o.AliceBaseKey.PickleLen()
-	length += o.BobOneTimeKey.PickleLen()
-	length += o.Ratchet.PickleLen()
-	return length
-}
-
-// PickleLenMin returns the minimum number of bytes the pickled session must have.
-func (o OlmSession) PickleLenMin() int {
-	length := libolmpickle.PickleUInt32Len(olmSessionPickleVersionLibOlm)
-	length += libolmpickle.PickleBoolLen(o.ReceivedMessage)
-	length += o.AliceIdentityKey.PickleLen()
-	length += o.AliceBaseKey.PickleLen()
-	length += o.BobOneTimeKey.PickleLen()
-	length += o.Ratchet.PickleLenMin()
-	return length
+// PickleLibOlm pickles the session and returns the raw bytes.
+func (o *OlmSession) PickleLibOlm() []byte {
+	encoder := libolmpickle.NewEncoder()
+	encoder.WriteUInt32(olmSessionPickleVersionLibOlm)
+	encoder.WriteBool(o.ReceivedMessage)
+	o.AliceIdentityKey.PickleLibOlm(encoder)
+	o.AliceBaseKey.PickleLibOlm(encoder)
+	o.BobOneTimeKey.PickleLibOlm(encoder)
+	o.Ratchet.PickleLibOlm(encoder)
+	return encoder.Bytes()
 }
 
 // Describe returns a string describing the current state of the session for debugging.
-func (o OlmSession) Describe() string {
-	var res string
-	if o.Ratchet.SenderChains.IsSet {
-		res += fmt.Sprintf("sender chain index: %d ", o.Ratchet.SenderChains.CKey.Index)
-	} else {
-		res += "sender chain index: "
-	}
-	res += "receiver chain indicies:"
+func (o *OlmSession) Describe() string {
+	var builder strings.Builder
+	builder.WriteString("sender chain index: ")
+	builder.WriteString(fmt.Sprint(o.Ratchet.SenderChains.CKey.Index))
+	builder.WriteString(" receiver chain indices:")
 	for _, curChain := range o.Ratchet.ReceiverChains {
-		res += fmt.Sprintf(" %d", curChain.CKey.Index)
+		builder.WriteString(fmt.Sprintf(" %d", curChain.CKey.Index))
 	}
-	res += " skipped message keys:"
+	builder.WriteString(" skipped message keys:")
 	for _, curSkip := range o.Ratchet.SkippedMessageKeys {
-		res += fmt.Sprintf(" %d", curSkip.MKey.Index)
+		builder.WriteString(fmt.Sprintf(" %d", curSkip.MKey.Index))
 	}
-	return res
+	return builder.String()
 }

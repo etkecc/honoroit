@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"modernc.org/sqlite/internal/libc"
+	"modernc.org/libc"
 	sqlite3 "modernc.org/sqlite/lib"
 )
 

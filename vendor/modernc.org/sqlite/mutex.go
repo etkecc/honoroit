@@ -8,8 +8,8 @@ import (
 	"sync"
 	"unsafe"
 
-	"modernc.org/sqlite/internal/libc"
-	"modernc.org/sqlite/internal/libc/sys/types"
+	"modernc.org/libc"
+	"modernc.org/libc/sys/types"
 )
 
 type mutex struct {

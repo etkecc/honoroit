@@ -78,7 +78,7 @@ var upgradeHeaderRegex = regexp.MustCompile(`^-- (?:v(\d+) -> )?v(\d+)(?: \(comp
 //	-- v5: Upgrade without transaction
 //	-- transaction: off
 //	// do dangerous stuff
-var transactionDisableRegex = regexp.MustCompile(`^-- transaction: (\w*)`)
+var transactionDisableRegex = regexp.MustCompile(`^-- transaction: ([a-z-]*)`)
 
 func parseFileHeader(file []byte) (from, to, compat int, message string, txn TxnMode, lines [][]byte, err error) {
 	lines = bytes.Split(file, []byte("\n"))
@@ -130,6 +130,13 @@ func parseFileHeader(file []byte) (from, to, compat int, message string, txn Txn
 // To limit the next N lines:
 //
 //	-- only: sqlite for next 123 lines
+//
+// To limit a block of code, fenced by another directive:
+//
+//	-- only: sqlite until "end only"
+//	QUERY;
+//	ANOTHER QUERY;
+//	-- end only sqlite
 //
 // If the single-line limit is on the second line of the file, the whole file is limited to that dialect.
 //

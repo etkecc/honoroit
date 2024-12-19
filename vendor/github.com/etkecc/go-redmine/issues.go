@@ -194,7 +194,6 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 	})
 	eligibleJournals := []*redmine.IssueJournalObject{}
 	for _, journal := range journals {
-		journal := journal
 		if journal.User.ID == r.cfg.UserID {
 			continue
 		}

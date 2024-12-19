@@ -36,7 +36,7 @@ github.com/etkecc/go-env/dotenv
 # github.com/etkecc/go-healthchecks/v2 v2.2.2
 ## explicit; go 1.18
 github.com/etkecc/go-healthchecks/v2
-# github.com/etkecc/go-linkpearl v0.0.0-20241212081007-8dacb4a09830
+# github.com/etkecc/go-linkpearl v0.0.0-20241219100412-83bcd2416637
 ## explicit; go 1.22.0
 github.com/etkecc/go-linkpearl
 # github.com/etkecc/go-mxidwc v1.0.1
@@ -45,8 +45,8 @@ github.com/etkecc/go-mxidwc
 # github.com/etkecc/go-psd v0.0.0-20241014083754-1bc4ec777ba8
 ## explicit; go 1.21.0
 github.com/etkecc/go-psd
-# github.com/etkecc/go-redmine v0.0.0-20240820090507-19ce08baf06b
-## explicit; go 1.21
+# github.com/etkecc/go-redmine v0.0.0-20241212083151-0940e5cd0812
+## explicit; go 1.22
 github.com/etkecc/go-redmine
 # github.com/getsentry/sentry-go v0.30.0
 ## explicit; go 1.21
@@ -80,7 +80,7 @@ github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/josharian/intern v1.0.0
 ## explicit; go 1.5
 github.com/josharian/intern
-# github.com/labstack/echo/v4 v4.13.2
+# github.com/labstack/echo/v4 v4.13.3
 ## explicit; go 1.20
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
@@ -180,7 +180,7 @@ github.com/yuin/goldmark/util
 # github.com/ziflex/lecho/v3 v3.7.0
 ## explicit; go 1.17
 github.com/ziflex/lecho/v3
-# go.mau.fi/util v0.8.2
+# go.mau.fi/util v0.8.3
 ## explicit; go 1.22.0
 go.mau.fi/util/base58
 go.mau.fi/util/confusable
@@ -204,12 +204,12 @@ golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20241210194714-1829a127f884
+# golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 ## explicit; go 1.22.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.32.0
+# golang.org/x/net v0.33.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -251,7 +251,7 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# maunium.net/go/mautrix v0.22.0
+# maunium.net/go/mautrix v0.22.1
 ## explicit; go 1.22.0
 maunium.net/go/mautrix
 maunium.net/go/mautrix/crypto
@@ -286,7 +286,7 @@ maunium.net/go/mautrix/format/mdext
 maunium.net/go/mautrix/id
 maunium.net/go/mautrix/pushrules
 maunium.net/go/mautrix/sqlstatestore
-# modernc.org/gc/v3 v3.0.0-20241004144649-1aea3fae8852
+# modernc.org/gc/v3 v3.0.0-20241213165251-3bc300f6d0c9
 ## explicit; go 1.20
 modernc.org/gc/v3
 # modernc.org/libc v1.61.4
@@ -323,7 +323,7 @@ modernc.org/mathutil
 # modernc.org/memory v1.8.0
 ## explicit; go 1.18
 modernc.org/memory
-# modernc.org/sqlite v1.34.2
+# modernc.org/sqlite v1.34.3
 ## explicit; go 1.21
 modernc.org/sqlite
 modernc.org/sqlite/lib

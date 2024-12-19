@@ -11,12 +11,12 @@ require (
 	github.com/etkecc/go-echo-basic-auth v1.1.1
 	github.com/etkecc/go-env v1.2.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
-	github.com/etkecc/go-linkpearl v0.0.0-20241212081007-8dacb4a09830
+	github.com/etkecc/go-linkpearl v0.0.0-20241219100412-83bcd2416637
 	github.com/etkecc/go-mxidwc v1.0.1
 	github.com/etkecc/go-psd v0.0.0-20241014083754-1bc4ec777ba8
-	github.com/etkecc/go-redmine v0.0.0-20240820090507-19ce08baf06b
+	github.com/etkecc/go-redmine v0.0.0-20241212083151-0940e5cd0812
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/labstack/echo/v4 v4.13.2
+	github.com/labstack/echo/v4 v4.13.3
 	github.com/lib/pq v1.10.9
 	github.com/mileusna/crontab v1.2.0
 	github.com/nixys/nxs-go-redmine/v5 v5.1.1
@@ -24,9 +24,9 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.3
 	github.com/ziflex/lecho/v3 v3.7.0
-	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
-	maunium.net/go/mautrix v0.22.0
-	modernc.org/sqlite v1.34.2
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
+	maunium.net/go/mautrix v0.22.1
+	modernc.org/sqlite v1.34.3
 )
 
 require (
@@ -61,16 +61,16 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
-	go.mau.fi/util v0.8.2 // indirect
+	go.mau.fi/util v0.8.3 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.32.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/gc/v3 v3.0.0-20241004144649-1aea3fae8852 // indirect
+	modernc.org/gc/v3 v3.0.0-20241213165251-3bc300f6d0c9 // indirect
 	modernc.org/libc v1.61.4 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect

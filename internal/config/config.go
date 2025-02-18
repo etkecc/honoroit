@@ -13,16 +13,17 @@ const prefix = "honoroit"
 func New() *Config {
 	env.SetPrefix(prefix)
 	return &Config{
-		Homeserver:   env.String("homeserver", defaultConfig.Homeserver),
-		RoomID:       env.String("roomid", defaultConfig.RoomID),
-		Login:        env.String("login", defaultConfig.Login),
-		Password:     env.String("password", defaultConfig.Password),
-		SharedSecret: env.String("sharedsecret", defaultConfig.SharedSecret),
-		DataSecret:   env.String("data.secret", defaultConfig.DataSecret),
-		LogLevel:     env.String("loglevel", defaultConfig.LogLevel),
-		CacheSize:    env.Int("cachesize", defaultConfig.CacheSize),
-		Prefix:       env.String("prefix", defaultConfig.Prefix),
-		Port:         env.String("port", defaultConfig.Port),
+		Homeserver:          env.String("homeserver", defaultConfig.Homeserver),
+		RoomID:              env.String("roomid", defaultConfig.RoomID),
+		Login:               env.String("login", defaultConfig.Login),
+		Password:            env.String("password", defaultConfig.Password),
+		SharedSecret:        env.String("sharedsecret", defaultConfig.SharedSecret),
+		NoEncryptionWarning: env.Bool("noencryptionwarning"),
+		DataSecret:          env.String("data.secret", defaultConfig.DataSecret),
+		LogLevel:            env.String("loglevel", defaultConfig.LogLevel),
+		CacheSize:           env.Int("cachesize", defaultConfig.CacheSize),
+		Prefix:              env.String("prefix", defaultConfig.Prefix),
+		Port:                env.String("port", defaultConfig.Port),
 		DB: DB{
 			DSN:     env.String("db.dsn", defaultConfig.DB.DSN),
 			Dialect: env.String("db.dialect", defaultConfig.DB.Dialect),

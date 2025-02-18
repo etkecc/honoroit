@@ -111,6 +111,12 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 		b.SendNotice(ctx, b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
+	linkpearl.ParseContent(threadEvt, b.log)
+	threadMsg := threadEvt.Content.AsMessage()
+	lastEdit := b.getLastEdit(ctx, b.roomID, threadID)
+	if lastEdit != nil {
+		threadMsg = lastEdit.Content.AsMessage()
+	}
 
 	roomID, err := b.findRoomID(ctx, threadID)
 	if err != nil {
@@ -127,11 +133,19 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 	b.SendNotice(ctx, roomID, text, nil)
 	go b.closeIssue(ctx, roomID, threadID, text)
 
-	var oldbody string
-	if threadEvt.Content.AsMessage() != nil {
-		oldbody = strings.Replace(threadEvt.Content.AsMessage().Body, b.cfg.Get(ctx, config.TextPrefixOpen.Key), "", 1)
+	var oldBody, oldFormattedBody string
+	if threadMsg != nil {
+		body := threadMsg.Body
+		formattedBody := threadMsg.FormattedBody
+		if threadMsg.NewContent != nil {
+			body = threadMsg.NewContent.Body
+			formattedBody = threadMsg.NewContent.FormattedBody
+		}
+		oldBody = strings.Replace(body, b.cfg.Get(ctx, config.TextPrefixOpen.Key), "", 1)
+		oldFormattedBody = strings.Replace(formattedBody, b.cfg.Get(ctx, config.TextPrefixOpen.Key), "", 1)
+
 	}
-	err = b.replace(ctx, threadID, b.cfg.Get(ctx, config.TextPrefixDone.Key)+" ", oldbody, "", "")
+	err = b.replace(ctx, threadID, b.cfg.Get(ctx, config.TextPrefixDone.Key)+" ", "", oldBody, oldFormattedBody)
 	if err != nil {
 		b.SendNotice(ctx, b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}

@@ -36,7 +36,7 @@ github.com/etkecc/go-env/dotenv
 # github.com/etkecc/go-healthchecks/v2 v2.2.2
 ## explicit; go 1.18
 github.com/etkecc/go-healthchecks/v2
-# github.com/etkecc/go-linkpearl v0.0.0-20250217075507-d5e511599d5c
+# github.com/etkecc/go-linkpearl v0.0.0-20250218100459-0e671f157c8b
 ## explicit; go 1.23.0
 github.com/etkecc/go-linkpearl
 # github.com/etkecc/go-mxidwc v1.0.1

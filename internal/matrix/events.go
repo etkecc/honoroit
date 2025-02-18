@@ -158,3 +158,19 @@ func (b *Bot) getLastThreadMessage(ctx context.Context, threadID id.EventID, fro
 	}
 	return b.getLastThreadMessage(ctx, threadID, evts.NextBatch)
 }
+
+// getLastEdit returns the last edit of the message
+func (b *Bot) getLastEdit(ctx context.Context, roomID id.RoomID, eventID id.EventID) *event.Event {
+	edits, err := b.lp.Relations(ctx, roomID, eventID, string(event.RelReplace))
+	if err != nil {
+		b.log.Error().Err(err).Msg("cannot get edits")
+		return nil
+	}
+	if len(edits.Chunk) == 0 {
+		return nil
+	}
+
+	evt := edits.Chunk[len(edits.Chunk)-1]
+	linkpearl.ParseContent(evt, b.log)
+	return evt
+}

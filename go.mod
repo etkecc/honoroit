@@ -11,7 +11,7 @@ require (
 	github.com/etkecc/go-echo-basic-auth v1.1.1
 	github.com/etkecc/go-env v1.2.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
-	github.com/etkecc/go-linkpearl v0.0.0-20250217075507-d5e511599d5c
+	github.com/etkecc/go-linkpearl v0.0.0-20250218100459-0e671f157c8b
 	github.com/etkecc/go-mxidwc v1.0.1
 	github.com/etkecc/go-redmine v0.0.0-20241212083151-0940e5cd0812
 	github.com/hashicorp/golang-lru/v2 v2.0.7

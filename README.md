@@ -88,7 +88,7 @@ env vars
 * **HONOROIT_MONITORING_HEALTHCHECKS_DURATION** - heathchecks.io duration between pings in seconds (default: 5)
 * **HONOROIT_LOGLEVEL** - log level
 * **HONOROIT_CACHESIZE** - max allowed mappings in cache
-* **HONOROIT_NOENCRYPTION** - disable e2e encryption support
+* **HONOROIT_NOENCRYPTIONWARNING** - disable e2e encryption warning message
 * **HONOROIT_DB_DSN** - database connection string
 * **HONOROIT_DB_DIALECT** - database dialect (postgres, sqlite3)
 * **HONOROIT_METRICS_LOGIN** - /metrics login

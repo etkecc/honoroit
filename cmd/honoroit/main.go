@@ -158,7 +158,7 @@ func initBot(cfg *config.Config, rdm *redmine.Redmine) error {
 	}
 	psdc := psd.NewClient(cfg.Auth.PSD.URL, cfg.Auth.PSD.Login, cfg.Auth.PSD.Password)
 	mxc := mxconfig.New(lp)
-	bot, err = matrix.NewBot(lp, &log, mxc, psdc, rdm, cfg.Prefix, cfg.RoomID, cfg.CacheSize)
+	bot, err = matrix.NewBot(lp, &log, mxc, psdc, rdm, cfg.Prefix, cfg.RoomID, cfg.CacheSize, cfg.NoEncryptionWarning)
 	return err
 }
 

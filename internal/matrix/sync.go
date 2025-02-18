@@ -169,6 +169,11 @@ func (b *Bot) onEncryptedMessage(ctx context.Context, evt *event.Event) {
 		return
 	}
 
+	// if the warning is disabled, ignore
+	if b.noEncryptionWarning {
+		return
+	}
+
 	// otherwise, send a notice about potential issues with encrypted messages
 	content := format.RenderMarkdown(b.cfg.Get(ctx, config.TextGreetingsBeforeEncryption.Key), true, true)
 	content.MsgType = event.MsgNotice

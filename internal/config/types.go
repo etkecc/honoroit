@@ -18,6 +18,8 @@ type Config struct {
 	SharedSecret string
 	// DataSecret for account data encryption
 	DataSecret string
+	// NoEncryptionWarning disables warning about encrypted messages
+	NoEncryptionWarning bool
 	// RoomID where threads will be created
 	RoomID string
 	// Port for HTTP listener

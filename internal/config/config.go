@@ -33,11 +33,6 @@ func New() *Config {
 				Password: env.String("auth.metrics.password"),
 				IPs:      env.Slice("auth.metrics.ips"),
 			},
-			PSD: PSDAuth{
-				URL:      env.String("auth.psd.url"),
-				Login:    env.String("auth.psd.login"),
-				Password: env.String("auth.psd.password"),
-			},
 		},
 		Redmine: Redmine{
 			Host:             env.String("redmine.host"),

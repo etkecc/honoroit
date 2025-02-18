@@ -14,7 +14,6 @@ import (
 	zlogsentry "github.com/archdx/zerolog-sentry"
 	"github.com/etkecc/go-healthchecks/v2"
 	"github.com/etkecc/go-linkpearl"
-	"github.com/etkecc/go-psd"
 	"github.com/etkecc/go-redmine"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
@@ -156,9 +155,8 @@ func initBot(cfg *config.Config, rdm *redmine.Redmine) error {
 	if err != nil {
 		return err
 	}
-	psdc := psd.NewClient(cfg.Auth.PSD.URL, cfg.Auth.PSD.Login, cfg.Auth.PSD.Password)
 	mxc := mxconfig.New(lp)
-	bot, err = matrix.NewBot(lp, &log, mxc, psdc, rdm, cfg.Prefix, cfg.RoomID, cfg.CacheSize, cfg.NoEncryptionWarning)
+	bot, err = matrix.NewBot(lp, &log, mxc, rdm, cfg.Prefix, cfg.RoomID, cfg.CacheSize, cfg.NoEncryptionWarning)
 	return err
 }
 

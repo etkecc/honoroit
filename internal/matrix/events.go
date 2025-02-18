@@ -3,7 +3,6 @@ package matrix
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/etkecc/go-linkpearl"
@@ -85,31 +84,6 @@ func (b *Bot) getMSC4144Profie(ctx context.Context, userID id.UserID) *MSC4144Pr
 	}
 	b.profilesCache.Add(userID, profile)
 	return profile
-}
-
-func (b *Bot) getStatus(userID id.UserID) (userStatus, hostStatus string, issueID int64) {
-	hostTargets, err := b.psdc.Get(userID.Homeserver())
-	if err != nil {
-		b.log.Warn().Err(err).Str("host", userID.Homeserver()).Msg("cannot check psd")
-	}
-	userTargets, err := b.psdc.Get(userID.String())
-	if err != nil {
-		b.log.Warn().Err(err).Str("userID", userID.String()).Msg("cannot check psd")
-	}
-	if len(hostTargets) > 0 {
-		hostStatus = "👥"
-		if issueIDStr, ok := hostTargets[0].Labels["order_issue_id"]; ok {
-			issueID, err = strconv.ParseInt(issueIDStr, 10, 64)
-			if err != nil {
-				b.log.Warn().Err(err).Str("issueIDStr", issueIDStr).Msg("cannot parse issue ID")
-			}
-		}
-	}
-	if len(userTargets) > 0 {
-		userStatus = "👤"
-	}
-
-	return userStatus, hostStatus, issueID
 }
 
 // getThreadIDs returns all thread IDs in the operator room

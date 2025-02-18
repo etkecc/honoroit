@@ -9,7 +9,6 @@ import (
 
 	"github.com/etkecc/go-linkpearl"
 	"github.com/etkecc/go-mxidwc"
-	"github.com/etkecc/go-psd"
 	"github.com/etkecc/go-redmine"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/rs/zerolog"
@@ -25,7 +24,6 @@ const TypingTimeout = 5_000
 type Bot struct {
 	cfg                 *config.Manager
 	log                 *zerolog.Logger
-	psdc                *psd.Client
 	redmine             *redmine.Redmine
 	lp                  *linkpearl.Linkpearl
 	mu                  map[string]*sync.Mutex
@@ -44,7 +42,6 @@ func NewBot(
 	lp *linkpearl.Linkpearl,
 	log *zerolog.Logger,
 	cfg *config.Manager,
-	psdc *psd.Client,
 	rdm *redmine.Redmine,
 	prefix string,
 	roomID string,
@@ -69,7 +66,6 @@ func NewBot(
 		mu:                  make(map[string]*sync.Mutex),
 		cfg:                 cfg,
 		log:                 log,
-		psdc:                psdc,
 		redmine:             rdm,
 		namesCache:          namesCache,
 		profilesCache:       profilesCache,

@@ -54,13 +54,6 @@ type DB struct {
 
 type Auth struct {
 	Metrics *echobasicauth.Auth
-	PSD     PSDAuth
-}
-
-type PSDAuth struct {
-	URL      string
-	Login    string
-	Password string
 }
 
 type Redmine struct {

@@ -18,10 +18,8 @@ import (
 )
 
 func (b *Bot) greetings(ctx context.Context, userID id.UserID, roomID id.RoomID) {
-	customerStatus, hsStatus, _ := b.getStatus(userID)
-	identified := customerStatus != "" || hsStatus != ""
 	ownServer := userID.Homeserver() == b.lp.GetClient().UserID.Homeserver()
-	if identified && !ownServer {
+	if !ownServer {
 		_, requests, err := b.countCustomerRequests(ctx, userID)
 		if err != nil {
 			b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot calculate count of the support requests")
@@ -164,7 +162,6 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 }
 
 func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (id.EventID, int64, error) {
-	customerStatus, hsStatus, orderIssueID := b.getStatus(userID)
 	customerRequests, hsRequests, err := b.countCustomerRequests(ctx, userID)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot calculate count of the support requests")
@@ -177,7 +174,7 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 	}
 
 	name, _ := b.getName(ctx, userID)
-	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s%s (%s by %s%s)", prefix, hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, name), raw)
+	eventID := b.SendNotice(ctx, b.roomID, fmt.Sprintf("%s %s request from %s (%s by %s)", prefix, hsRequestsStr, userID.Homeserver(), customerRequestsStr, name), raw)
 	if eventID == "" {
 		b.SendNotice(ctx, b.roomID, "user "+userID.String()+" tried to send a message, but thread creation failed", nil)
 		return "", 0, err
@@ -189,18 +186,13 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 
 	threadURL := fmt.Sprintf("https://matrix.to/#/%s/%s", b.roomID, eventID)
 	issueID, err := b.redmine.NewIssue(
-		fmt.Sprintf("%s request from %s%s (%s by %s%s)", hsRequestsStr, hsStatus, userID.Homeserver(), customerRequestsStr, customerStatus, name),
+		fmt.Sprintf("%s request from %s (%s by %s)", hsRequestsStr, userID.Homeserver(), customerRequestsStr, name),
 		"Matrix",
 		userID.String(),
 		fmt.Sprintf("Matrix thread: [%s](%s)", threadURL, threadURL),
 	)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot create a new issue in Redmine")
-	}
-	if issueID != 0 && orderIssueID != 0 {
-		if err := b.redmine.NewIssueRelation(issueID, orderIssueID, ""); err != nil {
-			b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot create a relation between issues in Redmine")
-		}
 	}
 	return eventID, issueID, nil
 }

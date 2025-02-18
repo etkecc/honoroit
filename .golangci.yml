@@ -4,7 +4,6 @@ run:
   issues-exit-code: 1
   tests: true
   build-tags: []
-  skip-files: []
   modules-download-mode: readonly
 
 output:

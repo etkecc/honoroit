@@ -150,7 +150,7 @@ func initBot(cfg *config.Config, rdm *redmine.Redmine) error {
 		DB:                db,
 		Dialect:           cfg.DB.Dialect,
 		AccountDataSecret: cfg.DataSecret,
-		Logger:            log.Level(zerolog.InfoLevel),
+		Logger:            log,
 	})
 	if err != nil {
 		return err

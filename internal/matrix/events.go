@@ -66,6 +66,24 @@ func (b *Bot) getName(ctx context.Context, userID id.UserID) (md, html string) {
 	return md, html
 }
 
+// getContentBody returns the body and formatted body of the message,
+// taking into account the new content if it exists
+func (b *Bot) getContentBody(content *event.MessageEventContent) (body, formattedBody string) {
+	if content == nil {
+		return "", ""
+	}
+	body = content.Body
+	formattedBody = content.FormattedBody
+	if content.NewContent != nil {
+		body = content.NewContent.Body
+		formattedBody = content.NewContent.FormattedBody
+	}
+	if formattedBody == "" {
+		formattedBody = body
+	}
+	return body, formattedBody
+}
+
 // getMSC4144Profie returns the MSC4144 profile of the user
 func (b *Bot) getMSC4144Profie(ctx context.Context, userID id.UserID) *MSC4144Profile {
 	if profile, ok := b.profilesCache.Get(userID); ok {
@@ -171,6 +189,23 @@ func (b *Bot) getLastEdit(ctx context.Context, roomID id.RoomID, eventID id.Even
 	}
 
 	evt := edits.Chunk[len(edits.Chunk)-1]
+	isEncrypted := evt.Type == event.EventEncrypted
 	linkpearl.ParseContent(evt, b.log)
-	return evt
+	log := b.log.With().
+		Str("originalEventID", eventID.String()).
+		Str("lastEditID", evt.ID.String()).
+		Bool("encrypted", isEncrypted).
+		Logger()
+	log.Debug().Msg("found last edit")
+	if !isEncrypted {
+		return evt
+	}
+	decrypted, derr := b.lp.GetClient().Crypto.Decrypt(ctx, evt)
+	if derr != nil {
+		log.Error().Err(derr).Msg("cannot decrypt last edit")
+		return nil
+	}
+	log.Debug().Msg("successfully decrypted last edit")
+	linkpearl.ParseContent(decrypted, b.log)
+	return decrypted
 }

@@ -133,19 +133,10 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 	b.SendNotice(ctx, roomID, text, nil)
 	go b.closeIssue(ctx, roomID, threadID, text)
 
-	var oldBody, oldFormattedBody string
-	if threadMsg != nil {
-		body := threadMsg.Body
-		formattedBody := threadMsg.FormattedBody
-		if threadMsg.NewContent != nil {
-			body = threadMsg.NewContent.Body
-			formattedBody = threadMsg.NewContent.FormattedBody
-		}
-		oldBody = strings.Replace(body, b.cfg.Get(ctx, config.TextPrefixOpen.Key), "", 1)
-		oldFormattedBody = strings.Replace(formattedBody, b.cfg.Get(ctx, config.TextPrefixOpen.Key), "", 1)
-
-	}
-	err = b.replace(ctx, threadID, b.cfg.Get(ctx, config.TextPrefixDone.Key)+" ", "", oldBody, oldFormattedBody)
+	body, formattedBody := b.getContentBody(threadMsg)
+	body = strings.Replace(body, b.cfg.Get(ctx, config.TextPrefixOpen.Key), "", 1)
+	formattedBody = strings.Replace(formattedBody, b.cfg.Get(ctx, config.TextPrefixOpen.Key), "", 1)
+	err = b.replace(ctx, threadID, b.cfg.Get(ctx, config.TextPrefixDone.Key)+" ", "", body, formattedBody)
 	if err != nil {
 		b.SendNotice(ctx, b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 	}

@@ -33,6 +33,11 @@ type RespJoinRoom struct {
 	RoomID id.RoomID `json:"room_id"`
 }
 
+// RespKnockRoom is the JSON response for https://spec.matrix.org/v1.13/client-server-api/#post_matrixclientv3knockroomidoralias
+type RespKnockRoom struct {
+	RoomID id.RoomID `json:"room_id"`
+}
+
 // RespLeaveRoom is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidleave
 type RespLeaveRoom struct{}
 
@@ -98,7 +103,11 @@ type RespContext struct {
 // RespSendEvent is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid
 type RespSendEvent struct {
 	EventID id.EventID `json:"event_id"`
+
+	UnstableDelayID string `json:"delay_id,omitempty"`
 }
+
+type RespUpdateDelayedEvent struct{}
 
 type RespRedactUserEvents struct {
 	IsMoreEvents   bool `json:"is_more_events"`
@@ -269,6 +278,9 @@ type RespLogin struct {
 	DeviceID    id.DeviceID      `json:"device_id"`
 	UserID      id.UserID        `json:"user_id"`
 	WellKnown   *ClientWellKnown `json:"well_known,omitempty"`
+
+	RefreshToken string `json:"refresh_token,omitempty"`
+	ExpiresInMS  int64  `json:"expires_in_ms,omitempty"`
 }
 
 // RespLogout is the JSON response for https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3logout
@@ -384,6 +396,7 @@ type BeeperInboxPreviewEvent struct {
 type SyncJoinedRoom struct {
 	Summary     LazyLoadSummary `json:"summary"`
 	State       SyncEventsList  `json:"state"`
+	StateAfter  *SyncEventsList `json:"org.matrix.msc4222.state_after,omitempty"`
 	Timeline    SyncTimeline    `json:"timeline"`
 	Ephemeral   SyncEventsList  `json:"ephemeral"`
 	AccountData SyncEventsList  `json:"account_data"`

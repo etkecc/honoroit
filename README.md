@@ -2,6 +2,33 @@
 
 > [more about that name](https://finalfantasy.fandom.com/wiki/Honoroit_Banlardois)
 
+
+<!-- vim-markdown-toc GFM -->
+
+* [Features](#features)
+* [How it looks like](#how-it-looks-like)
+    * [Step 1: a matrix user (customer) sends a message to Honoroit bot in direct 1:1 chat](#step-1-a-matrix-user-customer-sends-a-message-to-honoroit-bot-in-direct-11-chat)
+    * [Step 2: a new thread created in the backoffice room](#step-2-a-new-thread-created-in-the-backoffice-room)
+    * [Step 3: operator(-s) chat with customer in that thread](#step-3-operator-s-chat-with-customer-in-that-thread)
+    * [Step 4: customer sees that like a direct 1:1 chat with honoroit user](#step-4-customer-sees-that-like-a-direct-11-chat-with-honoroit-user)
+    * [Step 5: operator closes the request](#step-5-operator-closes-the-request)
+    * [Step 6: customer receives special message and bot leaves the room](#step-6-customer-receives-special-message-and-bot-leaves-the-room)
+* [TODO](#todo)
+* [Commands](#commands)
+* [Configuration](#configuration)
+    * [mandatory](#mandatory)
+    * [optional](#optional)
+        * [honoroit internals](#honoroit-internals)
+        * [redmine](#redmine)
+* [Where to get](#where-to-get)
+    * [etke.cc](#etkecc)
+    * [Matrix Docker Ansible Deploy](#matrix-docker-ansible-deploy)
+    * [Docker](#docker)
+    * [Binary](#binary)
+    * [Build from source](#build-from-source)
+
+<!-- vim-markdown-toc -->
+
 A helpdesk bot, used as part of [etke.cc](https://etke.cc) service.
 
 The main idea of that bot is to give you the same abilities as with website chats (like Intercom, jivosite, etc) inside the matrix.
@@ -108,3 +135,46 @@ Optional 2-way sync with redmine
 * **HONOROIT_REDMINE_DONESTATUSID** - redmine "done" status ID, e.g. `3`
 
 You can find default values in [config/defaults.go](config/defaults.go)
+
+## Where to get
+
+### [etke.cc](https://etke.cc)
+
+You can get a hosted version of the bot with a support and maintenance plan by the developers on [etke.cc](https://etke.cc)
+
+### [Matrix Docker Ansible Deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy)
+
+You can get the bot using MDAD playbook, just [follow the docs](https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/docs/configuring-playbook-bot-honoroit.md)
+
+### Docker
+
+You can get the bot using docker image from [the registry](https://github.com/etkecc/honoroit/pkgs/container/honoroit)
+
+```bash
+# 1. Get UID and GID of the system user you want to use to run the bot's container:
+# id
+# 2. Prepare the configuration in the env file (see Configuration section), alternatively you can use `docker --env` flags
+# 2. Run the bot using UID and GID from step 1:
+docker run --user YOUR_UID:YOUR_GID --env-file /YOUR_ENV_FILE ghcr.io/etkecc/honoroit:latest
+```
+
+### Binary
+
+You can get binary from [the releases page](https://github.com/etkecc/honoroit/releases):
+
+```bash
+# 1. Prepare the configuration in the .env file (see Configuration section), alternatively you can use env vars
+# 2. Run the bot (it will load .env file in the current directory automatically)
+./honoroit
+```
+
+### Build from source
+
+```bash
+# 1. Clone the repo
+# 2. Prepare the configuration in the .env file (see Configuration section), alternatively you can use env vars
+# 3. (if `just` is installed)
+just build
+# or
+go build -ldflags '-extldflags "-static"' -tags timetzdata,goolm -v ./cmd/honoroit
+```

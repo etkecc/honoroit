@@ -130,7 +130,9 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 	} else {
 		text = b.cfg.Get(ctx, config.TextDone.Key)
 	}
-	b.SendNotice(ctx, roomID, text, nil)
+	if b.cfg.Get(ctx, config.Silent.Key) != "true" {
+		b.SendNotice(ctx, roomID, text, nil)
+	}
 	go b.closeIssue(ctx, roomID, threadID, text)
 
 	body, formattedBody := b.getContentBody(threadMsg)

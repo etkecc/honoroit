@@ -56,6 +56,18 @@ var (
 			return "false"
 		},
 	}
+	Silent = &Option{
+		Key:         "silent",
+		Default:     "false",
+		Description: "if set to true, the bot will not send any automatic messages to the customer",
+		Sanitizer: func(s string) string {
+			s = strings.ToLower(strings.TrimSpace(s))
+			if s == "yes" || s == "true" || s == "1" || s == "y" {
+				return "true"
+			}
+			return "false"
+		},
+	}
 	TextPrefixOpen = &Option{
 		Key:         "text.prefix.open",
 		Default:     "[OPEN]",
@@ -142,7 +154,7 @@ var (
 	}
 
 	// Options is full list of the all available options
-	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, TextPrefixOpen, TextPrefixDone, TextGreetingsBeforeEncryption, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone, TextDoneAuto}
+	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, Silent, TextPrefixOpen, TextPrefixDone, TextGreetingsBeforeEncryption, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone, TextDoneAuto}
 )
 
 type Option struct {

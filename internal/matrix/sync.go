@@ -170,7 +170,7 @@ func (b *Bot) onEncryptedMessage(ctx context.Context, evt *event.Event) {
 	}
 
 	// if the warning is disabled, ignore
-	if b.noEncryptionWarning {
+	if b.noEncryptionWarning || b.cfg.Get(ctx, config.Silent.Key) == "true" {
 		return
 	}
 

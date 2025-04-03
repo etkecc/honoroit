@@ -9,8 +9,8 @@ import (
 )
 
 func (b *Bot) forwardReaction(ctx context.Context, evt *event.Event) {
-	b.lock(evt.RoomID.String())
-	defer b.unlock(evt.RoomID.String())
+	b.mu.Lock(evt.RoomID.String())
+	defer b.mu.Unlock(evt.RoomID.String())
 
 	if evt.RoomID == b.roomID {
 		b.forwardReactionToCustomer(ctx, evt)

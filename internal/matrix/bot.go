@@ -4,9 +4,9 @@ import (
 	"context"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/etkecc/go-kit"
 	"github.com/etkecc/go-linkpearl"
 	"github.com/etkecc/go-mxidwc"
 	"github.com/etkecc/go-redmine"
@@ -26,7 +26,7 @@ type Bot struct {
 	log                 *zerolog.Logger
 	redmine             *redmine.Redmine
 	lp                  *linkpearl.Linkpearl
-	mu                  map[string]*sync.Mutex
+	mu                  *kit.Mutex
 	syncing             bool
 	namesCache          *lru.Cache[id.UserID, [2]string]
 	profilesCache       *lru.Cache[id.UserID, *MSC4144Profile]
@@ -63,7 +63,7 @@ func NewBot(
 
 	bot := &Bot{
 		lp:                  lp,
-		mu:                  make(map[string]*sync.Mutex),
+		mu:                  kit.NewMutex(),
 		cfg:                 cfg,
 		log:                 log,
 		redmine:             rdm,

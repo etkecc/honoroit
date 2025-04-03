@@ -36,6 +36,7 @@ The main idea of that bot is to give you the same abilities as with website chat
 ## Features
 
 * chat-based configuration
+* optional silent mode (bot won't send any automatic messages to the customer)
 * prometheus metrics on `/metrics` endpoint
 * [Redmine integration](./docs/redmine.md)
 * [MSC4144 integration](./docs/msc4144.md)

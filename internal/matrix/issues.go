@@ -198,8 +198,8 @@ func (b *Bot) getFileUploadReq(ctx context.Context, content *event.MessageEventC
 
 func (b *Bot) updateIssue(ctx context.Context, byOperator bool, sender string, threadID id.EventID, content *event.MessageEventContent) {
 	key := "redmine_" + threadID.String()
-	b.lock(key)
-	defer b.unlock(key)
+	b.mu.Lock(key)
+	defer b.mu.Unlock(key)
 
 	issueIDStr, err := b.getRedmineMapping(ctx, threadID.String())
 	if err != nil {
@@ -226,8 +226,8 @@ func (b *Bot) updateIssue(ctx context.Context, byOperator bool, sender string, t
 
 func (b *Bot) closeIssue(ctx context.Context, roomID id.RoomID, threadID id.EventID, text string) {
 	key := "redmine_" + threadID.String()
-	b.lock(key)
-	defer b.unlock(key)
+	b.mu.Lock(key)
+	defer b.mu.Unlock(key)
 
 	issueIDStr, err := b.getRedmineMapping(ctx, threadID.String())
 	if err != nil {

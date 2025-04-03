@@ -126,13 +126,16 @@ func (b *Bot) clearReply(content *event.MessageEventContent) {
 
 func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserID, greet bool) (id.EventID, error) {
 	mukey := "start_thread_" + roomID.String()
-	b.lock(mukey)
-	defer b.unlock(mukey)
+	b.mu.Lock(mukey)
+	defer b.mu.Unlock(mukey)
+	isSilent := b.cfg.Get(ctx, config.Silent.Key) == "true"
 
 	eventID, err := b.findEventID(ctx, roomID)
 	if err != nil && !errors.Is(err, errNotMapped) {
 		b.log.Error().Err(err).Str("userID", userID.String()).Str("roomID", roomID.String()).Msg("user tried to send a message from the room, but account data operation failed")
-		b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextError.Key), nil)
+		if !isSilent {
+			b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextError.Key), nil)
+		}
 		return "", err
 	}
 
@@ -155,7 +158,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 		b.setRedmineMapping(ctx, roomID.String(), issueIDStr)
 	}
 
-	if greet {
+	if greet && !isSilent {
 		b.greetings(ctx, userID, roomID)
 	}
 	return eventID, nil
@@ -181,8 +184,8 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 	}
 
 	key := "redmine_" + userID.Homeserver()
-	b.lock(key)
-	defer b.unlock(key)
+	b.mu.Lock(key)
+	defer b.mu.Unlock(key)
 
 	threadURL := fmt.Sprintf("https://matrix.to/#/%s/%s", b.roomID, eventID)
 	issueID, err := b.redmine.NewIssue(
@@ -238,12 +241,15 @@ func (b *Bot) forwardToCustomer(ctx context.Context, evt *event.Event, content *
 }
 
 func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *event.MessageEventContent) {
-	b.lock(evt.RoomID.String())
-	defer b.unlock(evt.RoomID.String())
+	b.mu.Lock(evt.RoomID.String())
+	defer b.mu.Unlock(evt.RoomID.String())
+	isSilent := b.cfg.Get(ctx, config.Silent.Key) == "true"
 
 	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, true)
 	if err != nil {
-		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
+		if !isSilent {
+			b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
+		}
 		return
 	}
 	originalContent := *content
@@ -282,6 +288,8 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 	_, err = b.lp.Send(ctx, b.roomID, fullContent)
 	if err != nil {
 		b.log.Error().Err(err).Str("userID", evt.Sender.String()).Str("roomID", evt.RoomID.String()).Msg("user tried to send a message, but creation of the thread failed")
-		b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
+		if !isSilent {
+			b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
+		}
 	}
 }

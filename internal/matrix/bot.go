@@ -33,6 +33,7 @@ type Bot struct {
 	eventsCache         *lru.Cache[id.EventID, id.EventID]
 	prefix              string
 	roomID              id.RoomID
+	roomConfigured      bool
 	noEncryptionWarning bool
 	ignoreBefore        int64 // TODO remove after some time
 }
@@ -72,7 +73,11 @@ func NewBot(
 		eventsCache:         eventsCache,
 		prefix:              prefix,
 		roomID:              id.RoomID(roomID),
+		roomConfigured:      isRoomConfigured(roomID),
 		noEncryptionWarning: noEncryptionWarning,
+	}
+	if !bot.roomConfigured {
+		bot.log.Warn().Msg("the operators room is not configured. Please, set operators room id to the `HONOROIT_ROOMID` env var. The bot won't work until that.")
 	}
 	bot.ignoreBefore = bot.cfg.Mautrix015Migration(context.Background())
 

@@ -59,3 +59,12 @@ func GetFileURL(content *event.MessageEventContent) (fileName string, fileURL id
 	}
 	return "", ""
 }
+
+// isRoomConfigured checks if the operator room is configured
+func isRoomConfigured(roomID string) bool {
+	if roomID == "" {
+		return false
+	}
+	sigil, localpart, homeserver := id.ParseCommonIdentifier(roomID)
+	return sigil == '!' && localpart != "" && homeserver != ""
+}

@@ -1,4 +1,5 @@
 /cover.out
 /local.db
 /local.db-journal
+/.env
 .idea

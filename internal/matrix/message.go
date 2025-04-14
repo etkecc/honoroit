@@ -245,6 +245,19 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 	defer b.mu.Unlock(evt.RoomID.String())
 	isSilent := b.cfg.Get(ctx, config.Silent.Key) == "true"
 
+	// special case: when an operators room is not configured yet.
+	// in that situation bot cannot have any configuration, so
+	// there is no point to check for silent mode and/or to use
+	// configurable text
+	if !b.roomConfigured {
+		b.SendNotice(
+			ctx,
+			evt.RoomID,
+			"The operators room is not configured. Please, set operators room id to the `HONOROIT_ROOMID` env var. The bot won't work until that.",
+			nil)
+		return
+	}
+
 	eventID, err := b.startThread(ctx, evt.RoomID, evt.Sender, true)
 	if err != nil {
 		if !isSilent {

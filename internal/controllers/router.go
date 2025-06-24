@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"bytes"
 	"net/http"
 
 	echobasicauth "github.com/etkecc/go-echo-basic-auth"
+	"github.com/etkecc/go-kit"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -16,8 +18,11 @@ func ConfigureRouter(e *echo.Echo, auth *echobasicauth.Auth) {
 		Skipper: func(c echo.Context) bool {
 			return c.Request().URL.Path == "/_health"
 		},
-		Format:           `${remote_ip} - - [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"` + "\n",
+		Format:           `${custom} - - [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"` + "\n",
 		CustomTimeFormat: "2/Jan/2006:15:04:05 -0700",
+		CustomTagFunc: func(c echo.Context, w *bytes.Buffer) (int, error) {
+			return w.WriteString(kit.AnonymizeIP(c.RealIP()))
+		},
 	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.Secure())

@@ -15,10 +15,11 @@ import (
 type RelationType string
 
 const (
-	RelReplace    RelationType = "m.replace"
-	RelReference  RelationType = "m.reference"
-	RelAnnotation RelationType = "m.annotation"
-	RelThread     RelationType = "m.thread"
+	RelReplace             RelationType = "m.replace"
+	RelReference           RelationType = "m.reference"
+	RelAnnotation          RelationType = "m.annotation"
+	RelThread              RelationType = "m.thread"
+	RelBeeperTranscription RelationType = "com.beeper.transcription"
 )
 
 type RelatesTo struct {
@@ -33,7 +34,7 @@ type RelatesTo struct {
 type InReplyTo struct {
 	EventID id.EventID `json:"event_id,omitempty"`
 
-	UnstableRoomID id.RoomID `json:"room_id,omitempty"`
+	UnstableRoomID id.RoomID `json:"com.beeper.cross_room_id,omitempty"`
 }
 
 func (rel *RelatesTo) Copy() *RelatesTo {
@@ -100,6 +101,10 @@ func (rel *RelatesTo) SetReplace(mxid id.EventID) *RelatesTo {
 }
 
 func (rel *RelatesTo) SetReplyTo(mxid id.EventID) *RelatesTo {
+	if rel.Type != RelThread {
+		rel.Type = ""
+		rel.EventID = ""
+	}
 	rel.InReplyTo = &InReplyTo{EventID: mxid}
 	rel.IsFallingBack = false
 	return rel

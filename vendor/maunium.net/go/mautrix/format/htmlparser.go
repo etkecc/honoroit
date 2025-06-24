@@ -187,25 +187,6 @@ func (parser *HTMLParser) listToString(node *html.Node, ctx Context) string {
 	return strings.Join(children, "\n")
 }
 
-func LongestSequence(in string, of rune) int {
-	currentSeq := 0
-	maxSeq := 0
-	for _, chr := range in {
-		if chr == of {
-			currentSeq++
-		} else {
-			if currentSeq > maxSeq {
-				maxSeq = currentSeq
-			}
-			currentSeq = 0
-		}
-	}
-	if currentSeq > maxSeq {
-		maxSeq = currentSeq
-	}
-	return maxSeq
-}
-
 func (parser *HTMLParser) basicFormatToString(node *html.Node, ctx Context) string {
 	str := parser.nodeToTagAwareString(node.FirstChild, ctx)
 	switch node.Data {
@@ -232,8 +213,7 @@ func (parser *HTMLParser) basicFormatToString(node *html.Node, ctx Context) stri
 		if parser.MonospaceConverter != nil {
 			return parser.MonospaceConverter(str, ctx)
 		}
-		surround := strings.Repeat("`", LongestSequence(str, '`')+1)
-		return fmt.Sprintf("%s%s%s", surround, str, surround)
+		return SafeMarkdownCode(str)
 	}
 	return str
 }
@@ -348,6 +328,8 @@ func (parser *HTMLParser) tagToString(node *html.Node, ctx Context) string {
 		return parser.imgToString(node, ctx)
 	case "hr":
 		return parser.HorizontalLine
+	case "input":
+		return parser.inputToString(node, ctx)
 	case "pre":
 		var preStr, language string
 		if node.FirstChild != nil && node.FirstChild.Type == html.ElementNode && node.FirstChild.Data == "code" {
@@ -369,6 +351,17 @@ func (parser *HTMLParser) tagToString(node *html.Node, ctx Context) string {
 	default:
 		return parser.nodeToTagAwareString(node.FirstChild, ctx)
 	}
+}
+
+func (parser *HTMLParser) inputToString(node *html.Node, ctx Context) string {
+	if len(ctx.TagStack) > 1 && ctx.TagStack[len(ctx.TagStack)-2] == "li" {
+		_, checked := parser.maybeGetAttribute(node, "checked")
+		if checked {
+			return "[x]"
+		}
+		return "[ ]"
+	}
+	return parser.nodeToTagAwareString(node.FirstChild, ctx)
 }
 
 func (parser *HTMLParser) singleNodeToString(node *html.Node, ctx Context) TaggedString {

@@ -221,9 +221,10 @@ type RespMutualRooms struct {
 type RespRoomSummary struct {
 	PublicRoomInfo
 
-	Membership  event.Membership  `json:"membership,omitempty"`
-	RoomVersion event.RoomVersion `json:"room_version,omitempty"`
-	Encryption  id.Algorithm      `json:"encryption,omitempty"`
+	Membership     event.Membership  `json:"membership,omitempty"`
+	RoomVersion    event.RoomVersion `json:"room_version,omitempty"`
+	Encryption     id.Algorithm      `json:"encryption,omitempty"`
+	AllowedRoomIDs []id.RoomID       `json:"allowed_room_ids,omitempty"`
 
 	UnstableRoomVersion    event.RoomVersion `json:"im.nheko.summary.room_version,omitempty"`
 	UnstableRoomVersionOld event.RoomVersion `json:"im.nheko.summary.version,omitempty"`
@@ -707,4 +708,11 @@ type RespOpenIDToken struct {
 	ExpiresIn        int    `json:"expires_in"`
 	MatrixServerName string `json:"matrix_server_name"`
 	TokenType        string `json:"token_type"` // Always "Bearer"
+}
+
+type RespGetRelations struct {
+	Chunk          []*event.Event `json:"chunk"`
+	NextBatch      string         `json:"next_batch,omitempty"`
+	PrevBatch      string         `json:"prev_batch,omitempty"`
+	RecursionDepth int            `json:"recursion_depth,omitempty"`
 }

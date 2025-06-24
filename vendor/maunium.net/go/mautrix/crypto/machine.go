@@ -44,6 +44,8 @@ type OlmMachine struct {
 	// Don't mark outbound Olm sessions as shared for devices they were initially sent to.
 	DisableSharedGroupSessionTracking bool
 
+	IgnorePostDecryptionParseErrors bool
+
 	SendKeysMinTrust  id.TrustState
 	ShareKeysMinTrust id.TrustState
 
@@ -582,7 +584,7 @@ func (mach *OlmMachine) createGroupSession(ctx context.Context, senderKey id.Sen
 		log.Err(err).Str("session_id", sessionID.String()).Msg("Failed to store new inbound group session")
 		return fmt.Errorf("failed to store new inbound group session: %w", err)
 	}
-	mach.markSessionReceived(ctx, roomID, sessionID, igs.Internal.FirstKnownIndex())
+	mach.MarkSessionReceived(ctx, roomID, sessionID, igs.Internal.FirstKnownIndex())
 	log.Debug().
 		Str("session_id", sessionID.String()).
 		Str("sender_key", senderKey.String()).
@@ -593,7 +595,7 @@ func (mach *OlmMachine) createGroupSession(ctx context.Context, senderKey id.Sen
 	return nil
 }
 
-func (mach *OlmMachine) markSessionReceived(ctx context.Context, roomID id.RoomID, id id.SessionID, firstKnownIndex uint32) {
+func (mach *OlmMachine) MarkSessionReceived(ctx context.Context, roomID id.RoomID, id id.SessionID, firstKnownIndex uint32) {
 	if mach.SessionReceived != nil {
 		mach.SessionReceived(ctx, roomID, id, firstKnownIndex)
 	}

@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"context"
+	"strings"
 
 	"github.com/etkecc/go-linkpearl"
 	"maunium.net/go/mautrix/event"
@@ -65,6 +66,5 @@ func isRoomConfigured(roomID string) bool {
 	if roomID == "" {
 		return false
 	}
-	sigil, localpart, homeserver := id.ParseCommonIdentifier(roomID)
-	return sigil == '!' && localpart != "" && homeserver != ""
+	return strings.HasPrefix(roomID, "!")
 }

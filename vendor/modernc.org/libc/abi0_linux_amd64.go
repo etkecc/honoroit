@@ -1,6 +1,10 @@
-// Code generated for linux/amd64 by 'genasm', DO NOT EDIT.
+// Code generated for linux/amd64 by 'qbecc --abi0wrap .', DO NOT EDIT.
 
 package libc
+
+import "unsafe"
+
+var _ unsafe.Pointer
 
 //go:noescape
 func Y_Exit(tls *TLS, ec int32)
@@ -27,7 +31,7 @@ func Y_IO_putc_unlocked(tls *TLS, c int32, f uintptr) (r int32)
 func Y___errno_location(tls *TLS) (r uintptr)
 
 //go:noescape
-func Y__aio_close(tls *TLS, fd int32) int32
+func Y__aio_close(tls *TLS, fd int32) (_2 int32)
 
 //go:noescape
 func Y__asctime_r(tls *TLS, tm uintptr, buf uintptr) (r uintptr)
@@ -36,28 +40,28 @@ func Y__asctime_r(tls *TLS, tm uintptr, buf uintptr) (r uintptr)
 func Y__assert_fail(tls *TLS, expr uintptr, file uintptr, line int32, func1 uintptr)
 
 //go:noescape
-func Y__atomic_compare_exchangeInt16(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) int32
+func Y__atomic_compare_exchangeInt16(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) (_3 int32)
 
 //go:noescape
-func Y__atomic_compare_exchangeInt32(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) int32
+func Y__atomic_compare_exchangeInt32(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) (_3 int32)
 
 //go:noescape
-func Y__atomic_compare_exchangeInt64(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) int32
+func Y__atomic_compare_exchangeInt64(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) (_3 int32)
 
 //go:noescape
-func Y__atomic_compare_exchangeInt8(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) int32
+func Y__atomic_compare_exchangeInt8(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) (_3 int32)
 
 //go:noescape
-func Y__atomic_compare_exchangeUint16(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) int32
+func Y__atomic_compare_exchangeUint16(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) (_3 int32)
 
 //go:noescape
-func Y__atomic_compare_exchangeUint32(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) int32
+func Y__atomic_compare_exchangeUint32(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) (_3 int32)
 
 //go:noescape
-func Y__atomic_compare_exchangeUint64(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) int32
+func Y__atomic_compare_exchangeUint64(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) (_3 int32)
 
 //go:noescape
-func Y__atomic_compare_exchangeUint8(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) int32
+func Y__atomic_compare_exchangeUint8(t *TLS, ptr, expected, desired uintptr, weak, success, failure int32) (_3 int32)
 
 //go:noescape
 func Y__atomic_exchangeInt16(t *TLS, ptr, val, ret uintptr, _ int32)
@@ -261,10 +265,10 @@ func Y__block_app_sigs(tls *TLS, set uintptr)
 func Y__builtin___memcpy_chk(t *TLS, dest, src uintptr, n, os Tsize_t) (r uintptr)
 
 //go:noescape
-func Y__builtin___memmove_chk(t *TLS, dest, src uintptr, n, os Tsize_t) uintptr
+func Y__builtin___memmove_chk(t *TLS, dest, src uintptr, n, os Tsize_t) (_3 uintptr)
 
 //go:noescape
-func Y__builtin___memset_chk(t *TLS, s uintptr, c int32, n, os Tsize_t) uintptr
+func Y__builtin___memset_chk(t *TLS, s uintptr, c int32, n, os Tsize_t) (_4 uintptr)
 
 //go:noescape
 func Y__builtin___snprintf_chk(t *TLS, str uintptr, maxlen Tsize_t, flag int32, os Tsize_t, format, args uintptr) (r int32)
@@ -276,7 +280,7 @@ func Y__builtin___sprintf_chk(t *TLS, s uintptr, flag int32, os Tsize_t, format,
 func Y__builtin___strcat_chk(t *TLS, dest, src uintptr, os Tsize_t) (r uintptr)
 
 //go:noescape
-func Y__builtin___strcpy_chk(t *TLS, dest, src uintptr, os Tsize_t) uintptr
+func Y__builtin___strcpy_chk(t *TLS, dest, src uintptr, os Tsize_t) (_3 uintptr)
 
 //go:noescape
 func Y__builtin___strncpy_chk(t *TLS, dest, src uintptr, n, os Tsize_t) (r uintptr)
@@ -288,70 +292,70 @@ func Y__builtin___vsnprintf_chk(t *TLS, str uintptr, maxlen Tsize_t, flag int32,
 func Y__builtin_abort(t *TLS)
 
 //go:noescape
-func Y__builtin_abs(t *TLS, j int32) int32
+func Y__builtin_abs(t *TLS, j int32) (_2 int32)
 
 //go:noescape
-func Y__builtin_add_overflowInt64(t *TLS, a, b int64, res uintptr) int32
+func Y__builtin_add_overflowInt64(t *TLS, a, b int64, res uintptr) (_3 int32)
 
 //go:noescape
-func Y__builtin_add_overflowUint32(t *TLS, a, b uint32, res uintptr) int32
+func Y__builtin_add_overflowUint32(t *TLS, a, b uint32, res uintptr) (_3 int32)
 
 //go:noescape
-func Y__builtin_add_overflowUint64(t *TLS, a, b uint64, res uintptr) int32
+func Y__builtin_add_overflowUint64(t *TLS, a, b uint64, res uintptr) (_3 int32)
 
 //go:noescape
-func Y__builtin_alloca(tls *TLS, size Tsize_t) uintptr
+func Y__builtin_alloca(tls *TLS, size Tsize_t) (_2 uintptr)
 
 //go:noescape
-func Y__builtin_bswap16(t *TLS, x uint16) uint16
+func Y__builtin_bswap16(t *TLS, x uint16) (_2 uint16)
 
 //go:noescape
-func Y__builtin_bswap32(t *TLS, x uint32) uint32
+func Y__builtin_bswap32(t *TLS, x uint32) (_2 uint32)
 
 //go:noescape
-func Y__builtin_bswap64(t *TLS, x uint64) uint64
+func Y__builtin_bswap64(t *TLS, x uint64) (_2 uint64)
 
 //go:noescape
 func Y__builtin_bzero(t *TLS, s uintptr, n Tsize_t)
 
 //go:noescape
-func Y__builtin_clz(t *TLS, n uint32) int32
+func Y__builtin_clz(t *TLS, n uint32) (_2 int32)
 
 //go:noescape
-func Y__builtin_clzl(t *TLS, n ulong) int32
+func Y__builtin_clzl(t *TLS, n ulong) (_2 int32)
 
 //go:noescape
-func Y__builtin_clzll(t *TLS, n uint64) int32
+func Y__builtin_clzll(t *TLS, n uint64) (_2 int32)
 
 //go:noescape
-func Y__builtin_copysign(t *TLS, x, y float64) float64
+func Y__builtin_copysign(t *TLS, x, y float64) (_2 float64)
 
 //go:noescape
-func Y__builtin_copysignf(t *TLS, x, y float32) float32
+func Y__builtin_copysignf(t *TLS, x, y float32) (_2 float32)
 
 //go:noescape
-func Y__builtin_copysignl(t *TLS, x, y float64) float64
+func Y__builtin_copysignl(t *TLS, x, y float64) (_2 float64)
 
 //go:noescape
-func Y__builtin_ctz(t *TLS, n uint32) int32
+func Y__builtin_ctz(t *TLS, n uint32) (_2 int32)
 
 //go:noescape
-func Y__builtin_ctzl(tls *TLS, x ulong) int32
+func Y__builtin_ctzl(tls *TLS, x ulong) (_2 int32)
 
 //go:noescape
 func Y__builtin_exit(t *TLS, status int32)
 
 //go:noescape
-func Y__builtin_expect(t *TLS, exp, c long) long
+func Y__builtin_expect(t *TLS, exp, c long) (_2 long)
 
 //go:noescape
-func Y__builtin_fabs(t *TLS, x float64) float64
+func Y__builtin_fabs(t *TLS, x float64) (_2 float64)
 
 //go:noescape
-func Y__builtin_fabsf(t *TLS, x float32) float32
+func Y__builtin_fabsf(t *TLS, x float32) (_2 float32)
 
 //go:noescape
-func Y__builtin_fabsl(t *TLS, x float64) float64
+func Y__builtin_fabsl(t *TLS, x float64) (_2 float64)
 
 //go:noescape
 func Y__builtin_ffs(tls *TLS, i int32) (r int32)
@@ -369,49 +373,49 @@ func Y__builtin_fmin(tls *TLS, x float64, y float64) (r float64)
 func Y__builtin_free(t *TLS, ptr uintptr)
 
 //go:noescape
-func Y__builtin_getentropy(t *TLS, buf uintptr, n Tsize_t) int32
+func Y__builtin_getentropy(t *TLS, buf uintptr, n Tsize_t) (_3 int32)
 
 //go:noescape
-func Y__builtin_huge_val(t *TLS) float64
+func Y__builtin_huge_val(t *TLS) (_1 float64)
 
 //go:noescape
-func Y__builtin_huge_valf(t *TLS) float32
+func Y__builtin_huge_valf(t *TLS) (_1 float32)
 
 //go:noescape
 func Y__builtin_hypot(tls *TLS, x float64, y float64) (r float64)
 
 //go:noescape
-func Y__builtin_inf(t *TLS) float64
+func Y__builtin_inf(t *TLS) (_1 float64)
 
 //go:noescape
-func Y__builtin_inff(tls *TLS) float32
+func Y__builtin_inff(tls *TLS) (_1 float32)
 
 //go:noescape
-func Y__builtin_infl(t *TLS) float64
+func Y__builtin_infl(t *TLS) (_1 float64)
 
 //go:noescape
 func Y__builtin_isblank(tls *TLS, c int32) (r int32)
 
 //go:noescape
-func Y__builtin_isnan(t *TLS, x float64) int32
+func Y__builtin_isnan(t *TLS, x float64) (_2 int32)
 
 //go:noescape
-func Y__builtin_isnanf(t *TLS, x float32) int32
+func Y__builtin_isnanf(t *TLS, x float32) (_2 int32)
 
 //go:noescape
-func Y__builtin_isnanl(t *TLS, x float64) int32
+func Y__builtin_isnanl(t *TLS, x float64) (_2 int32)
 
 //go:noescape
 func Y__builtin_isprint(tls *TLS, c int32) (r int32)
 
 //go:noescape
-func Y__builtin_isunordered(t *TLS, a, b float64) int32
+func Y__builtin_isunordered(t *TLS, a, b float64) (_2 int32)
 
 //go:noescape
-func Y__builtin_llabs(tls *TLS, a int64) int64
+func Y__builtin_llabs(tls *TLS, a int64) (_2 int64)
 
 //go:noescape
-func Y__builtin_log2(t *TLS, x float64) float64
+func Y__builtin_log2(t *TLS, x float64) (_2 float64)
 
 //go:noescape
 func Y__builtin_lrint(tls *TLS, x float64) (r long)
@@ -423,46 +427,46 @@ func Y__builtin_lrintf(tls *TLS, x float32) (r long)
 func Y__builtin_lround(tls *TLS, x float64) (r long)
 
 //go:noescape
-func Y__builtin_malloc(t *TLS, size Tsize_t) uintptr
+func Y__builtin_malloc(t *TLS, size Tsize_t) (_2 uintptr)
 
 //go:noescape
-func Y__builtin_memcmp(t *TLS, s1, s2 uintptr, n Tsize_t) int32
+func Y__builtin_memcmp(t *TLS, s1, s2 uintptr, n Tsize_t) (_3 int32)
 
 //go:noescape
 func Y__builtin_memcpy(t *TLS, dest, src uintptr, n Tsize_t) (r uintptr)
 
 //go:noescape
-func Y__builtin_memset(t *TLS, s uintptr, c int32, n Tsize_t) uintptr
+func Y__builtin_memset(t *TLS, s uintptr, c int32, n Tsize_t) (_4 uintptr)
 
 //go:noescape
-func Y__builtin_mmap(t *TLS, addr uintptr, length Tsize_t, prot, flags, fd int32, offset Toff_t) uintptr
+func Y__builtin_mmap(t *TLS, addr uintptr, length Tsize_t, prot, flags, fd int32, offset Toff_t) (_5 uintptr)
 
 //go:noescape
-func Y__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) int32
+func Y__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) (_3 int32)
 
 //go:noescape
-func Y__builtin_mul_overflowUint128(t *TLS, a, b Uint128, res uintptr) int32
+func Y__builtin_mul_overflowUint128(t *TLS, a, b Uint128, res uintptr) (_3 int32)
 
 //go:noescape
-func Y__builtin_mul_overflowUint64(t *TLS, a, b uint64, res uintptr) int32
+func Y__builtin_mul_overflowUint64(t *TLS, a, b uint64, res uintptr) (_3 int32)
 
 //go:noescape
-func Y__builtin_nan(t *TLS, s uintptr) float64
+func Y__builtin_nan(t *TLS, s uintptr) (_2 float64)
 
 //go:noescape
-func Y__builtin_nanf(tls *TLS, s uintptr) float32
+func Y__builtin_nanf(tls *TLS, s uintptr) (_2 float32)
 
 //go:noescape
-func Y__builtin_nanl(t *TLS, s uintptr) float64
+func Y__builtin_nanl(t *TLS, s uintptr) (_2 float64)
 
 //go:noescape
-func Y__builtin_object_size(t *TLS, p uintptr, typ int32) Tsize_t
+func Y__builtin_object_size(t *TLS, p uintptr, typ int32) (_3 Tsize_t)
 
 //go:noescape
-func Y__builtin_popcount(t *TLS, x uint32) int32
+func Y__builtin_popcount(t *TLS, x uint32) (_2 int32)
 
 //go:noescape
-func Y__builtin_popcountl(t *TLS, x ulong) int32
+func Y__builtin_popcountl(t *TLS, x ulong) (_2 int32)
 
 //go:noescape
 func Y__builtin_prefetch(t *TLS, addr, args uintptr)
@@ -480,25 +484,25 @@ func Y__builtin_round(tls *TLS, x float64) (r float64)
 func Y__builtin_roundf(tls *TLS, x float32) (r float32)
 
 //go:noescape
-func Y__builtin_snprintf(t *TLS, str uintptr, size Tsize_t, format, args uintptr) int32
+func Y__builtin_snprintf(t *TLS, str uintptr, size Tsize_t, format, args uintptr) (_4 int32)
 
 //go:noescape
 func Y__builtin_sprintf(t *TLS, str, format, args uintptr) (r int32)
 
 //go:noescape
-func Y__builtin_strchr(t *TLS, s uintptr, c int32) uintptr
+func Y__builtin_strchr(t *TLS, s uintptr, c int32) (_3 uintptr)
 
 //go:noescape
-func Y__builtin_strcmp(t *TLS, s1, s2 uintptr) int32
+func Y__builtin_strcmp(t *TLS, s1, s2 uintptr) (_2 int32)
 
 //go:noescape
-func Y__builtin_strcpy(t *TLS, dest, src uintptr) uintptr
+func Y__builtin_strcpy(t *TLS, dest, src uintptr) (_2 uintptr)
 
 //go:noescape
-func Y__builtin_strlen(t *TLS, s uintptr) Tsize_t
+func Y__builtin_strlen(t *TLS, s uintptr) (_2 Tsize_t)
 
 //go:noescape
-func Y__builtin_sub_overflowInt64(t *TLS, a, b int64, res uintptr) int32
+func Y__builtin_sub_overflowInt64(t *TLS, a, b int64, res uintptr) (_3 int32)
 
 //go:noescape
 func Y__builtin_trap(t *TLS)
@@ -510,31 +514,31 @@ func Y__builtin_trunc(tls *TLS, x float64) (r float64)
 func Y__builtin_unreachable(t *TLS)
 
 //go:noescape
-func Y__builtin_vsnprintf(t *TLS, str uintptr, size Tsize_t, format, va uintptr) int32
+func Y__builtin_vsnprintf(t *TLS, str uintptr, size Tsize_t, format, va uintptr) (_4 int32)
 
 //go:noescape
-func Y__c11_atomic_compare_exchange_strongInt16(t *TLS, ptr, expected uintptr, desired int16, success, failure int32) int32
+func Y__c11_atomic_compare_exchange_strongInt16(t *TLS, ptr, expected uintptr, desired int16, success, failure int32) (_4 int32)
 
 //go:noescape
-func Y__c11_atomic_compare_exchange_strongInt32(t *TLS, ptr, expected uintptr, desired, success, failure int32) int32
+func Y__c11_atomic_compare_exchange_strongInt32(t *TLS, ptr, expected uintptr, desired, success, failure int32) (_3 int32)
 
 //go:noescape
-func Y__c11_atomic_compare_exchange_strongInt64(t *TLS, ptr, expected uintptr, desired int64, success, failure int32) int32
+func Y__c11_atomic_compare_exchange_strongInt64(t *TLS, ptr, expected uintptr, desired int64, success, failure int32) (_4 int32)
 
 //go:noescape
-func Y__c11_atomic_compare_exchange_strongInt8(t *TLS, ptr, expected uintptr, desired int8, success, failure int32) int32
+func Y__c11_atomic_compare_exchange_strongInt8(t *TLS, ptr, expected uintptr, desired int8, success, failure int32) (_4 int32)
 
 //go:noescape
-func Y__c11_atomic_compare_exchange_strongUint16(t *TLS, ptr, expected uintptr, desired uint16, success, failure int32) int32
+func Y__c11_atomic_compare_exchange_strongUint16(t *TLS, ptr, expected uintptr, desired uint16, success, failure int32) (_4 int32)
 
 //go:noescape
-func Y__c11_atomic_compare_exchange_strongUint32(t *TLS, ptr, expected uintptr, desired uint32, success, failure int32) int32
+func Y__c11_atomic_compare_exchange_strongUint32(t *TLS, ptr, expected uintptr, desired uint32, success, failure int32) (_4 int32)
 
 //go:noescape
-func Y__c11_atomic_compare_exchange_strongUint64(t *TLS, ptr, expected uintptr, desired uint64, success, failure int32) int32
+func Y__c11_atomic_compare_exchange_strongUint64(t *TLS, ptr, expected uintptr, desired uint64, success, failure int32) (_4 int32)
 
 //go:noescape
-func Y__c11_atomic_compare_exchange_strongUint8(t *TLS, ptr, expected uintptr, desired uint8, success, failure int32) int32
+func Y__c11_atomic_compare_exchange_strongUint8(t *TLS, ptr, expected uintptr, desired uint8, success, failure int32) (_4 int32)
 
 //go:noescape
 func Y__c11_atomic_exchangeInt16(t *TLS, ptr uintptr, val int16, _ int32) (r int16)
@@ -732,16 +736,16 @@ func Y__c11_atomic_storeUint8(t *TLS, ptr uintptr, val uint8, memorder int32)
 func Y__ccgo_dmesg(t *TLS, fmt uintptr, va uintptr)
 
 //go:noescape
-func Y__ccgo_getMutexType(tls *TLS, m uintptr) int32
+func Y__ccgo_getMutexType(tls *TLS, m uintptr) (_2 int32)
 
 //go:noescape
-func Y__ccgo_in6addr_anyp(t *TLS) uintptr
+func Y__ccgo_in6addr_anyp(t *TLS) (_1 uintptr)
 
 //go:noescape
-func Y__ccgo_pthreadAttrGetDetachState(tls *TLS, a uintptr) int32
+func Y__ccgo_pthreadAttrGetDetachState(tls *TLS, a uintptr) (_2 int32)
 
 //go:noescape
-func Y__ccgo_pthreadMutexattrGettype(tls *TLS, a uintptr) int32
+func Y__ccgo_pthreadMutexattrGettype(tls *TLS, a uintptr) (_2 int32)
 
 //go:noescape
 func Y__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr)
@@ -753,7 +757,7 @@ func Y__clock_gettime(tls *TLS, clk Tclockid_t, ts uintptr) (r1 int32)
 func Y__clock_nanosleep(tls *TLS, clk Tclockid_t, flags int32, req uintptr, rem uintptr) (r int32)
 
 //go:noescape
-func Y__cmsg_nxthdr(t *TLS, msgh, cmsg uintptr) uintptr
+func Y__cmsg_nxthdr(t *TLS, msgh, cmsg uintptr) (_2 uintptr)
 
 //go:noescape
 func Y__convert_scm_timestamps(tls *TLS, msg uintptr, csize Tsocklen_t)
@@ -801,7 +805,17 @@ func Y__des_setkey(tls *TLS, key uintptr, ekey uintptr)
 func Y__dn_expand(tls *TLS, base uintptr, end uintptr, src uintptr, dest uintptr, space int32) (r int32)
 
 //go:noescape
-func Y__dns_parse(tls *TLS, r uintptr, rlen int32, callback uintptr, ctx uintptr) (r1 int32)
+func Y__dns_parse(tls *TLS, r uintptr, rlen int32, __ccgo_fp_callback uintptr, ctx uintptr) (r1 int32)
+
+//go:noescape
+func __ccgo_abi0___dns_parse_2(_0 *TLS, _1 uintptr, _2 int32, _3 uintptr, _4 int32, _5 uintptr, _6 int32, __ccgo_fp uintptr) (_7 int32)
+
+func __ccgo_abiInternal___dns_parse_2(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 int32, _3 uintptr, _4 int32, _5 uintptr, _6 int32) (_7 int32) {
+		return __ccgo_abi0___dns_parse_2(_0, _1, _2, _3, _4, _5, _6, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Y__do_des(tls *TLS, l_in Tuint32_t, r_in Tuint32_t, l_out uintptr, r_out uintptr, count Tuint32_t, saltbits Tuint32_t, ekey uintptr)
@@ -1002,13 +1016,13 @@ func Y__iscntrl_l(tls *TLS, c int32, l Tlocale_t) (r int32)
 func Y__isdigit_l(tls *TLS, c int32, l Tlocale_t) (r int32)
 
 //go:noescape
-func Y__isfinite(tls *TLS, d float64) int32
+func Y__isfinite(tls *TLS, d float64) (_2 int32)
 
 //go:noescape
-func Y__isfinitef(tls *TLS, f float32) int32
+func Y__isfinitef(tls *TLS, f float32) (_2 int32)
 
 //go:noescape
-func Y__isfinitel(tls *TLS, d float64) int32
+func Y__isfinitel(tls *TLS, d float64) (_2 int32)
 
 //go:noescape
 func Y__isgraph_l(tls *TLS, c int32, l Tlocale_t) (r int32)
@@ -1017,13 +1031,13 @@ func Y__isgraph_l(tls *TLS, c int32, l Tlocale_t) (r int32)
 func Y__islower_l(tls *TLS, c int32, l Tlocale_t) (r int32)
 
 //go:noescape
-func Y__isnan(t *TLS, x float64) int32
+func Y__isnan(t *TLS, x float64) (_2 int32)
 
 //go:noescape
-func Y__isnanf(t *TLS, arg float32) int32
+func Y__isnanf(t *TLS, arg float32) (_2 int32)
 
 //go:noescape
-func Y__isnanl(t *TLS, arg float64) int32
+func Y__isnanl(t *TLS, arg float64) (_2 int32)
 
 //go:noescape
 func Y__isoc99_fscanf(tls *TLS, f uintptr, fmt uintptr, va uintptr) (r int32)
@@ -1155,7 +1169,7 @@ func Y__loc_is_allocated(tls *TLS, loc Tlocale_t) (r int32)
 func Y__localtime_r(tls *TLS, t uintptr, tm uintptr) (r uintptr)
 
 //go:noescape
-func Y__lockfile(tls *TLS, file uintptr) int32
+func Y__lockfile(tls *TLS, file uintptr) (_2 int32)
 
 //go:noescape
 func Y__lookup_ipliteral(tls *TLS, buf uintptr, name uintptr, family int32) (r int32)
@@ -1275,7 +1289,17 @@ func Y__ptsname_r(tls *TLS, fd int32, buf uintptr, len1 Tsize_t) (r int32)
 func Y__putenv(tls *TLS, s uintptr, l Tsize_t, r uintptr) (r1 int32)
 
 //go:noescape
-func Y__qsort_r(tls *TLS, base uintptr, nel Tsize_t, width Tsize_t, cmp Tcmpfun, arg uintptr)
+func Y__qsort_r(tls *TLS, base uintptr, nel Tsize_t, width Tsize_t, __ccgo_fp_cmp Tcmpfun, arg uintptr)
+
+//go:noescape
+func __ccgo_abi0___qsort_r_3(_0 *TLS, _1 uintptr, _2 uintptr, _3 uintptr, __ccgo_fp uintptr) (_4 int32)
+
+func __ccgo_abiInternal___qsort_r_3(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr, _3 uintptr) (_4 int32) {
+		return __ccgo_abi0___qsort_r_3(_0, _1, _2, _3, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Y__rand48_step(tls *TLS, xi uintptr, lc uintptr) (r Tuint64_t)
@@ -1320,7 +1344,17 @@ func Y__restore_rt(tls *TLS)
 func Y__restore_sigs(tls *TLS, set uintptr)
 
 //go:noescape
-func Y__rtnetlink_enumerate(tls *TLS, link_af int32, addr_af int32, cb uintptr, ctx uintptr) (r1 int32)
+func Y__rtnetlink_enumerate(tls *TLS, link_af int32, addr_af int32, __ccgo_fp_cb uintptr, ctx uintptr) (r1 int32)
+
+//go:noescape
+func __ccgo_abi0___rtnetlink_enumerate_2(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal___rtnetlink_enumerate_2(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0___rtnetlink_enumerate_2(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Y__secs_to_tm(tls *TLS, t int64, tm uintptr) (r int32)
@@ -1473,25 +1507,25 @@ func Y__sync_val_compare_and_swapUint64(t *TLS, ptr uintptr, oldval, newval uint
 func Y__sync_val_compare_and_swapUint8(t *TLS, ptr uintptr, oldval, newval uint8) (r uint8)
 
 //go:noescape
-func Y__syscall0(tls *TLS, n long) long
+func Y__syscall0(tls *TLS, n long) (_2 long)
 
 //go:noescape
-func Y__syscall1(tls *TLS, n, a1 long) long
+func Y__syscall1(tls *TLS, n, a1 long) (_2 long)
 
 //go:noescape
-func Y__syscall2(tls *TLS, n, a1, a2 long) long
+func Y__syscall2(tls *TLS, n, a1, a2 long) (_2 long)
 
 //go:noescape
-func Y__syscall3(tls *TLS, n, a1, a2, a3 long) long
+func Y__syscall3(tls *TLS, n, a1, a2, a3 long) (_2 long)
 
 //go:noescape
-func Y__syscall4(tls *TLS, n, a1, a2, a3, a4 long) long
+func Y__syscall4(tls *TLS, n, a1, a2, a3, a4 long) (_2 long)
 
 //go:noescape
-func Y__syscall5(tls *TLS, n, a1, a2, a3, a4, a5 long) long
+func Y__syscall5(tls *TLS, n, a1, a2, a3, a4, a5 long) (_2 long)
 
 //go:noescape
-func Y__syscall6(tls *TLS, n, a1, a2, a3, a4, a5, a6 long) long
+func Y__syscall6(tls *TLS, n, a1, a2, a3, a4, a5, a6 long) (_2 long)
 
 //go:noescape
 func Y__syscall_ret(tls *TLS, r uint64) (r1 int64)
@@ -1605,10 +1639,10 @@ func Y_flushlbf(tls *TLS)
 func Y_longjmp(t *TLS, env uintptr, val int32)
 
 //go:noescape
-func Y_obstack_begin(t *TLS, obstack uintptr, size, alignment int32, chunkfun, freefun uintptr) int32
+func Y_obstack_begin(t *TLS, obstack uintptr, size, alignment int32, chunkfun, freefun uintptr) (_4 int32)
 
 //go:noescape
-func Y_obstack_newchunk(t *TLS, obstack uintptr, length int32) int32
+func Y_obstack_newchunk(t *TLS, obstack uintptr, length int32) (_3 int32)
 
 //go:noescape
 func Y_pthread_cleanup_pop(tls *TLS, _ uintptr, run int32)
@@ -1617,7 +1651,7 @@ func Y_pthread_cleanup_pop(tls *TLS, _ uintptr, run int32)
 func Y_pthread_cleanup_push(tls *TLS, _, f, x uintptr)
 
 //go:noescape
-func Y_setjmp(t *TLS, env uintptr) int32
+func Y_setjmp(t *TLS, env uintptr) (_2 int32)
 
 //go:noescape
 func Ya64l(tls *TLS, s uintptr) (r int64)
@@ -1671,7 +1705,7 @@ func Yadjtimex(tls *TLS, tx uintptr) (r int32)
 func Yalarm(tls *TLS, seconds uint32) (r uint32)
 
 //go:noescape
-func Yalloca(tls *TLS, size Tsize_t) uintptr
+func Yalloca(tls *TLS, size Tsize_t) (_2 uintptr)
 
 //go:noescape
 func Yalphasort(tls *TLS, a uintptr, b uintptr) (r int32)
@@ -1707,7 +1741,17 @@ func Yasinl(tls *TLS, x float64) (r float64)
 func Yasprintf(tls *TLS, s uintptr, fmt uintptr, va uintptr) (r int32)
 
 //go:noescape
-func Yat_quick_exit(tls *TLS, func1 uintptr) (r1 int32)
+func Yat_quick_exit(tls *TLS, __ccgo_fp_func uintptr) (r1 int32)
+
+//go:noescape
+func __ccgo_abi0_at_quick_exit_0(_0 *TLS, __ccgo_fp uintptr)
+
+func __ccgo_abiInternal_at_quick_exit_0(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS) {
+		__ccgo_abi0_at_quick_exit_0(_0, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Yatan(tls *TLS, x3 float64) (r float64)
@@ -1752,7 +1796,7 @@ func Yatol(tls *TLS, s uintptr) (r int64)
 func Yatoll(tls *TLS, s uintptr) (r int64)
 
 //go:noescape
-func Ybacktrace(t *TLS, buf uintptr, size int32) int32
+func Ybacktrace(t *TLS, buf uintptr, size int32) (_3 int32)
 
 //go:noescape
 func Ybacktrace_symbols_fd(t *TLS, buffer uintptr, size, fd int32)
@@ -1779,7 +1823,17 @@ func Ybindtextdomain(tls *TLS, domainname uintptr, dirname uintptr) (r uintptr)
 func Ybrk(tls *TLS, end uintptr) (r int32)
 
 //go:noescape
-func Ybsearch(tls *TLS, key uintptr, base uintptr, nel Tsize_t, width Tsize_t, cmp uintptr) (r uintptr)
+func Ybsearch(tls *TLS, key uintptr, base uintptr, nel Tsize_t, width Tsize_t, __ccgo_fp_cmp uintptr) (r uintptr)
+
+//go:noescape
+func __ccgo_abi0_bsearch_4(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_bsearch_4(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0_bsearch_4(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Ybtowc(tls *TLS, c int32) (r Twint_t)
@@ -2178,16 +2232,16 @@ func Ydirname(tls *TLS, s uintptr) (r uintptr)
 func Ydiv(tls *TLS, num int32, den int32) (r Tdiv_t)
 
 //go:noescape
-func Ydlclose(t *TLS, handle uintptr) int32
+func Ydlclose(t *TLS, handle uintptr) (_2 int32)
 
 //go:noescape
-func Ydlerror(t *TLS) uintptr
+func Ydlerror(t *TLS) (_1 uintptr)
 
 //go:noescape
-func Ydlopen(t *TLS, filename uintptr, flags int32) uintptr
+func Ydlopen(t *TLS, filename uintptr, flags int32) (_3 uintptr)
 
 //go:noescape
-func Ydlsym(t *TLS, handle, symbol uintptr) uintptr
+func Ydlsym(t *TLS, handle, symbol uintptr) (_2 uintptr)
 
 //go:noescape
 func Ydn_comp(tls *TLS, src uintptr, dst uintptr, space int32, dnptrs uintptr, lastdnptr uintptr) (r int32)
@@ -2640,7 +2694,7 @@ func Yfopen64(tls *TLS, filename uintptr, mode uintptr) (r uintptr)
 func Yfopencookie(tls *TLS, cookie uintptr, mode uintptr, iofuncs Tcookie_io_functions_t) (r uintptr)
 
 //go:noescape
-func Yfork(t *TLS) int32
+func Yfork(t *TLS) (_1 int32)
 
 //go:noescape
 func Yfpathconf(tls *TLS, fd int32, name int32) (r int64)
@@ -2763,25 +2817,35 @@ func Yftruncate64(tls *TLS, fd int32, length Toff_t) (r int32)
 func Yftrylockfile(tls *TLS, f uintptr) (r int32)
 
 //go:noescape
-func Yfts64_close(t *TLS, ftsp uintptr) int32
+func Yfts64_close(t *TLS, ftsp uintptr) (_2 int32)
 
 //go:noescape
-func Yfts64_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr
+func Yfts64_open(t *TLS, path_argv uintptr, options int32, compar uintptr) (_4 uintptr)
 
 //go:noescape
-func Yfts64_read(t *TLS, ftsp uintptr) uintptr
+func Yfts64_read(t *TLS, ftsp uintptr) (_2 uintptr)
 
 //go:noescape
-func Yfts_close(t *TLS, ftsp uintptr) int32
+func Yfts_close(t *TLS, ftsp uintptr) (_2 int32)
 
 //go:noescape
-func Yfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr
+func Yfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) (_4 uintptr)
 
 //go:noescape
-func Yfts_read(t *TLS, ftsp uintptr) uintptr
+func Yfts_read(t *TLS, ftsp uintptr) (_2 uintptr)
 
 //go:noescape
-func Yftw(tls *TLS, path uintptr, fn uintptr, fd_limit int32) (r int32)
+func Yftw(tls *TLS, path uintptr, __ccgo_fp_fn uintptr, fd_limit int32) (r int32)
+
+//go:noescape
+func __ccgo_abi0_ftw_1(_0 *TLS, _1 uintptr, _2 uintptr, _3 int32, __ccgo_fp uintptr) (_4 int32)
+
+func __ccgo_abiInternal_ftw_1(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr, _3 int32) (_4 int32) {
+		return __ccgo_abi0_ftw_1(_0, _1, _2, _3, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Yfunlockfile(tls *TLS, f uintptr)
@@ -3117,7 +3181,17 @@ func Ygetwchar_unlocked(tls *TLS) (r Twint_t)
 func Ygetxattr(tls *TLS, path uintptr, name uintptr, value uintptr, size Tsize_t) (r Tssize_t)
 
 //go:noescape
-func Yglob(tls *TLS, pat uintptr, flags int32, errfunc uintptr, g_ uintptr) (r int32)
+func Yglob(tls *TLS, pat uintptr, flags int32, __ccgo_fp_errfunc uintptr, g_ uintptr) (r int32)
+
+//go:noescape
+func __ccgo_abi0_glob_2(_0 *TLS, _1 uintptr, _2 int32, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_glob_2(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 int32) (_3 int32) {
+		return __ccgo_abi0_glob_2(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Yglobfree(tls *TLS, g_ uintptr)
@@ -3237,7 +3311,7 @@ func Yinit_module(tls *TLS, a uintptr, b uint64, c uintptr) (r int32)
 func Yinitstate(tls *TLS, seed uint32, state uintptr, size Tsize_t) (r uintptr)
 
 //go:noescape
-func Yinitstate_r(t *TLS, seed uint32, statebuf uintptr, statelen Tsize_t, buf uintptr) int32
+func Yinitstate_r(t *TLS, seed uint32, statebuf uintptr, statelen Tsize_t, buf uintptr) (_5 int32)
 
 //go:noescape
 func Yinotify_add_watch(tls *TLS, fd int32, pathname uintptr, mask Tuint32_t) (r int32)
@@ -3315,13 +3389,13 @@ func Yislower(tls *TLS, c int32) (r int32)
 func Yislower_l(tls *TLS, c int32, l Tlocale_t) (r int32)
 
 //go:noescape
-func Yisnan(t *TLS, x float64) int32
+func Yisnan(t *TLS, x float64) (_2 int32)
 
 //go:noescape
-func Yisnanf(t *TLS, arg float32) int32
+func Yisnanf(t *TLS, arg float32) (_2 int32)
 
 //go:noescape
-func Yisnanl(t *TLS, arg float64) int32
+func Yisnanl(t *TLS, arg float64) (_2 int32)
 
 //go:noescape
 func Yisprint(tls *TLS, c int32) (r int32)
@@ -3495,7 +3569,17 @@ func Yldexpl(tls *TLS, x float64, n int32) (r float64)
 func Yldiv(tls *TLS, num int64, den int64) (r Tldiv_t)
 
 //go:noescape
-func Ylfind(tls *TLS, key uintptr, base uintptr, nelp uintptr, width Tsize_t, compar uintptr) (r uintptr)
+func Ylfind(tls *TLS, key uintptr, base uintptr, nelp uintptr, width Tsize_t, __ccgo_fp_compar uintptr) (r uintptr)
+
+//go:noescape
+func __ccgo_abi0_lfind_4(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_lfind_4(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0_lfind_4(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Ylgamma(tls *TLS, x float64) (r float64)
@@ -3645,7 +3729,17 @@ func Ylroundf(tls *TLS, x float32) (r int64)
 func Ylroundl(tls *TLS, x float64) (r int64)
 
 //go:noescape
-func Ylsearch(tls *TLS, key uintptr, base uintptr, nelp uintptr, width Tsize_t, compar uintptr) (r uintptr)
+func Ylsearch(tls *TLS, key uintptr, base uintptr, nelp uintptr, width Tsize_t, __ccgo_fp_compar uintptr) (r uintptr)
+
+//go:noescape
+func __ccgo_abi0_lsearch_4(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_lsearch_4(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0_lsearch_4(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Ylseek(tls *TLS, fd int32, offset Toff_t, whence int32) (r Toff_t)
@@ -3879,7 +3973,17 @@ func Ynexttowardf(tls *TLS, x3 float32, y3 float64) (r float32)
 func Ynexttowardl(tls *TLS, x float64, y float64) (r float64)
 
 //go:noescape
-func Ynftw(tls *TLS, path uintptr, fn uintptr, fd_limit int32, flags int32) (r1 int32)
+func Ynftw(tls *TLS, path uintptr, __ccgo_fp_fn uintptr, fd_limit int32, flags int32) (r1 int32)
+
+//go:noescape
+func __ccgo_abi0_nftw_1(_0 *TLS, _1 uintptr, _2 uintptr, _3 int32, _4 uintptr, __ccgo_fp uintptr) (_5 int32)
+
+func __ccgo_abiInternal_nftw_1(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr, _3 int32, _4 uintptr) (_5 int32) {
+		return __ccgo_abi0_nftw_1(_0, _1, _2, _3, _4, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Yngettext(tls *TLS, msgid1 uintptr, msgid2 uintptr, n uint64) (r uintptr)
@@ -3930,7 +4034,7 @@ func Yntohs(tls *TLS, n Tuint16_t) (r Tuint16_t)
 func Yobstack_free(t *TLS, obstack, obj uintptr)
 
 //go:noescape
-func Yobstack_vprintf(t *TLS, obstack, template, va uintptr) int32
+func Yobstack_vprintf(t *TLS, obstack, template, va uintptr) (_2 int32)
 
 //go:noescape
 func Yopen(tls *TLS, filename uintptr, flags int32, va uintptr) (r int32)
@@ -3987,7 +4091,7 @@ func Ypivot_root(tls *TLS, new1 uintptr, old uintptr) (r int32)
 func Ypoll(tls *TLS, fds uintptr, n Tnfds_t, timeout int32) (r int32)
 
 //go:noescape
-func Ypopen(t *TLS, command, type1 uintptr) uintptr
+func Ypopen(t *TLS, command, type1 uintptr) (_2 uintptr)
 
 //go:noescape
 func Yposix_close(tls *TLS, fd int32, flags int32) (r int32)
@@ -4122,25 +4226,25 @@ func Ypsiginfo(tls *TLS, si uintptr, msg uintptr)
 func Ypsignal(tls *TLS, sig int32, msg uintptr)
 
 //go:noescape
-func Ypthread_atfork(tls *TLS, prepare, parent, child uintptr) int32
+func Ypthread_atfork(tls *TLS, prepare, parent, child uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_attr_destroy(tls *TLS, a uintptr) int32
+func Ypthread_attr_destroy(tls *TLS, a uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_attr_getdetachstate(tls *TLS, a uintptr, state uintptr) int32
+func Ypthread_attr_getdetachstate(tls *TLS, a uintptr, state uintptr) (_3 int32)
 
 //go:noescape
-func Ypthread_attr_init(tls *TLS, a uintptr) int32
+func Ypthread_attr_init(tls *TLS, a uintptr) (_2 int32)
 
 //go:noescape
 func Ypthread_attr_setdetachstate(tls *TLS, a uintptr, state int32) (r int32)
 
 //go:noescape
-func Ypthread_attr_setscope(tls *TLS, a uintptr, scope int32) int32
+func Ypthread_attr_setscope(tls *TLS, a uintptr, scope int32) (_3 int32)
 
 //go:noescape
-func Ypthread_attr_setstacksize(tls *TLS, a uintptr, stacksite Tsize_t) int32
+func Ypthread_attr_setstacksize(tls *TLS, a uintptr, stacksite Tsize_t) (_3 int32)
 
 //go:noescape
 func Ypthread_cleanup_pop(tls *TLS, run int32)
@@ -4149,82 +4253,82 @@ func Ypthread_cleanup_pop(tls *TLS, run int32)
 func Ypthread_cleanup_push(tls *TLS, f, x uintptr)
 
 //go:noescape
-func Ypthread_cond_broadcast(tls *TLS, c uintptr) int32
+func Ypthread_cond_broadcast(tls *TLS, c uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_cond_destroy(tls *TLS, c uintptr) int32
+func Ypthread_cond_destroy(tls *TLS, c uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_cond_init(tls *TLS, c, a uintptr) int32
+func Ypthread_cond_init(tls *TLS, c, a uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_cond_signal(tls *TLS, c uintptr) int32
+func Ypthread_cond_signal(tls *TLS, c uintptr) (_2 int32)
 
 //go:noescape
 func Ypthread_cond_timedwait(tls *TLS, c, m, ts uintptr) (r int32)
 
 //go:noescape
-func Ypthread_cond_wait(tls *TLS, c, m uintptr) int32
+func Ypthread_cond_wait(tls *TLS, c, m uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_create(tls *TLS, res, attrp, entry, arg uintptr) int32
+func Ypthread_create(tls *TLS, res, attrp, entry, arg uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_detach(tls *TLS, t uintptr) int32
+func Ypthread_detach(tls *TLS, t uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_equal(tls *TLS, t, u uintptr) int32
+func Ypthread_equal(tls *TLS, t, u uintptr) (_2 int32)
 
 //go:noescape
 func Ypthread_exit(tls *TLS, result uintptr)
 
 //go:noescape
-func Ypthread_getspecific(tls *TLS, k Tpthread_key_t) uintptr
+func Ypthread_getspecific(tls *TLS, k Tpthread_key_t) (_2 uintptr)
 
 //go:noescape
 func Ypthread_join(tls *TLS, t Tpthread_t, res uintptr) (r int32)
 
 //go:noescape
-func Ypthread_key_create(tls *TLS, k uintptr, dtor uintptr) int32
+func Ypthread_key_create(tls *TLS, k uintptr, dtor uintptr) (_3 int32)
 
 //go:noescape
-func Ypthread_key_delete(tls *TLS, k Tpthread_key_t) int32
+func Ypthread_key_delete(tls *TLS, k Tpthread_key_t) (_2 int32)
 
 //go:noescape
-func Ypthread_mutex_destroy(tls *TLS, m uintptr) int32
+func Ypthread_mutex_destroy(tls *TLS, m uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_mutex_init(tls *TLS, m, a uintptr) int32
+func Ypthread_mutex_init(tls *TLS, m, a uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_mutex_lock(tls *TLS, m uintptr) int32
+func Ypthread_mutex_lock(tls *TLS, m uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_mutex_trylock(tls *TLS, m uintptr) int32
+func Ypthread_mutex_trylock(tls *TLS, m uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_mutex_unlock(tls *TLS, m uintptr) int32
+func Ypthread_mutex_unlock(tls *TLS, m uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_mutexattr_destroy(tls *TLS, a uintptr) int32
+func Ypthread_mutexattr_destroy(tls *TLS, a uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_mutexattr_init(tls *TLS, a uintptr) int32
+func Ypthread_mutexattr_init(tls *TLS, a uintptr) (_2 int32)
 
 //go:noescape
-func Ypthread_mutexattr_settype(tls *TLS, a uintptr, typ int32) int32
+func Ypthread_mutexattr_settype(tls *TLS, a uintptr, typ int32) (_3 int32)
 
 //go:noescape
-func Ypthread_self(tls *TLS) uintptr
+func Ypthread_self(tls *TLS) (_1 uintptr)
 
 //go:noescape
-func Ypthread_setcancelstate(tls *TLS, new int32, old uintptr) int32
+func Ypthread_setcancelstate(tls *TLS, new int32, old uintptr) (_3 int32)
 
 //go:noescape
-func Ypthread_setspecific(tls *TLS, k Tpthread_key_t, x uintptr) int32
+func Ypthread_setspecific(tls *TLS, k Tpthread_key_t, x uintptr) (_3 int32)
 
 //go:noescape
-func Ypthread_sigmask(tls *TLS, now int32, set, old uintptr) int32
+func Ypthread_sigmask(tls *TLS, now int32, set, old uintptr) (_3 int32)
 
 //go:noescape
 func Yptrace(tls *TLS, req int32, va uintptr) (r int64)
@@ -4293,10 +4397,30 @@ func Ypwritev(tls *TLS, fd int32, iov uintptr, count int32, ofs Toff_t) (r Tssiz
 func Ypwritev2(tls *TLS, fd int32, iov uintptr, count int32, ofs Toff_t, flags int32) (r Tssize_t)
 
 //go:noescape
-func Yqsort(tls *TLS, base uintptr, nel Tsize_t, width Tsize_t, cmp Tcmpfun)
+func Yqsort(tls *TLS, base uintptr, nel Tsize_t, width Tsize_t, __ccgo_fp_cmp Tcmpfun)
 
 //go:noescape
-func Yqsort_r(tls *TLS, base uintptr, nel Tsize_t, width Tsize_t, cmp Tcmpfun, arg uintptr)
+func __ccgo_abi0_qsort_3(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_qsort_3(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0_qsort_3(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
+
+//go:noescape
+func Yqsort_r(tls *TLS, base uintptr, nel Tsize_t, width Tsize_t, __ccgo_fp_cmp Tcmpfun, arg uintptr)
+
+//go:noescape
+func __ccgo_abi0_qsort_r_3(_0 *TLS, _1 uintptr, _2 uintptr, _3 uintptr, __ccgo_fp uintptr) (_4 int32)
+
+func __ccgo_abiInternal_qsort_r_3(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr, _3 uintptr) (_4 int32) {
+		return __ccgo_abi0_qsort_r_3(_0, _1, _2, _3, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Yquick_exit(tls *TLS, code int32)
@@ -4317,7 +4441,7 @@ func Yrand_r(tls *TLS, seed uintptr) (r int32)
 func Yrandom(tls *TLS) (r int64)
 
 //go:noescape
-func Yrandom_r(t *TLS, buf, result uintptr) int32
+func Yrandom_r(t *TLS, buf, result uintptr) (_2 int32)
 
 //go:noescape
 func Yread(tls *TLS, fd int32, buf uintptr, count Tsize_t) (r Tssize_t)
@@ -4416,7 +4540,7 @@ func Yrename(tls *TLS, old uintptr, new1 uintptr) (r int32)
 func Yrenameat(tls *TLS, oldfd int32, old uintptr, newfd int32, new1 uintptr) (r int32)
 
 //go:noescape
-func Yrenameat2(t *TLS, olddirfd int32, oldpath uintptr, newdirfd int32, newpath uintptr, flags int32) int32
+func Yrenameat2(t *TLS, olddirfd int32, oldpath uintptr, newdirfd int32, newpath uintptr, flags int32) (_6 int32)
 
 //go:noescape
 func Yres_init(tls *TLS) (r int32)
@@ -4485,13 +4609,33 @@ func Yscalbnf(tls *TLS, x float32, n int32) (r float32)
 func Yscalbnl(tls *TLS, x float64, n int32) (r float64)
 
 //go:noescape
-func Yscandir(tls *TLS, path uintptr, res uintptr, sel uintptr, cmp uintptr) (r int32)
+func Yscandir(tls *TLS, path uintptr, res uintptr, __ccgo_fp_sel uintptr, __ccgo_fp_cmp uintptr) (r int32)
+
+//go:noescape
+func __ccgo_abi0_scandir_2(_0 *TLS, _1 uintptr, __ccgo_fp uintptr) (_2 int32)
+
+func __ccgo_abiInternal_scandir_2(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr) (_2 int32) {
+		return __ccgo_abi0_scandir_2(_0, _1, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
+
+//go:noescape
+func __ccgo_abi0_scandir_3(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_scandir_3(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0_scandir_3(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Yscanf(tls *TLS, fmt uintptr, va uintptr) (r int32)
 
 //go:noescape
-func Ysched_yield(tls *TLS) int32
+func Ysched_yield(tls *TLS) (_1 int32)
 
 //go:noescape
 func Ysecure_getenv(tls *TLS, name uintptr) (r uintptr)
@@ -4566,7 +4710,7 @@ func Ysethostname(tls *TLS, name uintptr, len1 Tsize_t) (r int32)
 func Ysetitimer(tls *TLS, which int32, new1 uintptr, old uintptr) (r1 int32)
 
 //go:noescape
-func Ysetjmp(t *TLS, env uintptr) int32
+func Ysetjmp(t *TLS, env uintptr) (_2 int32)
 
 //go:noescape
 func Ysetkey(tls *TLS, key uintptr)
@@ -5016,7 +5160,7 @@ func Ysyscall(tls *TLS, n int64, va uintptr) (r int64)
 func Ysysconf(tls *TLS, name int32) (r int64)
 
 //go:noescape
-func Ysysctlbyname(t *TLS, name, oldp, oldlenp, newp uintptr, newlen Tsize_t) int32
+func Ysysctlbyname(t *TLS, name, oldp, oldlenp, newp uintptr, newlen Tsize_t) (_3 int32)
 
 //go:noescape
 func Ysysinfo(tls *TLS, info uintptr) (r int32)
@@ -5025,7 +5169,7 @@ func Ysysinfo(tls *TLS, info uintptr) (r int32)
 func Ysyslog(tls *TLS, priority int32, message uintptr, va uintptr)
 
 //go:noescape
-func Ysystem(t *TLS, command uintptr) int32
+func Ysystem(t *TLS, command uintptr) (_2 int32)
 
 //go:noescape
 func Ytan(tls *TLS, x3 float64) (r float64)
@@ -5079,10 +5223,30 @@ func Ytcsetpgrp(tls *TLS, fd int32, pgrp Tpid_t) (r int32)
 func Ytcsetwinsize(tls *TLS, fd int32, wsz uintptr) (r int32)
 
 //go:noescape
-func Ytdelete(tls *TLS, key uintptr, rootp uintptr, cmp uintptr) (r uintptr)
+func Ytdelete(tls *TLS, key uintptr, rootp uintptr, __ccgo_fp_cmp uintptr) (r uintptr)
 
 //go:noescape
-func Ytdestroy(tls *TLS, root uintptr, freekey uintptr)
+func __ccgo_abi0_tdelete_2(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_tdelete_2(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0_tdelete_2(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
+
+//go:noescape
+func Ytdestroy(tls *TLS, root uintptr, __ccgo_fp_freekey uintptr)
+
+//go:noescape
+func __ccgo_abi0_tdestroy_1(_0 *TLS, _1 uintptr, __ccgo_fp uintptr)
+
+func __ccgo_abiInternal_tdestroy_1(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr) {
+		__ccgo_abi0_tdestroy_1(_0, _1, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Ytee(tls *TLS, src int32, dest int32, len1 Tsize_t, flags uint32) (r Tssize_t)
@@ -5097,7 +5261,17 @@ func Ytempnam(tls *TLS, dir uintptr, pfx uintptr) (r1 uintptr)
 func Ytextdomain(tls *TLS, domainname uintptr) (r uintptr)
 
 //go:noescape
-func Ytfind(tls *TLS, key uintptr, rootp uintptr, cmp uintptr) (r uintptr)
+func Ytfind(tls *TLS, key uintptr, rootp uintptr, __ccgo_fp_cmp uintptr) (r uintptr)
+
+//go:noescape
+func __ccgo_abi0_tfind_2(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_tfind_2(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0_tfind_2(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Ytgamma(tls *TLS, x3 float64) (r1 float64)
@@ -5193,7 +5367,17 @@ func Ytruncf(tls *TLS, x3 float32) (r float32)
 func Ytruncl(tls *TLS, x float64) (r float64)
 
 //go:noescape
-func Ytsearch(tls *TLS, key uintptr, rootp uintptr, cmp uintptr) (r1 uintptr)
+func Ytsearch(tls *TLS, key uintptr, rootp uintptr, __ccgo_fp_cmp uintptr) (r1 uintptr)
+
+//go:noescape
+func __ccgo_abi0_tsearch_2(_0 *TLS, _1 uintptr, _2 uintptr, __ccgo_fp uintptr) (_3 int32)
+
+func __ccgo_abiInternal_tsearch_2(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 uintptr) (_3 int32) {
+		return __ccgo_abi0_tsearch_2(_0, _1, _2, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Yttyname(tls *TLS, fd int32) (r uintptr)
@@ -5202,7 +5386,17 @@ func Yttyname(tls *TLS, fd int32) (r uintptr)
 func Yttyname_r(tls *TLS, fd int32, name uintptr, size Tsize_t) (r int32)
 
 //go:noescape
-func Ytwalk(tls *TLS, root uintptr, action uintptr)
+func Ytwalk(tls *TLS, root uintptr, __ccgo_fp_action uintptr)
+
+//go:noescape
+func __ccgo_abi0_twalk_1(_0 *TLS, _1 uintptr, _2 int32, _3 int32, __ccgo_fp uintptr)
+
+func __ccgo_abiInternal_twalk_1(tls *TLS, dest, abi0CodePtr uintptr) {
+	f := func(_0 *TLS, _1 uintptr, _2 int32, _3 int32) {
+		__ccgo_abi0_twalk_1(_0, _1, _2, _3, abi0CodePtr)
+	}
+	*(*[2]uintptr)(unsafe.Pointer(dest)) = *(*[2]uintptr)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&f))))
+}
 
 //go:noescape
 func Ytzset(tls *TLS)
@@ -5277,7 +5471,7 @@ func Yuuid_copy(t *TLS, dst, src uintptr)
 func Yuuid_generate_random(t *TLS, out uintptr)
 
 //go:noescape
-func Yuuid_parse(t *TLS, in uintptr, uu uintptr) int32
+func Yuuid_parse(t *TLS, in uintptr, uu uintptr) (_3 int32)
 
 //go:noescape
 func Yuuid_unparse(t *TLS, uu, out uintptr)

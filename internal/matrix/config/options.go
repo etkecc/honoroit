@@ -68,6 +68,18 @@ var (
 			return "false"
 		},
 	}
+	MsgType = &Option{
+		Key:         "msgtype",
+		Default:     "m.notice",
+		Description: "message type used to send automatic messages (like greetings, done notification, etc.), possible values are `m.text` and `m.notice`",
+		Sanitizer: func(s string) string {
+			s = strings.ToLower(strings.TrimSpace(s))
+			if s == "m.text" || s == "m.notice" {
+				return s
+			}
+			return "m.notice"
+		},
+	}
 	TextPrefixOpen = &Option{
 		Key:         "text.prefix.open",
 		Default:     "[OPEN]",
@@ -154,7 +166,7 @@ var (
 	}
 
 	// Options is full list of the all available options
-	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, Silent, TextPrefixOpen, TextPrefixDone, TextGreetingsBeforeEncryption, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone, TextDoneAuto}
+	Options = ListOfOptions{AllowedUsers, IgnoredRooms, IgnoreNoThread, Silent, MsgType, TextPrefixOpen, TextPrefixDone, TextGreetingsBeforeEncryption, TextGreetings, TextGreetingsCustomer, TextJoin, TextInvite, TextLeave, TextEmptyRoom, TextError, TextStart, TextCount, TextDone, TextDoneAuto}
 )
 
 type Option struct {

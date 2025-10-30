@@ -8,16 +8,18 @@ import (
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/format"
 	"maunium.net/go/mautrix/id"
+
+	"github.com/etkecc/honoroit/internal/matrix/config"
 )
 
-// SendNotice is a copy of linkpearl.SendNotice, but with raw content support
+// SendNotice is a copy of linkpearl.SendNotice, but with raw content support and automatic msg type setting based on config
 func (b *Bot) SendNotice(ctx context.Context, roomID id.RoomID, message string, raw map[string]any, relates ...*event.RelatesTo) id.EventID {
 	var relatesTo *event.RelatesTo
 	if len(relates) > 0 {
 		relatesTo = relates[0]
 	}
 	content := format.RenderMarkdown(message, true, true)
-	content.MsgType = event.MsgNotice
+	content.MsgType = event.MessageType(b.cfg.Get(ctx, config.MsgType.Key))
 	content.RelatesTo = relatesTo
 	fullContent := &event.Content{Parsed: &content, Raw: raw}
 

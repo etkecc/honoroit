@@ -12,12 +12,12 @@ import (
 	"time"
 
 	zlogsentry "github.com/archdx/zerolog-sentry"
+	"github.com/etkecc/go-crontab"
 	"github.com/etkecc/go-healthchecks/v2"
 	"github.com/etkecc/go-linkpearl"
 	"github.com/etkecc/go-redmine"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
-	"github.com/mileusna/crontab"
 	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
 	_ "modernc.org/sqlite"
@@ -73,6 +73,9 @@ func main() {
 		return
 	}
 	ctab = crontab.New()
+	ctab.SetPanicLogger(func(r any) {
+		log.Error().Any("panic", r).Msg("cron job panic")
+	})
 	initShutdown()
 
 	if err := ctab.AddJob("0 15 * * *", bot.AutoCloseRequests); err != nil {

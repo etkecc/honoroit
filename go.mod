@@ -8,6 +8,7 @@ require (
 	github.com/VictoriaMetrics/metrics v1.40.2
 	github.com/archdx/zerolog-sentry v1.8.5
 	github.com/dustin/go-humanize v1.0.1
+	github.com/etkecc/go-crontab v1.2.1
 	github.com/etkecc/go-echo-basic-auth v1.3.1
 	github.com/etkecc/go-env v1.2.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
@@ -18,7 +19,6 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/lib/pq v1.10.9
-	github.com/mileusna/crontab v1.2.0
 	github.com/nixys/nxs-go-redmine/v5 v5.1.1
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
@@ -26,7 +26,7 @@ require (
 	github.com/ziflex/lecho/v3 v3.9.0
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	maunium.net/go/mautrix v0.25.2
-	modernc.org/sqlite v1.39.1
+	modernc.org/sqlite v1.40.0
 )
 
 require (

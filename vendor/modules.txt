@@ -26,6 +26,9 @@ github.com/davecgh/go-spew/spew
 # github.com/dustin/go-humanize v1.0.1
 ## explicit; go 1.16
 github.com/dustin/go-humanize
+# github.com/etkecc/go-crontab v1.2.1
+## explicit; go 1.22
+github.com/etkecc/go-crontab
 # github.com/etkecc/go-echo-basic-auth v1.3.1
 ## explicit; go 1.23.0
 github.com/etkecc/go-echo-basic-auth
@@ -110,9 +113,6 @@ github.com/mattn/go-isatty
 # github.com/mattn/go-sqlite3 v1.14.32
 ## explicit; go 1.19
 github.com/mattn/go-sqlite3
-# github.com/mileusna/crontab v1.2.0
-## explicit; go 1.14
-github.com/mileusna/crontab
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
@@ -329,7 +329,7 @@ modernc.org/mathutil
 # modernc.org/memory v1.11.0
 ## explicit; go 1.23.0
 modernc.org/memory
-# modernc.org/sqlite v1.39.1
+# modernc.org/sqlite v1.40.0
 ## explicit; go 1.24.0
 modernc.org/sqlite
 modernc.org/sqlite/lib

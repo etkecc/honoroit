@@ -39,6 +39,7 @@ type OlmMachine struct {
 	cancelBackgroundCtx context.CancelFunc
 
 	PlaintextMentions   bool
+	MSC4392Relations    bool
 	AllowEncryptedState bool
 
 	// Never ask the server for keys automatically as a side effect during Megolm decryption.
@@ -205,7 +206,7 @@ func (mach *OlmMachine) FlushStore(ctx context.Context) error {
 func (mach *OlmMachine) timeTrace(ctx context.Context, thing string, expectedDuration time.Duration) func() {
 	start := time.Now()
 	return func() {
-		duration := time.Now().Sub(start)
+		duration := time.Since(start)
 		if duration > expectedDuration {
 			zerolog.Ctx(ctx).Warn().
 				Str("action", thing).

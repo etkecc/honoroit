@@ -113,7 +113,7 @@ func (et *Type) GuessClass() TypeClass {
 		StatePinnedEvents.Type, StateTombstone.Type, StateEncryption.Type, StateBridge.Type, StateHalfShotBridge.Type,
 		StateSpaceParent.Type, StateSpaceChild.Type, StatePolicyRoom.Type, StatePolicyServer.Type, StatePolicyUser.Type,
 		StateElementFunctionalMembers.Type, StateBeeperRoomFeatures.Type, StateBeeperDisappearingTimer.Type,
-		StateBotCommands.Type:
+		StateMSC4391BotCommand.Type:
 		return StateEventType
 	case EphemeralEventReceipt.Type, EphemeralEventTyping.Type, EphemeralEventPresence.Type:
 		return EphemeralEventType
@@ -128,7 +128,7 @@ func (et *Type) GuessClass() TypeClass {
 		InRoomVerificationKey.Type, InRoomVerificationMAC.Type, InRoomVerificationCancel.Type,
 		CallInvite.Type, CallCandidates.Type, CallAnswer.Type, CallReject.Type, CallSelectAnswer.Type,
 		CallNegotiate.Type, CallHangup.Type, BeeperMessageStatus.Type, EventUnstablePollStart.Type, EventUnstablePollResponse.Type,
-		EventUnstablePollEnd.Type, BeeperTranscription.Type, BeeperDeleteChat.Type:
+		EventUnstablePollEnd.Type, BeeperTranscription.Type, BeeperDeleteChat.Type, BeeperAcceptMessageRequest.Type:
 		return MessageEventType
 	case ToDeviceRoomKey.Type, ToDeviceRoomKeyRequest.Type, ToDeviceForwardedRoomKey.Type, ToDeviceRoomKeyWithheld.Type,
 		ToDeviceBeeperRoomKeyAck.Type:
@@ -205,7 +205,7 @@ var (
 	StateElementFunctionalMembers = Type{"io.element.functional_members", StateEventType}
 	StateBeeperRoomFeatures       = Type{"com.beeper.room_features", StateEventType}
 	StateBeeperDisappearingTimer  = Type{"com.beeper.disappearing_timer", StateEventType}
-	StateBotCommands              = Type{"org.matrix.msc4332.commands", StateEventType}
+	StateMSC4391BotCommand        = Type{"org.matrix.msc4391.command_description", StateEventType}
 )
 
 // Message events
@@ -234,9 +234,11 @@ var (
 	CallNegotiate    = Type{"m.call.negotiate", MessageEventType}
 	CallHangup       = Type{"m.call.hangup", MessageEventType}
 
-	BeeperMessageStatus = Type{"com.beeper.message_send_status", MessageEventType}
-	BeeperTranscription = Type{"com.beeper.transcription", MessageEventType}
-	BeeperDeleteChat    = Type{"com.beeper.delete_chat", MessageEventType}
+	BeeperMessageStatus        = Type{"com.beeper.message_send_status", MessageEventType}
+	BeeperTranscription        = Type{"com.beeper.transcription", MessageEventType}
+	BeeperDeleteChat           = Type{"com.beeper.delete_chat", MessageEventType}
+	BeeperAcceptMessageRequest = Type{"com.beeper.accept_message_request", MessageEventType}
+	BeeperSendState            = Type{"com.beeper.send_state", MessageEventType}
 
 	EventUnstablePollStart    = Type{Type: "org.matrix.msc3381.poll.start", Class: MessageEventType}
 	EventUnstablePollResponse = Type{Type: "org.matrix.msc3381.poll.response", Class: MessageEventType}

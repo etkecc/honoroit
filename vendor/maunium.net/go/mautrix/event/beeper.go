@@ -53,6 +53,8 @@ type BeeperMessageStatusEventContent struct {
 
 	LastRetry id.EventID `json:"last_retry,omitempty"`
 
+	TargetTxnID string `json:"relates_to_txn_id,omitempty"`
+
 	MutateEventKey string `json:"mutate_event_key,omitempty"`
 
 	// Indicates the set of users to whom the event was delivered. If nil, then
@@ -87,7 +89,19 @@ type BeeperRoomKeyAckEventContent struct {
 }
 
 type BeeperChatDeleteEventContent struct {
-	DeleteForEveryone bool `json:"delete_for_everyone,omitempty"`
+	DeleteForEveryone  bool `json:"delete_for_everyone,omitempty"`
+	FromMessageRequest bool `json:"from_message_request,omitempty"`
+}
+
+type BeeperAcceptMessageRequestEventContent struct {
+	// Whether this was triggered by a message rather than an explicit event
+	IsImplicit bool `json:"-"`
+}
+
+type BeeperSendStateEventContent struct {
+	Type     string  `json:"type"`
+	StateKey string  `json:"state_key"`
+	Content  Content `json:"content"`
 }
 
 type IntOrString int
@@ -132,6 +146,7 @@ type BeeperLinkPreview struct {
 
 	MatchedURL      string             `json:"matched_url,omitempty"`
 	ImageEncryption *EncryptedFileInfo `json:"beeper:image:encryption,omitempty"`
+	ImageBlurhash   string             `json:"matrix:image:blurhash,omitempty"`
 }
 
 type BeeperProfileExtra struct {
@@ -149,6 +164,24 @@ type BeeperPerMessageProfile struct {
 	AvatarURL   *id.ContentURIString `json:"avatar_url,omitempty"`
 	AvatarFile  *EncryptedFileInfo   `json:"avatar_file,omitempty"`
 	HasFallback bool                 `json:"has_fallback,omitempty"`
+}
+
+type BeeperActionMessageType string
+
+const (
+	BeeperActionMessageCall BeeperActionMessageType = "call"
+)
+
+type BeeperActionMessageCallType string
+
+const (
+	BeeperActionMessageCallTypeVoice BeeperActionMessageCallType = "voice"
+	BeeperActionMessageCallTypeVideo BeeperActionMessageCallType = "video"
+)
+
+type BeeperActionMessage struct {
+	Type     BeeperActionMessageType     `json:"type"`
+	CallType BeeperActionMessageCallType `json:"call_type,omitempty"`
 }
 
 func (content *MessageEventContent) AddPerMessageProfileFallback() {

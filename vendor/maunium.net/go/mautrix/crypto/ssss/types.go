@@ -26,7 +26,8 @@ var (
 	ErrUnsupportedPassphraseAlgorithm = errors.New("unsupported passphrase KDF algorithm")
 	ErrIncorrectSSSSKey               = errors.New("incorrect SSSS key")
 	ErrInvalidRecoveryKey             = errors.New("invalid recovery key")
-	ErrCorruptedKeyMetadata           = errors.New("corrupted key metadata")
+	ErrCorruptedKeyMetadata           = errors.New("corrupted recovery key metadata")
+	ErrUnverifiableKey                = errors.New("cannot verify recovery key: missing MAC or IV in metadata")
 )
 
 // Algorithm is the identifier for an SSSS encryption algorithm.
@@ -57,6 +58,7 @@ type EncryptedKeyData struct {
 
 type EncryptedAccountDataEventContent struct {
 	Encrypted map[string]EncryptedKeyData `json:"encrypted"`
+	Metadata  map[string]any              `json:"com.beeper.metadata,omitzero"`
 }
 
 func (ed *EncryptedAccountDataEventContent) Decrypt(eventType string, key *Key) ([]byte, error) {

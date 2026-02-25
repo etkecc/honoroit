@@ -1,4 +1,4 @@
-package metrics
+package metrics //nolint:var-naming,revive // Metrics should be exported for use in other packages
 
 import (
 	"fmt"

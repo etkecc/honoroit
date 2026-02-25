@@ -18,8 +18,14 @@ import (
 )
 
 var (
-	SessionNotShared = errors.New("session has not been shared")
-	SessionExpired   = errors.New("session has expired")
+	ErrSessionNotShared = errors.New("session has not been shared")
+	ErrSessionExpired   = errors.New("session has expired")
+)
+
+// Deprecated: use variables prefixed with Err
+var (
+	SessionNotShared = ErrSessionNotShared
+	SessionExpired   = ErrSessionExpired
 )
 
 // OlmSessionList is a list of OlmSessions.
@@ -163,7 +169,7 @@ func (igs *InboundGroupSession) export() (*ExportedSession, error) {
 		ForwardingChains:  igs.ForwardingChains,
 		RoomID:            igs.RoomID,
 		SenderKey:         igs.SenderKey,
-		SenderClaimedKeys: SenderClaimedKeys{},
+		SenderClaimedKeys: SenderClaimedKeys{Ed25519: igs.SigningKey},
 		SessionID:         igs.ID(),
 		SessionKey:        string(key),
 	}, nil
@@ -255,9 +261,9 @@ func (ogs *OutboundGroupSession) Expired() bool {
 
 func (ogs *OutboundGroupSession) Encrypt(plaintext []byte) ([]byte, error) {
 	if !ogs.Shared {
-		return nil, SessionNotShared
+		return nil, ErrSessionNotShared
 	} else if ogs.Expired() {
-		return nil, SessionExpired
+		return nil, ErrSessionExpired
 	}
 	ogs.MessageCount++
 	ogs.LastEncryptedTime = time.Now()

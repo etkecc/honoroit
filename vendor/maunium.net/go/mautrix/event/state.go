@@ -62,6 +62,13 @@ type ExtensibleTextContainer struct {
 	Text []ExtensibleText `json:"m.text"`
 }
 
+func (c *ExtensibleTextContainer) Equals(description *ExtensibleTextContainer) bool {
+	if c == nil || description == nil {
+		return c == description
+	}
+	return slices.Equal(c.Text, description.Text)
+}
+
 func MakeExtensibleText(text string) *ExtensibleTextContainer {
 	return &ExtensibleTextContainer{
 		Text: []ExtensibleText{{
@@ -231,7 +238,8 @@ type BridgeInfoSection struct {
 	AvatarURL   id.ContentURIString `json:"avatar_url,omitempty"`
 	ExternalURL string              `json:"external_url,omitempty"`
 
-	Receiver string `json:"fi.mau.receiver,omitempty"`
+	Receiver       string `json:"fi.mau.receiver,omitempty"`
+	MessageRequest bool   `json:"com.beeper.message_request,omitempty"`
 }
 
 // BridgeEventContent represents the content of a m.bridge state event.

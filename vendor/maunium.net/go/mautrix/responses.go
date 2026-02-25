@@ -263,10 +263,7 @@ type RespMutualRooms struct {
 type RespRoomSummary struct {
 	PublicRoomInfo
 
-	Membership     event.Membership `json:"membership,omitempty"`
-	RoomVersion    id.RoomVersion   `json:"room_version,omitempty"`
-	Encryption     id.Algorithm     `json:"encryption,omitempty"`
-	AllowedRoomIDs []id.RoomID      `json:"allowed_room_ids,omitempty"`
+	Membership event.Membership `json:"membership,omitempty"`
 
 	UnstableRoomVersion    id.RoomVersion `json:"im.nheko.summary.room_version,omitempty"`
 	UnstableRoomVersionOld id.RoomVersion `json:"im.nheko.summary.version,omitempty"`
@@ -342,6 +339,13 @@ type LazyLoadSummary struct {
 	Heroes             []id.UserID `json:"m.heroes,omitempty"`
 	JoinedMemberCount  *int        `json:"m.joined_member_count,omitempty"`
 	InvitedMemberCount *int        `json:"m.invited_member_count,omitempty"`
+}
+
+func (lls *LazyLoadSummary) MemberCount() int {
+	if lls == nil {
+		return 0
+	}
+	return ptr.Val(lls.JoinedMemberCount) + ptr.Val(lls.InvitedMemberCount)
 }
 
 func (lls *LazyLoadSummary) Equal(other *LazyLoadSummary) bool {
@@ -685,6 +689,10 @@ type PublicRoomInfo struct {
 	RoomType         event.RoomType      `json:"room_type"`
 	Topic            string              `json:"topic,omitempty"`
 	WorldReadable    bool                `json:"world_readable"`
+
+	RoomVersion    id.RoomVersion `json:"room_version,omitempty"`
+	Encryption     id.Algorithm   `json:"encryption,omitempty"`
+	AllowedRoomIDs []id.RoomID    `json:"allowed_room_ids,omitempty"`
 }
 
 // RespHierarchy is the JSON response for https://spec.matrix.org/v1.4/client-server-api/#get_matrixclientv1roomsroomidhierarchy

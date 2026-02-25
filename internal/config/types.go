@@ -13,7 +13,7 @@ type Config struct {
 	// Login is a MXID localpart (honoroit - OK, @honoroit:example.com - wrong)
 	Login string
 	// Password for login/password auth only
-	Password string
+	Password string //nolint:gosec // Password for login/password auth only
 	// SharedSecret for shared secret auth only
 	SharedSecret string
 	// DataSecret for account data encryption
@@ -58,7 +58,7 @@ type Auth struct {
 
 type Redmine struct {
 	Host             string
-	APIKey           string
+	APIKey           string //nolint:gosec // Redmine API key
 	ProjectID        string
 	TrackerID        int
 	NewStatus        int

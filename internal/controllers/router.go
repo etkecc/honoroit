@@ -14,6 +14,7 @@ import (
 
 // ConfigureRouter configures echo router
 func ConfigureRouter(e *echo.Echo, auth *echobasicauth.Auth) {
+	//nolint:staticcheck // new logger is less convenient
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Skipper: func(c echo.Context) bool {
 			return c.Request().URL.Path == "/_health"

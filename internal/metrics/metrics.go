@@ -1,4 +1,4 @@
-package metrics //nolint:revive // Metrics should be exported for use in other packages
+package metrics
 
 import (
 	"fmt"

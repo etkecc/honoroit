@@ -15,6 +15,7 @@ var values = map[string]string{
 	"HONOROIT_HOMESERVER": "https://example.com",
 	"HONOROIT_LOGIN":      "test",
 	"HONOROIT_PASSWORD":   "password",
+	"HONOROIT_TOKEN":      "mytoken",
 	"HONOROIT_ROOMID":     "!test:example.com",
 
 	"HONOROIT_PREFIX":    "!hohoho",
@@ -45,6 +46,7 @@ func (s *configSuite) TestNew() {
 	s.Equal("https://example.com", config.Homeserver)
 	s.Equal("test", config.Login)
 	s.Equal("password", config.Password)
+	s.Equal("mytoken", config.Token)
 	s.Equal("!test:example.com", config.RoomID)
 	s.Equal("DEBUG", config.LogLevel)
 	s.Equal(100, config.CacheSize)

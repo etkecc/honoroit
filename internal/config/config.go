@@ -18,6 +18,7 @@ func New() *Config {
 		Login:               env.String("login", defaultConfig.Login),
 		Password:            env.String("password", defaultConfig.Password),
 		SharedSecret:        env.String("sharedsecret", defaultConfig.SharedSecret),
+		Token:               env.String("token", defaultConfig.Token),
 		NoEncryptionWarning: env.Bool("noencryptionwarning"),
 		DataSecret:          env.String("data.secret", defaultConfig.DataSecret),
 		LogLevel:            env.String("loglevel", defaultConfig.LogLevel),

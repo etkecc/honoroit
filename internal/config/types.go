@@ -16,6 +16,8 @@ type Config struct {
 	Password string
 	// SharedSecret for shared secret auth only
 	SharedSecret string
+	// Token is a pre-created Matrix access token; when set, Login/Password/SharedSecret are ignored
+	Token string
 	// DataSecret for account data encryption
 	DataSecret string
 	// NoEncryptionWarning disables warning about encrypted messages

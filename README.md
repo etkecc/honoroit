@@ -98,8 +98,9 @@ env vars
 
 * **HONOROIT_HOMESERVER** - homeserver url, eg: `https://matrix.example.com`
 * **HONOROIT_LOGIN** - user login, localpart when using password (e.g., `honoroit`), OR full MXID when using shared secret (e.g., `@honoroit:example.com`)
-* **HONOROIT_PASSWORD** - user password, alternatively you may use shared secret
+* **HONOROIT_PASSWORD** - user password, alternatively you may use shared secret or token
 * **HONOROIT_SHAREDSECRET** - alternative to password, shared secret ([details](https://github.com/devture/matrix-synapse-shared-secret-auth))
+* **HONOROIT_TOKEN** - alternative to password/shared secret: a pre-created Matrix access token; when set, `HONOROIT_LOGIN`, `HONOROIT_PASSWORD`, and `HONOROIT_SHAREDSECRET` are ignored. `UserID` and `DeviceID` are resolved via `/account/whoami`. For E2EE to work the token must belong to a fresh device with no prior Olm keys.
 * **HONOROIT_ROOMID** - room ID where threads will be created, eg: `!test:example.com`
 
 ### optional

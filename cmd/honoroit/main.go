@@ -141,6 +141,7 @@ func initBot(cfg *config.Config, rdm *redmine.Redmine) error {
 		Login:             cfg.Login,
 		Password:          cfg.Password,
 		SharedSecret:      cfg.SharedSecret,
+		Token:             cfg.Token,
 		DB:                db,
 		Dialect:           cfg.DB.Dialect,
 		AccountDataSecret: cfg.DataSecret,

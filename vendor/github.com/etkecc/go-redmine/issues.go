@@ -62,7 +62,7 @@ func (r *Redmine) NewIssue(subject, senderMedium, senderAddress, text string, fi
 	defer r.wg.Done()
 
 	var description strings.Builder
-	description.WriteString(fmt.Sprintf("Sender: `%s` (%s)\n\n", senderAddress, senderMedium))
+	fmt.Fprintf(&description, "Sender: `%s` (%s)\n\n", senderAddress, senderMedium)
 	description.WriteString(text)
 	text = description.String()
 	issue, err := RetryResult(&log, func() (redmine.IssueObject, redmine.StatusCode, error) {

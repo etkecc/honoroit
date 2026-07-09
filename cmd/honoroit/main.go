@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/etkecc/go-crontab"
 	"github.com/etkecc/go-healthchecks/v2"
+	"github.com/etkecc/go-kit/crontab"
 	"github.com/etkecc/go-linkpearl"
 	"github.com/etkecc/go-redmine"
 	"github.com/labstack/echo/v4"
@@ -70,20 +70,13 @@ func main() {
 		log.Error().Err(err).Msg("cannot initialize the bot")
 		return
 	}
-	ctab = crontab.New()
-	ctab.SetPanicLogger(func(r any) {
-		log.Error().Any("panic", r).Msg("cron job panic")
-	})
+	ctab = crontab.New(crontab.WithPanicHandler(func(spec string, recovered any) {
+		log.Error().Str("spec", spec).Any("panic", recovered).Msg("cron job panic")
+	}))
 	initShutdown()
 
-	if err := ctab.AddJob("0 15 * * *", bot.AutoCloseRequests); err != nil {
-		log.Error().Err(err).Msg("cannot add cron job")
-		return
-	}
-	if err := ctab.AddJob("* * * * *", bot.SyncIssues); err != nil {
-		log.Error().Err(err).Msg("cannot add cron job")
-		return
-	}
+	ctab.MustAddJob("0 15 * * *", bot.AutoCloseRequests)
+	ctab.MustAddJob("* * * * *", bot.SyncIssues)
 
 	go e.Start(cfg.Port) //nolint:errcheck // nobody cares
 
@@ -167,8 +160,13 @@ func initShutdown() {
 }
 
 func shutdown() {
+	// drain cron before stopping the bot: AutoCloseRequests/SyncIssues call into the matrix client bot.Stop() tears down
+	ctabCtx, ctabCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer ctabCancel()
+	if err := ctab.Shutdown(ctabCtx); err != nil {
+		log.Warn().Err(err).Msg("cron shutdown did not drain cleanly")
+	}
 	bot.Stop()
-	ctab.Shutdown()
 	rdm.Shutdown()
 
 	if hc != nil {

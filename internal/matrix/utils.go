@@ -12,7 +12,7 @@ import (
 	"github.com/etkecc/honoroit/internal/matrix/config"
 )
 
-// SendNotice is a copy of linkpearl.SendNotice, but with raw content support and automatic msg type setting based on config
+// SendNotice is linkpearl.SendNotice plus raw content support and config-based msg type setting
 func (b *Bot) SendNotice(ctx context.Context, roomID id.RoomID, message string, raw map[string]any, relates ...*event.RelatesTo) id.EventID {
 	var relatesTo *event.RelatesTo
 	if len(relates) > 0 {

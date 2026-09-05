@@ -12,8 +12,7 @@ import (
 	"github.com/etkecc/honoroit/internal/matrix/config"
 )
 
-// MSC4144Profile represents the profile of the user according to MSC4144
-// ref: https://github.com/beeper/matrix-spec-proposals/blob/per-message-profile/proposals/4144-per-message-profile.md
+// MSC4144Profile represents the per-message user profile defined by MSC4144
 type MSC4144Profile struct {
 	ID          string        `json:"id"`          // The id field is required and is an opaque string. Clients may use it to group messages with the same ID like they would group messages from the same sender. For example, bridges would likely set it to the immutable remote user ID.
 	DisplayName string        `json:"displayname"` // The displayname field represents the human-readable display name of the user who sent the message. It is recommended that clients use this display name when showing messages to end users.
@@ -66,8 +65,7 @@ func (b *Bot) getName(ctx context.Context, userID id.UserID) (md, html string) {
 	return md, html
 }
 
-// getContentBody returns the body and formatted body of the message,
-// taking into account the new content if it exists
+// getContentBody returns the body and formatted body of the message, accounting for new content if present
 func (b *Bot) getContentBody(content *event.MessageEventContent) (body, formattedBody string) {
 	if content == nil {
 		return "", ""

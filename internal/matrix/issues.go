@@ -16,9 +16,7 @@ import (
 
 const issueNotePrefix = "cc.etke.honoroit.redmine.note."
 
-// SyncIssues fetches redmine issue status and notes and sends them to the corresponding rooms
-// due to the lack of a proper redmine webhook, this function is called periodically,
-// due to the complexity of that function, it has own "syncing" flag that prevents multiple calls at once
+// SyncIssues sends redmine status/notes to rooms periodically (no webhook), guarded against concurrent runs
 func (b *Bot) SyncIssues() {
 	if !b.redmine.Enabled() {
 		b.log.Debug().Msg("redmine is disabled, skipping sync")

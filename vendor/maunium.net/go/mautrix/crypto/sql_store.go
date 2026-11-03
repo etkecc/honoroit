@@ -102,11 +102,17 @@ func (store *SQLCryptoStore) LoadFilterID(ctx context.Context, _ id.UserID) (str
 }
 
 func (store *SQLCryptoStore) SaveNextBatch(ctx context.Context, _ id.UserID, nextBatchToken string) error {
-	err := store.PutNextBatch(ctx, nextBatchToken)
-	if err != nil {
-		return fmt.Errorf("unable to store batch: %w", err)
+	for {
+		err := store.PutNextBatch(ctx, nextBatchToken)
+		if err != nil {
+			if strings.Contains(err.Error(), "database is locked") {
+				zerolog.Ctx(ctx).Err(err).Msg("Failed to save next batch, retrying")
+				continue
+			}
+			return fmt.Errorf("unable to store batch: %w", err)
+		}
+		return nil
 	}
-	return nil
 }
 
 func (store *SQLCryptoStore) LoadNextBatch(ctx context.Context, _ id.UserID) (string, error) {
@@ -321,6 +327,15 @@ func datePtr(t time.Time) *time.Time {
 	return &t
 }
 
+func (store *SQLCryptoStore) SetGroupSessionKeyBackupVersion(ctx context.Context, sessionID id.SessionID, version id.KeyBackupVersion) error {
+	_, err := store.DB.Exec(
+		ctx,
+		`UPDATE crypto_megolm_inbound_session SET key_backup_version=$1 WHERE session_id=$2 AND account_id=$3`,
+		version, sessionID, store.AccountID,
+	)
+	return err
+}
+
 // PutGroupSession stores an inbound Megolm group session for a room, sender and session.
 func (store *SQLCryptoStore) PutGroupSession(ctx context.Context, session *InboundGroupSession) error {
 	sessionBytes, err := session.Internal.Pickle(store.PickleKey)
@@ -345,24 +360,28 @@ func (store *SQLCryptoStore) PutGroupSession(ctx context.Context, session *Inbou
 		Int64("max_age", session.MaxAge).
 		Int("max_messages", session.MaxMessages).
 		Bool("is_scheduled", session.IsScheduled).
+		Any("shared_history", session.SharedHistory).
+		Uint32("first_message_index", session.Internal.FirstKnownIndex()).
 		Stringer("key_backup_version", session.KeyBackupVersion).
 		Stringer("key_source", session.KeySource).
+		Stringer("source_user", session.SourceUser).
 		Msg("Upserting megolm inbound group session")
 	_, err = store.DB.Exec(ctx, `
 		INSERT INTO crypto_megolm_inbound_session (
-			session_id, sender_key, signing_key, room_id, session, forwarding_chains,
-			ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source, account_id
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+			session_id, sender_key, signing_key, room_id, session, forwarding_chains, shared_history,
+			ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source,
+			source_user, account_id
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		ON CONFLICT (session_id, account_id) DO UPDATE
 		    SET withheld_code=NULL, withheld_reason=NULL, sender_key=excluded.sender_key, signing_key=excluded.signing_key,
 		        room_id=excluded.room_id, session=excluded.session, forwarding_chains=excluded.forwarding_chains,
-		        ratchet_safety=excluded.ratchet_safety, received_at=excluded.received_at,
+		        shared_history=excluded.shared_history, ratchet_safety=excluded.ratchet_safety, received_at=excluded.received_at,
 		        max_age=excluded.max_age, max_messages=excluded.max_messages, is_scheduled=excluded.is_scheduled,
-		        key_backup_version=excluded.key_backup_version, key_source=excluded.key_source
+		        key_backup_version=excluded.key_backup_version, key_source=excluded.key_source, source_user=excluded.source_user
 	`,
-		session.ID(), session.SenderKey, session.SigningKey, session.RoomID, sessionBytes, forwardingChains,
+		session.ID(), session.SenderKey, session.SigningKey, session.RoomID, sessionBytes, forwardingChains, session.SharedHistory,
 		ratchetSafety, datePtr(session.ReceivedAt), dbutil.NumPtr(session.MaxAge), dbutil.NumPtr(session.MaxMessages),
-		session.IsScheduled, session.KeyBackupVersion, session.KeySource, store.AccountID,
+		session.IsScheduled, session.KeyBackupVersion, session.KeySource, session.SourceUser, store.AccountID,
 	)
 	return err
 }
@@ -374,14 +393,20 @@ func (store *SQLCryptoStore) GetGroupSession(ctx context.Context, roomID id.Room
 	var receivedAt sql.NullTime
 	var maxAge, maxMessages sql.NullInt64
 	var isScheduled bool
+	var sharedHistory *bool
 	var version id.KeyBackupVersion
 	var keySource id.KeySource
+	var sourceUser id.UserID
 	err := store.DB.QueryRow(ctx, `
-		SELECT sender_key, signing_key, session, forwarding_chains, withheld_code, withheld_reason, ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source
+		SELECT sender_key, signing_key, session, forwarding_chains, withheld_code, withheld_reason, shared_history,
+		       ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source, source_user
 		FROM crypto_megolm_inbound_session
 		WHERE room_id=$1 AND session_id=$2 AND account_id=$3`,
 		roomID, sessionID, store.AccountID,
-	).Scan(&senderKey, &signingKey, &sessionBytes, &forwardingChains, &withheldCode, &withheldReason, &ratchetSafetyBytes, &receivedAt, &maxAge, &maxMessages, &isScheduled, &version, &keySource)
+	).Scan(
+		&senderKey, &signingKey, &sessionBytes, &forwardingChains, &withheldCode, &withheldReason, &sharedHistory,
+		&ratchetSafetyBytes, &receivedAt, &maxAge, &maxMessages, &isScheduled, &version, &keySource, &sourceUser,
+	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
@@ -410,9 +435,11 @@ func (store *SQLCryptoStore) GetGroupSession(ctx context.Context, roomID id.Room
 		ReceivedAt:       receivedAt.Time,
 		MaxAge:           maxAge.Int64,
 		MaxMessages:      int(maxMessages.Int64),
+		SharedHistory:    sharedHistory,
 		IsScheduled:      isScheduled,
 		KeyBackupVersion: version,
 		KeySource:        keySource,
+		SourceUser:       sourceUser,
 	}, nil
 }
 
@@ -536,9 +563,14 @@ func (store *SQLCryptoStore) scanInboundGroupSession(rows dbutil.Scannable) (*In
 	var receivedAt sql.NullTime
 	var maxAge, maxMessages sql.NullInt64
 	var isScheduled bool
+	var sharedHistory *bool
 	var version id.KeyBackupVersion
 	var keySource id.KeySource
-	err := rows.Scan(&roomID, &senderKey, &signingKey, &sessionBytes, &forwardingChains, &ratchetSafetyBytes, &receivedAt, &maxAge, &maxMessages, &isScheduled, &version, &keySource)
+	var sourceUser id.UserID
+	err := rows.Scan(
+		&roomID, &senderKey, &signingKey, &sessionBytes, &forwardingChains, &sharedHistory, &ratchetSafetyBytes,
+		&receivedAt, &maxAge, &maxMessages, &isScheduled, &version, &keySource, &sourceUser,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -556,15 +588,18 @@ func (store *SQLCryptoStore) scanInboundGroupSession(rows dbutil.Scannable) (*In
 		ReceivedAt:       receivedAt.Time,
 		MaxAge:           maxAge.Int64,
 		MaxMessages:      int(maxMessages.Int64),
+		SharedHistory:    sharedHistory,
 		IsScheduled:      isScheduled,
 		KeyBackupVersion: version,
 		KeySource:        keySource,
+		SourceUser:       sourceUser,
 	}, nil
 }
 
 func (store *SQLCryptoStore) GetGroupSessionsForRoom(ctx context.Context, roomID id.RoomID) dbutil.RowIter[*InboundGroupSession] {
 	rows, err := store.DB.Query(ctx, `
-		SELECT room_id, sender_key, signing_key, session, forwarding_chains, ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source
+		SELECT room_id, sender_key, signing_key, session, forwarding_chains, shared_history,
+		       ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source, source_user
 		FROM crypto_megolm_inbound_session WHERE room_id=$1 AND account_id=$2 AND session IS NOT NULL`,
 		roomID, store.AccountID,
 	)
@@ -573,7 +608,8 @@ func (store *SQLCryptoStore) GetGroupSessionsForRoom(ctx context.Context, roomID
 
 func (store *SQLCryptoStore) GetAllGroupSessions(ctx context.Context) dbutil.RowIter[*InboundGroupSession] {
 	rows, err := store.DB.Query(ctx, `
-		SELECT room_id, sender_key, signing_key, session, forwarding_chains, ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source
+		SELECT room_id, sender_key, signing_key, session, forwarding_chains, shared_history,
+		       ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source, source_user
 		FROM crypto_megolm_inbound_session WHERE account_id=$1 AND session IS NOT NULL`,
 		store.AccountID,
 	)
@@ -582,7 +618,8 @@ func (store *SQLCryptoStore) GetAllGroupSessions(ctx context.Context) dbutil.Row
 
 func (store *SQLCryptoStore) GetGroupSessionsWithoutKeyBackupVersion(ctx context.Context, version id.KeyBackupVersion) dbutil.RowIter[*InboundGroupSession] {
 	rows, err := store.DB.Query(ctx, `
-		SELECT room_id, sender_key, signing_key, session, forwarding_chains, ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source
+		SELECT room_id, sender_key, signing_key, session, forwarding_chains, shared_history,
+		       ratchet_safety, received_at, max_age, max_messages, is_scheduled, key_backup_version, key_source, source_user
 		FROM crypto_megolm_inbound_session WHERE account_id=$1 AND session IS NOT NULL AND key_backup_version != $2`,
 		store.AccountID, version,
 	)
@@ -596,15 +633,18 @@ func (store *SQLCryptoStore) AddOutboundGroupSession(ctx context.Context, sessio
 		return err
 	}
 	_, err = store.DB.Exec(ctx, `
-		INSERT INTO crypto_megolm_outbound_session
-			(room_id, session_id, session, shared, max_messages, message_count, max_age, created_at, last_used, account_id)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO crypto_megolm_outbound_session (
+			room_id, session_id, session, shared, max_messages, message_count, max_age,
+			shared_history, created_at, last_used, account_id
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (account_id, room_id) DO UPDATE
 			SET session_id=excluded.session_id, session=excluded.session, shared=excluded.shared,
 				max_messages=excluded.max_messages, message_count=excluded.message_count, max_age=excluded.max_age,
-				created_at=excluded.created_at, last_used=excluded.last_used, account_id=excluded.account_id
+				shared_history=excluded.shared_history, created_at=excluded.created_at, last_used=excluded.last_used,
+				account_id=excluded.account_id
 	`, session.RoomID, session.ID(), sessionBytes, session.Shared, session.MaxMessages, session.MessageCount,
-		session.MaxAge.Milliseconds(), session.CreationTime, session.LastEncryptedTime, store.AccountID)
+		session.MaxAge.Milliseconds(), session.SharedHistory, session.CreationTime, session.LastEncryptedTime,
+		store.AccountID)
 	return err
 }
 
@@ -625,10 +665,10 @@ func (store *SQLCryptoStore) GetOutboundGroupSession(ctx context.Context, roomID
 	var sessionBytes []byte
 	var maxAgeMS int64
 	err := store.DB.QueryRow(ctx, `
-		SELECT session, shared, max_messages, message_count, max_age, created_at, last_used
+		SELECT session, shared, max_messages, message_count, max_age, shared_history, created_at, last_used
 		FROM crypto_megolm_outbound_session WHERE room_id=$1 AND account_id=$2`,
 		roomID, store.AccountID,
-	).Scan(&sessionBytes, &ogs.Shared, &ogs.MaxMessages, &ogs.MessageCount, &maxAgeMS, &ogs.CreationTime, &ogs.LastEncryptedTime)
+	).Scan(&sessionBytes, &ogs.Shared, &ogs.MaxMessages, &ogs.MessageCount, &maxAgeMS, &ogs.SharedHistory, &ogs.CreationTime, &ogs.LastEncryptedTime)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
@@ -653,7 +693,7 @@ func (store *SQLCryptoStore) RemoveOutboundGroupSession(ctx context.Context, roo
 }
 
 func (store *SQLCryptoStore) MarkOutboundGroupSessionShared(ctx context.Context, userID id.UserID, identityKey id.IdentityKey, sessionID id.SessionID) error {
-	_, err := store.DB.Exec(ctx, "INSERT INTO crypto_megolm_outbound_session_shared (user_id, identity_key, session_id) VALUES ($1, $2, $3)", userID, identityKey, sessionID)
+	_, err := store.DB.Exec(ctx, "INSERT INTO crypto_megolm_outbound_session_shared (user_id, identity_key, session_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", userID, identityKey, sessionID)
 	return err
 }
 
@@ -765,7 +805,15 @@ ON CONFLICT (user_id, device_id) DO UPDATE
     SET identity_key=excluded.identity_key, deleted=excluded.deleted, trust=excluded.trust, name=excluded.name
 `
 
-var deviceMassInsertTemplate = strings.ReplaceAll(deviceInsertQuery, "($1, $2, $3, $4, $5, $6, $7)", "%s")
+type massInsertDevice id.Device
+
+func (mid *massInsertDevice) GetMassInsertValues() [6]any {
+	return [6]any{mid.DeviceID, mid.IdentityKey, mid.SigningKey, mid.Trust, mid.Deleted, mid.Name}
+}
+
+var deviceMassInsertBuilder = dbutil.NewMassInsertBuilder[*massInsertDevice, [1]any](
+	deviceInsertQuery, "($1, $%d, $%d, $%d, $%d, $%d, $%d)",
+)
 
 // PutDevice stores a single device for a user, replacing it if it exists already.
 func (store *SQLCryptoStore) PutDevice(ctx context.Context, userID id.UserID, device *id.Device) error {
@@ -775,16 +823,18 @@ func (store *SQLCryptoStore) PutDevice(ctx context.Context, userID id.UserID, de
 }
 
 const trackedUserUpsertQuery = `
-INSERT INTO crypto_tracked_user (user_id, devices_outdated)
-VALUES ($1, false)
+INSERT INTO crypto_tracked_user (user_id, devices_outdated, last_attempt, error_count)
+VALUES ($1, false, $2, 0)
 ON CONFLICT (user_id) DO UPDATE
-	SET devices_outdated = EXCLUDED.devices_outdated
+	SET devices_outdated = EXCLUDED.devices_outdated,
+		last_attempt = EXCLUDED.last_attempt,
+		error_count = EXCLUDED.error_count
 `
 
 // PutDevices stores the device identity information for the given user ID.
 func (store *SQLCryptoStore) PutDevices(ctx context.Context, userID id.UserID, devices map[id.DeviceID]*id.Device) error {
 	return store.DB.DoTxn(ctx, nil, func(ctx context.Context) error {
-		_, err := store.DB.Exec(ctx, trackedUserUpsertQuery, userID)
+		_, err := store.DB.Exec(ctx, trackedUserUpsertQuery, userID, time.Now().Unix())
 		if err != nil {
 			return fmt.Errorf("failed to upsert user to tracked users list: %w", err)
 		}
@@ -796,31 +846,15 @@ func (store *SQLCryptoStore) PutDevices(ctx context.Context, userID id.UserID, d
 		if len(devices) == 0 {
 			return nil
 		}
-		deviceBatchLen := 5 // how many devices will be inserted per query
-		deviceIDs := make([]id.DeviceID, 0, len(devices))
-		for deviceID := range devices {
-			deviceIDs = append(deviceIDs, deviceID)
+		midDevices := make([]*massInsertDevice, len(devices))
+		i := 0
+		for _, device := range devices {
+			midDevices[i] = (*massInsertDevice)(device)
+			i++
 		}
-		const valueStringFormat = "($1, $%d, $%d, $%d, $%d, $%d, $%d)"
-		for batchDeviceIdx := 0; batchDeviceIdx < len(deviceIDs); batchDeviceIdx += deviceBatchLen {
-			var batchDevices []id.DeviceID
-			if batchDeviceIdx+deviceBatchLen < len(deviceIDs) {
-				batchDevices = deviceIDs[batchDeviceIdx : batchDeviceIdx+deviceBatchLen]
-			} else {
-				batchDevices = deviceIDs[batchDeviceIdx:]
-			}
-			values := make([]interface{}, 1, len(devices)*6+1)
-			values[0] = userID
-			valueStrings := make([]string, 0, len(devices))
-			i := 2
-			for _, deviceID := range batchDevices {
-				identity := devices[deviceID]
-				values = append(values, deviceID, identity.IdentityKey, identity.SigningKey, identity.Trust, identity.Deleted, identity.Name)
-				valueStrings = append(valueStrings, fmt.Sprintf(valueStringFormat, i, i+1, i+2, i+3, i+4, i+5))
-				i += 6
-			}
-			valueString := strings.Join(valueStrings, ",")
-			_, err = store.DB.Exec(ctx, fmt.Sprintf(deviceMassInsertTemplate, valueString), values...)
+		for chunk := range slices.Chunk(midDevices, 100) {
+			query, params := deviceMassInsertBuilder.Build([1]any{userID}, chunk)
+			_, err = store.DB.Exec(ctx, query, params...)
 			if err != nil {
 				return fmt.Errorf("failed to insert new devices: %w", err)
 			}
@@ -829,12 +863,13 @@ func (store *SQLCryptoStore) PutDevices(ctx context.Context, userID id.UserID, d
 	})
 }
 
-func userIDsToParams(users []id.UserID) (placeholders string, params []any) {
+func userIDsToParams(users []id.UserID, prefixParams ...any) (placeholders string, params []any) {
 	queryString := make([]string, len(users))
-	params = make([]any, len(users))
+	params = make([]any, len(users)+len(prefixParams))
+	copy(params, prefixParams)
 	for i, user := range users {
-		queryString[i] = fmt.Sprintf("$%d", i+1)
-		params[i] = user
+		queryString[i] = fmt.Sprintf("$%d", len(prefixParams)+i+1)
+		params[i+len(prefixParams)] = user
 	}
 	placeholders = strings.Join(queryString, ",")
 	return
@@ -857,18 +892,77 @@ func (store *SQLCryptoStore) FilterTrackedUsers(ctx context.Context, users []id.
 func (store *SQLCryptoStore) MarkTrackedUsersOutdated(ctx context.Context, users []id.UserID) (err error) {
 	for chunk := range slices.Chunk(users, 1000) {
 		if store.DB.Dialect == dbutil.Postgres && PostgresArrayWrapper != nil {
-			_, err = store.DB.Exec(ctx, "UPDATE crypto_tracked_user SET devices_outdated = true WHERE user_id = ANY($1)", PostgresArrayWrapper(chunk))
+			_, err = store.DB.Exec(ctx, markUsersOutdatedPostgresQuery, PostgresArrayWrapper(chunk))
 		} else {
 			placeholders, params := userIDsToParams(chunk)
-			_, err = store.DB.Exec(ctx, "UPDATE crypto_tracked_user SET devices_outdated = true WHERE user_id IN ("+placeholders+")", params...)
+			_, err = store.DB.Exec(ctx, fmt.Sprintf(markUsersOutdatedSQLiteQuery, placeholders), params...)
+		}
+		if err != nil {
+			return
 		}
 	}
 	return
 }
 
-// GetOutdatedTrackerUsers gets all tracked users whose devices need to be updated.
+const markUsersOutdatedPostgresQuery = `
+	UPDATE crypto_tracked_user SET devices_outdated = true WHERE user_id = ANY($1)
+`
+
+const markUsersOutdatedSQLiteQuery = `
+	UPDATE crypto_tracked_user SET devices_outdated = true WHERE user_id IN (%s)
+`
+
+const incrementErrorCountPostgresQuery = `
+	UPDATE crypto_tracked_user
+	SET last_attempt = $1, error_count = COALESCE(error_count, 0) + 1
+	WHERE user_id = ANY($2) AND devices_outdated = true
+`
+
+const incrementErrorCountSQLiteQuery = `
+	UPDATE crypto_tracked_user
+	SET last_attempt = $1, error_count = COALESCE(error_count, 0) + 1
+	WHERE user_id IN (%s) AND devices_outdated = true
+`
+
+const getOutdatedTrackedUsersPostgresQuery = `
+	SELECT user_id
+	FROM crypto_tracked_user
+	WHERE devices_outdated = true AND (error_count IS NULL OR error_count < 5 OR last_attempt + least(error_count*error_count*error_count, 10800) < $1)
+`
+
+var getOutdatedTrackedUsersSQLiteQuery = strings.ReplaceAll(getOutdatedTrackedUsersPostgresQuery, "least(", "min(")
+
+func (store *SQLCryptoStore) IncrementTrackedUsersErrorCount(ctx context.Context, users []id.UserID) (err error) {
+	for chunk := range slices.Chunk(users, 1000) {
+		if store.DB.Dialect == dbutil.Postgres && PostgresArrayWrapper != nil {
+			_, err = store.DB.Exec(ctx, incrementErrorCountPostgresQuery, time.Now().Unix(), PostgresArrayWrapper(chunk))
+		} else {
+			placeholders, params := userIDsToParams(chunk, time.Now().Unix())
+			_, err = store.DB.Exec(ctx, fmt.Sprintf(incrementErrorCountSQLiteQuery, placeholders), params...)
+		}
+		if err != nil {
+			return
+		}
+	}
+	var res sql.Result
+	res, err = store.DB.Exec(ctx, "DELETE FROM crypto_tracked_user WHERE devices_outdated = true AND error_count > 100")
+	if res != nil && err == nil {
+		affected, _ := res.RowsAffected()
+		if affected > 0 {
+			zerolog.Ctx(ctx).Debug().Int64("deleted_tracked_users", affected).
+				Msg("Deleted tracked users with too many errors")
+		}
+	}
+	return
+}
+
+// GetOutdatedTrackedUsers gets all tracked users whose devices need to be updated.
 func (store *SQLCryptoStore) GetOutdatedTrackedUsers(ctx context.Context) ([]id.UserID, error) {
-	rows, err := store.DB.Query(ctx, "SELECT user_id FROM crypto_tracked_user WHERE devices_outdated = TRUE")
+	query := getOutdatedTrackedUsersPostgresQuery
+	if store.DB.Dialect == dbutil.SQLite {
+		query = getOutdatedTrackedUsersSQLiteQuery
+	}
+	rows, err := store.DB.Query(ctx, query, time.Now().Unix())
 	return dbutil.NewRowIterWithError(rows, dbutil.ScanSingleColumn[id.UserID], err).AsList()
 }
 
@@ -899,6 +993,18 @@ func (store *SQLCryptoStore) GetCrossSigningKeys(ctx context.Context, userID id.
 	}
 
 	return data, nil
+}
+
+func (store *SQLCryptoStore) ResetMasterKeyTOFU(ctx context.Context, userID id.UserID, key id.Ed25519) error {
+	res, err := store.DB.Exec(ctx, "UPDATE crypto_cross_signing_keys SET first_seen_key = key WHERE user_id = $1 AND key = $2 AND usage='master'", userID, key)
+	if err != nil {
+		return err
+	} else if affected, err := res.RowsAffected(); err != nil {
+		return err
+	} else if affected == 0 {
+		return fmt.Errorf("no matching master key found for user %s", userID)
+	}
+	return nil
 }
 
 // PutSignature stores a signature of a cross-signing or device key along with the signer's user ID and key.

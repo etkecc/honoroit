@@ -8,9 +8,7 @@ const (
 	Done
 )
 
-// Status is a type for issue statuses
-// it should be used instead of sending raw status IDs
-// to allow dynamic (re-)configuration
+// Status is a type for issue statuses, used instead of raw status IDs to allow dynamic (re-)configuration.
 type Status int
 
 // GetStatus returns the status of an issue

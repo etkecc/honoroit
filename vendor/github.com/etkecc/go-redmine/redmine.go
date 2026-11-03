@@ -50,9 +50,7 @@ func New(options ...Option) (*Redmine, error) {
 	return r, nil
 }
 
-// GetAPI returns the underlying API object from the github.com/nixys/nxs-go-redmine package (actual version may vary)
-// it's useful for calling methods that are not exposed by this package
-// WARNING: it CAN return nil (API interface is defined for tests only, but this method does type casting, so if the type is wrong, it will return nil)
+// GetAPI returns the underlying nxs-go-redmine object for unexposed methods; can return nil on a type-cast mismatch.
 func (r *Redmine) GetAPI() *redmine.Context {
 	if r.cfg == nil {
 		return nil
@@ -118,15 +116,13 @@ func (r *Redmine) Enabled() bool {
 	return r.cfg.Enabled()
 }
 
-// Configure applies the new configuration options in runtime
-// It is advisable to call UpdateUser() (if API key and/or host was changed), and UpdatePorject() (if project identifier was changed) after this method
+// Configure applies config options at runtime; call UpdateUser()/UpdateProject() after an API key/host/project change.
 func (r *Redmine) Configure(options ...Option) *Redmine {
 	r.cfg.apply(options...)
 	return r
 }
 
-// UpdateUser updates the current user ID,
-// it should be called after changing the API key and/or host
+// UpdateUser updates the current user ID; call after changing the API key and/or host.
 func (r *Redmine) UpdateUser() error {
 	user, err := RetryResult(r.cfg.Log, func() (redmine.UserObject, redmine.StatusCode, error) {
 		return r.cfg.api.UserCurrentGet(redmine.UserCurrentGetRequest{})
@@ -138,8 +134,7 @@ func (r *Redmine) UpdateUser() error {
 	return nil
 }
 
-// UpdateProject updates the project ID,
-// it should be called after changing the project identifier
+// UpdateProject updates the project ID; call after changing the project identifier.
 func (r *Redmine) UpdateProject() error {
 	project, err := RetryResult(r.cfg.Log, func() (redmine.ProjectObject, redmine.StatusCode, error) {
 		return r.cfg.api.ProjectSingleGet(r.cfg.ProjectIdentifier, redmine.ProjectSingleGetRequest{})

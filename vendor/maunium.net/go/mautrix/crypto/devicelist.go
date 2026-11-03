@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -251,7 +252,8 @@ func (mach *OlmMachine) FetchKeys(ctx context.Context, users []id.UserID, includ
 			newDevice, err := mach.validateDevice(userID, deviceID, deviceKeys, existing)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to validate device")
-			} else if newDevice != nil {
+			}
+			if newDevice != nil {
 				newDevices[deviceID] = newDevice
 				mach.storeDeviceSelfSignatures(ctx, userID, deviceID, resp)
 				if !existed {
@@ -293,8 +295,13 @@ func (mach *OlmMachine) FetchKeys(ctx context.Context, users []id.UserID, includ
 			mach.OnDevicesChanged(ctx, userID)
 		}
 	}
-	for userID := range req.DeviceKeys {
-		log.Warn().Stringer("user_id", userID).Msg("Didn't get any keys for user")
+	missingUsers := slices.Collect(maps.Keys(req.DeviceKeys))
+	if len(missingUsers) > 0 {
+		err = mach.CryptoStore.IncrementTrackedUsersErrorCount(ctx, missingUsers)
+		log.Warn().
+			Array("user_ids", exzerolog.ArrayOfStringers(missingUsers)).
+			AnErr("error_count_save_error", err).
+			Msg("Didn't get any keys for user")
 	}
 
 	mach.storeCrossSigningKeys(ctx, resp.MasterKeys, resp.DeviceKeys)
@@ -350,7 +357,16 @@ func (mach *OlmMachine) validateDevice(userID id.UserID, deviceID id.DeviceID, d
 	}
 
 	if existing != nil && existing.SigningKey != signingKey {
+		existing.Trust = id.TrustStateDeviceKeyMismatch
 		return existing, fmt.Errorf("%w (expected %s, got %s)", ErrMismatchingSigningKey, existing.SigningKey, signingKey)
+	} else if existing != nil && existing.IdentityKey != identityKey {
+		mach.Log.Warn().
+			Stringer("user_id", userID).
+			Stringer("device_id", deviceID).
+			Stringer("signing_key", signingKey).
+			Stringer("old_identity_key", existing.IdentityKey).
+			Stringer("new_identity_key", identityKey).
+			Msg("Identity key change detected. This will likely be forbidden in the future")
 	}
 
 	ok, err := signatures.VerifySignatureJSON(deviceKeys, userID, deviceID.String(), signingKey)
@@ -371,7 +387,7 @@ func (mach *OlmMachine) validateDevice(userID id.UserID, deviceID id.DeviceID, d
 
 	// This trust state doesn't matter much as most trust happens through cross-signing, but preserve it anyway.
 	trust := id.TrustStateUnset
-	if existing != nil {
+	if existing != nil && existing.Trust != id.TrustStateDeviceKeyMismatch {
 		trust = existing.Trust
 	}
 	return &id.Device{

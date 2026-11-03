@@ -168,7 +168,7 @@ func _exprListIsNoAffinity(tls *libc.TLS, pParse uintptr, pRow uintptr) (r int32
 	var ii int32
 	var pExpr uintptr
 	_, _ = ii, pExpr
-	if _exprListIsConstant(tls, pParse, pRow) == 0 {
+	if _sqlite3ExprListIsConstant(tls, pParse, pRow, 0) == 0 {
 		return 0
 	}
 	ii = 0
@@ -505,6 +505,18 @@ func _sessionAppendIdent(tls *libc.TLS, p uintptr, zStr uintptr, pRc uintptr) {
 	}
 }
 
+func _sqlite3ColumnDefault(tls *libc.TLS, v uintptr, pTab uintptr, i int32, iReg int32) {
+	var pCol uintptr
+	_ = pCol
+	pCol = (*TTable)(unsafe.Pointer(pTab)).FaCol + uintptr(i)*16
+	if (*TColumn)(unsafe.Pointer(pCol)).FiDflt != 0 {
+		_columnDefaultUncommonCase(tls, v, pTab, pCol)
+	}
+	if int32((*TColumn)(unsafe.Pointer(pCol)).Faffinity) == int32(SQLITE_AFF_REAL) {
+		_sqlite3VdbeAddOp1(tls, v, int32(OP_RealAffinity), iReg)
+	}
+}
+
 // C documentation
 //
 //	/*
@@ -624,7 +636,7 @@ func _sqlite3Prepare16(tls *libc.TLS, db uintptr, zSql uintptr, nBytes int32, pr
 	rc = SQLITE_OK
 	**(**uintptr)(__ccgo_up(ppStmt)) = uintptr(0)
 	if !(_sqlite3SafetyCheckOk(tls, db) != 0) || zSql == uintptr(0) {
-		return _sqlite3MisuseError(tls, int32(148771))
+		return _sqlite3MisuseError(tls, int32(149874))
 	}
 	/* Make sure nBytes is non-negative and correct.  It should be the
 	 ** number of bytes until the end of the input buffer or until the first
@@ -689,6 +701,10 @@ func _sqlite3ResultSetOfSelect(tls *libc.TLS, pParse uintptr, pSelect uintptr, a
 	var savedFlags Tu64
 	_, _, _ = db, pTab, savedFlags
 	db = (*TParse)(unsafe.Pointer(pParse)).Fdb
+	(*TParse)(unsafe.Pointer(pParse)).FnNestSel = (*TParse)(unsafe.Pointer(pParse)).FnNestSel + 1
+	if _checkSubqueryNestingDepth(tls, pParse) != 0 {
+		return uintptr(0)
+	}
 	savedFlags = (*Tsqlite3)(unsafe.Pointer(db)).Fflags
 	**(**Tu64)(__ccgo_up(db + 48)) &= ^libc.Uint64FromInt32(SQLITE_FullColNames)
 	**(**Tu64)(__ccgo_up(db + 48)) |= uint64(SQLITE_ShortColNames)
@@ -714,6 +730,7 @@ func _sqlite3ResultSetOfSelect(tls *libc.TLS, pParse uintptr, pSelect uintptr, a
 		_sqlite3DeleteTable(tls, db, pTab)
 		return uintptr(0)
 	}
+	(*TParse)(unsafe.Pointer(pParse)).FnNestSel = (*TParse)(unsafe.Pointer(pParse)).FnNestSel - 1
 	return pTab
 }
 

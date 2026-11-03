@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -23,8 +24,8 @@ import (
 type TagStack []string
 
 func (ts TagStack) Index(tag string) int {
-	for i := len(ts) - 1; i >= 0; i-- {
-		if ts[i] == tag {
+	for i, t := range slices.Backward(ts) {
+		if t == tag {
 			return i
 		}
 	}
@@ -41,6 +42,15 @@ type Context struct {
 	TagStack   TagStack
 
 	PreserveWhitespace bool
+}
+
+func (ctx Context) Mentions() *event.Mentions {
+	mentions, ok := ctx.ReturnData[contextKeyMentions].(*event.Mentions)
+	if !ok {
+		mentions = &event.Mentions{}
+		ctx.ReturnData[contextKeyMentions] = mentions
+	}
+	return mentions
 }
 
 func NewContext(ctx context.Context) Context {
@@ -69,13 +79,12 @@ type CodeBlockConverter func(code, language string, ctx Context) string
 type PillConverter func(displayname, mxid, eventID string, ctx Context) string
 type ImageConverter func(src, alt, title, width, height string, isEmoji bool) string
 
-const ContextKeyMentions = "_mentions"
+const contextKeyMentions = "_mentions"
 
 func DefaultPillConverter(displayname, mxid, eventID string, ctx Context) string {
 	switch {
 	case len(mxid) == 0, mxid[0] == '@':
-		existingMentions, _ := ctx.ReturnData[ContextKeyMentions].([]id.UserID)
-		ctx.ReturnData[ContextKeyMentions] = append(existingMentions, id.UserID(mxid))
+		ctx.Mentions().Add(id.UserID(mxid))
 		// User link, always just show the displayname
 		return displayname
 	case len(eventID) > 0:
@@ -191,11 +200,8 @@ func (parser *HTMLParser) listToString(node *html.Node, ctx Context) string {
 		var prefix string
 		// TODO make bullets and numbering configurable
 		if ordered {
-			indexPadding := indentLength - Digits(counter)
-			if indexPadding < 0 {
-				// This will happen on negative start indexes where longestIndex is usually wrong, otherwise shouldn't happen
-				indexPadding = 0
-			}
+			// Ensure padding is at least 0 even on negative start indexes where longestIndex is usually wrong
+			indexPadding := max(indentLength-Digits(counter), 0)
 			prefix = fmt.Sprintf("%d. %s", counter, strings.Repeat(" ", indexPadding))
 		} else {
 			prefix = "* "
@@ -418,12 +424,7 @@ func (parser *HTMLParser) nodeToTaggedStrings(node *html.Node, ctx Context) (str
 var BlockTags = []string{"p", "h1", "h2", "h3", "h4", "h5", "h6", "ol", "ul", "pre", "blockquote", "div", "hr", "table"}
 
 func (parser *HTMLParser) isBlockTag(tag string) bool {
-	for _, blockTag := range BlockTags {
-		if tag == blockTag {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(BlockTags, tag)
 }
 
 func (parser *HTMLParser) nodeToTagAwareString(node *html.Node, ctx Context) string {
@@ -503,11 +504,9 @@ func HTMLToMarkdownFull(parser *HTMLParser, html string) (parsed string, mention
 		parser = MarkdownHTMLParser
 	}
 	ctx := NewContext(context.TODO())
+	mentions = &event.Mentions{}
+	ctx.ReturnData[contextKeyMentions] = mentions
 	parsed = parser.Parse(html, ctx)
-	mentionList, _ := ctx.ReturnData[ContextKeyMentions].([]id.UserID)
-	mentions = &event.Mentions{
-		UserIDs: mentionList,
-	}
 	return
 }
 

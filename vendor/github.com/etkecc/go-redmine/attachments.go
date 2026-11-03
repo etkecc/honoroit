@@ -9,9 +9,7 @@ import (
 	redmine "github.com/nixys/nxs-go-redmine/v5"
 )
 
-// UploadRequest is a request to upload a file
-// you can use either only Path to specify the file from the filesystem
-// OR Stream to specify the file from a stream. In this case, Path is used as a filename
+// UploadRequest uploads a file: set Path for a filesystem file, or Stream (Path becomes the filename).
 type UploadRequest struct {
 	Path   string
 	Stream io.Reader
@@ -41,9 +39,7 @@ func (r *Redmine) DeleteAttachment(attachmentID int64) error {
 	return nil
 }
 
-// uploadAttachments uploads attachments to Redmine, if any
-// why it's not exported? Because Redmine REST API doesn't have a method to upload an attachment to an issue,
-// attachment has to be uploaded first, and then attached to an issue. That can be done using NewIssue() or UpdateIssue() methods
+// uploadAttachments uploads to Redmine; unexported: Redmine needs upload-then-attach via NewIssue/UpdateIssue.
 func (r *Redmine) uploadAttachments(files ...*UploadRequest) *[]redmine.AttachmentUploadObject {
 	var uploads *[]redmine.AttachmentUploadObject
 	for _, req := range files {

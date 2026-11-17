@@ -10,7 +10,7 @@ Its main focus is on using redmine issues as a ticketing system for customer sup
 - **Issue Management**: Create, update, and check the status of issues in Redmine.
 - **Notes Retrieval**: Retrieve notes from issues.
 - **Retry Mechanism**: Built-in retry mechanism for API calls to handle transient errors.
-- **Logging**: (Optional) Integration with `zerolog` for structured logging.
+- **Logging**: (Optional) Integration with `log/slog` for structured logging.
 - **Graceful Shutdown**: Wait for all goroutines to finish before shutting down.
 
 ## Installation
@@ -29,16 +29,17 @@ You need to configure the library to connect to your Redmine instance, here is a
 
 ```go
 import (
-    "github/etkecc/go-redmine"
-    "github.com/rs/zerolog"
+    "log/slog"
     "os"
+
+    "github/etkecc/go-redmine"
 )
 
 func main() {
-    logger := zerolog.New(os.Stdout).With().Timestamp().Logger() // completely optional, by default discard logs
-    
+    logger := slog.New(slog.NewJSONHandler(os.Stdout, nil)) // completely optional, by default discard logs
+
     client, err := redmine.New(
-        redmine.WithLog(&logger), // optional, by default discard logs
+        redmine.WithLog(logger), // optional, by default discard logs
         redmine.WithHost("https://redmine.example.com"), // required
         redmine.WithAPIKey("your_api_key"), // required
         redmine.WithProjectIdentifier("my-project"), // required, the identifier of the project. You may use redmine.WithProjectID() instead
@@ -47,11 +48,12 @@ func main() {
         redmine.WithWaitingForCustomerStatusID(2), // required, the status ID for issues waiting for customer. Usually "New" status
         redmine.WithDoneStatusID(3), // required, the status ID for closed issues. Usually "Closed" status
     )
-    
+
     if err != nil {
-        logger.Fatal().Err(err).Msg("Failed to create Redmine client")
+        logger.Error("Failed to create Redmine client", "error", err)
+        os.Exit(1)
     }
-    
+
     // Use the client...
 }
 ```
@@ -63,9 +65,9 @@ To create a new issue, use the `NewIssue` method:
 ```go
 issueID, err := client.NewIssue("Issue Subject", "email", "user@example.com", "Issue description text")
 if err != nil {
-    logger.Error().Err(err).Msg("Failed to create issue")
+    logger.Error("Failed to create issue", "error", err)
 } else {
-    logger.Info().Int64("issue_id", issueID).Msg("Issue created")
+    logger.Info("Issue created", "issue_id", issueID)
 }
 ```
 
@@ -76,7 +78,7 @@ To update the status of an existing issue, use the `UpdateIssue` method:
 ```go
 err := client.UpdateIssue(issueID, redmine.WaitingForCustomer, "Your notes")
 if err != nil {
-    logger.Error().Err(err).Msg("Failed to update issue")
+    logger.Error("Failed to update issue", "error", err)
 }
 ```
 
@@ -87,7 +89,7 @@ To retrieve the notes of an issue, use the `GetNotes` method:
 ```go
 notes, err := client.GetNotes(issueID)
 if err != nil {
-    logger.Error().Err(err).Msg("Failed to get issue notes")
+    logger.Error("Failed to get issue notes", "error", err)
 } else {
     for _, note := range notes {
         fmt.Println(note.Notes)
@@ -102,11 +104,11 @@ To check if an issue is closed, use the `IsClosed` method:
 ```go
 isClosed, err := client.IsClosed(issueID)
 if err != nil {
-    logger.Error().Err(err).Msg("Failed to check if issue is closed")
+    logger.Error("Failed to check if issue is closed", "error", err)
 } else if isClosed {
-    logger.Info().Msg("Issue is closed")
+    logger.Info("Issue is closed")
 } else {
-    logger.Info().Msg("Issue is open")
+    logger.Info("Issue is open")
 }
 ```
 

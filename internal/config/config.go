@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	echobasicauth "github.com/etkecc/go-echo-basic-auth"
+	echobasicauth "github.com/etkecc/go-echo-basic-auth/v2"
 	"github.com/etkecc/go-env"
 )
 

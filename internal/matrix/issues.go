@@ -19,16 +19,16 @@ const issueNotePrefix = "cc.etke.honoroit.redmine.note."
 // SyncIssues sends redmine status/notes to rooms periodically (no webhook), guarded against concurrent runs
 func (b *Bot) SyncIssues() {
 	if !b.redmine.Enabled() {
-		b.log.Debug().Msg("redmine is disabled, skipping sync")
+		b.log.Debug("redmine is disabled, skipping sync")
 		return
 	}
 
 	ctx := context.Background()
 	if b.syncing {
-		b.log.Debug().Msg("already syncing redmine issues")
+		b.log.Debug("already syncing redmine issues")
 		return
 	}
-	b.log.Debug().Msg("syncing redmine issues")
+	b.log.Debug("syncing redmine issues")
 	b.syncing = true
 	defer func() { b.syncing = false }()
 
@@ -42,7 +42,7 @@ func (b *Bot) syncIssue(ctx context.Context, threadID id.EventID) {
 	roomID, err := b.findRoomID(ctx, threadID)
 	if err != nil || roomID == "" {
 		if err != nil && !errors.Is(err, errNotMapped) {
-			b.log.Warn().Err(err).Str("thread_id", threadID.String()).Msg("cannot find room")
+			b.log.Warn("cannot find room", "error", err, "thread_id", threadID.String())
 		}
 		return
 	}
@@ -50,17 +50,17 @@ func (b *Bot) syncIssue(ctx context.Context, threadID id.EventID) {
 	issueIDStr, err := b.getRedmineMapping(ctx, threadID.String())
 	if err != nil {
 		if !errors.Is(err, errNotMapped) {
-			b.log.Warn().Err(err).Str("thread_id", threadID.String()).Msg("cannot get redmine mapping")
+			b.log.Warn("cannot get redmine mapping", "error", err, "thread_id", threadID.String())
 		}
-		b.log.Debug().Str("thread_id", threadID.String()).Str("room_id", roomID.String()).Msg("request not mapped")
+		b.log.Debug("request not mapped", "thread_id", threadID.String(), "room_id", roomID.String())
 		return
 	}
 	issueID, err := strconv.Atoi(issueIDStr)
 	if err != nil || issueID == 0 {
-		b.log.Debug().Str("thread_id", threadID.String()).Str("room_id", roomID.String()).Msg("issue not found")
+		b.log.Debug("issue not found", "thread_id", threadID.String(), "room_id", roomID.String())
 		return
 	}
-	b.log.Debug().Str("thread_id", threadID.String()).Str("room_id", roomID.String()).Int("issue_id", issueID).Msg("syncing request")
+	b.log.Debug("syncing request", "thread_id", threadID.String(), "room_id", roomID.String(), "issue_id", issueID)
 	b.syncIssueNotes(ctx, threadID, roomID, issueID)
 	b.syncIssueStatus(ctx, threadID, issueID)
 }
@@ -68,7 +68,7 @@ func (b *Bot) syncIssue(ctx context.Context, threadID id.EventID) {
 func (b *Bot) syncIssueStatus(ctx context.Context, threadID id.EventID, issueID int) {
 	closed, err := b.redmine.IsClosed(int64(issueID))
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot get redmine status")
+		b.log.Error("cannot get redmine status", "error", err)
 		return
 	}
 	if !closed {
@@ -86,22 +86,22 @@ func (b *Bot) syncIssueStatus(ctx context.Context, threadID id.EventID, issueID 
 func (b *Bot) syncIssueNotes(ctx context.Context, threadID id.EventID, roomID id.RoomID, issueID int) {
 	notes, err := b.redmine.GetNotes(int64(issueID))
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot get redmine notes")
+		b.log.Error("cannot get redmine notes", "error", err)
 		return
 	}
-	b.log.Debug().Int("issue_id", issueID).Int("notes", len(notes)).Msg("syncing notes")
+	b.log.Debug("syncing notes", "issue_id", issueID, "notes", len(notes))
 	for _, note := range notes {
 		acID := issueNotePrefix + threadID.String() + "_" + strconv.Itoa(int(note.ID))
 		data, err := b.lp.GetAccountData(ctx, acID)
 		if err != nil {
-			b.log.Error().Err(err).Msg("cannot get account data")
+			b.log.Error("cannot get account data", "error", err)
 			continue
 		}
 		if data["synced"] != "" {
-			b.log.Debug().Int("issue_id", issueID).Int("note_id", int(note.ID)).Msg("note already synced")
+			b.log.Debug("note already synced", "issue_id", issueID, "note_id", int(note.ID))
 			continue
 		}
-		b.log.Debug().Int("issue_id", issueID).Int("note_id", int(note.ID)).Msg("syncing note")
+		b.log.Debug("syncing note", "issue_id", issueID, "note_id", int(note.ID))
 		b.syncIssueNote(ctx, threadID, roomID, acID, note)
 	}
 }
@@ -117,10 +117,10 @@ func (b *Bot) syncIssueNote(ctx context.Context, threadID id.EventID, roomID id.
 	content := format.RenderMarkdown(fmt.Sprintf("%s\n\n%s", prefix, note.Notes), true, true)
 	content.MsgType = event.MsgNotice
 	content.RelatesTo = linkpearl.RelatesTo(threadID)
-	b.log.Debug().Str("thread_id", threadID.String()).Int("note_id", int(note.ID)).Msg("sending note to operators room")
+	b.log.Debug("sending note to operators room", "thread_id", threadID.String(), "note_id", int(note.ID))
 	evtID, err := b.lp.Send(ctx, b.roomID, content)
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot send note to operators room")
+		b.log.Error("cannot send note to operators room", "error", err)
 		return
 	}
 
@@ -134,17 +134,17 @@ func (b *Bot) syncIssueNote(ctx context.Context, threadID id.EventID, roomID id.
 				"event_id": evtID,
 			},
 		}
-		b.log.Debug().Str("thread_id", threadID.String()).Int("note_id", int(note.ID)).Msg("sending note to customer room")
+		b.log.Debug("sending note to customer room", "thread_id", threadID.String(), "note_id", int(note.ID))
 		_, err = b.lp.Send(ctx, roomID, fullContent)
 		if err != nil {
-			b.log.Error().Err(err).Msg("cannot send note to customer room")
+			b.log.Error("cannot send note to customer room", "error", err)
 			b.SendNotice(ctx, b.roomID, linkpearl.UnwrapError(err).Error(), nil, linkpearl.RelatesTo(threadID))
 			return
 		}
 	}
-	b.log.Debug().Str("thread_id", threadID.String()).Int("note_id", int(note.ID)).Msg("marking note as synced")
+	b.log.Debug("marking note as synced", "thread_id", threadID.String(), "note_id", int(note.ID))
 	if err := b.lp.SetAccountData(ctx, acID, map[string]string{"synced": "true"}); err != nil {
-		b.log.Error().Err(err).Msg("cannot set account data")
+		b.log.Error("cannot set account data", "error", err)
 	}
 }
 
@@ -161,7 +161,7 @@ func (b *Bot) getFileUploadReq(ctx context.Context, content *event.MessageEventC
 	}
 	fileContentURI, err := fileMXCURL.Parse()
 	if err != nil {
-		b.log.Warn().Err(err).Str("filename", fileName).Str("url", string(fileMXCURL)).Msg("cannot parse file MXC URI")
+		b.log.Warn("cannot parse file MXC URI", "error", err, "filename", fileName, "url", string(fileMXCURL))
 		return nil
 	}
 
@@ -171,7 +171,7 @@ func (b *Bot) getFileUploadReq(ctx context.Context, content *event.MessageEventC
 
 	resp, err := b.lp.GetClient().Download(ctx, fileContentURI)
 	if err != nil {
-		b.log.Warn().Err(err).Str("filename", fileName).Str("url", string(fileMXCURL)).Msg("cannot download file")
+		b.log.Warn("cannot download file", "error", err, "filename", fileName, "url", string(fileMXCURL))
 		return nil
 	}
 
@@ -184,7 +184,7 @@ func (b *Bot) getFileUploadReq(ctx context.Context, content *event.MessageEventC
 
 	defer resp.Body.Close()
 	if err := content.File.PrepareForDecryption(); err != nil {
-		b.log.Warn().Err(err).Msg("cannot prepare file for decryption")
+		b.log.Warn("cannot prepare file for decryption", "error", err)
 		return nil
 	}
 	encStream := content.File.DecryptStream(resp.Body)
@@ -218,7 +218,7 @@ func (b *Bot) updateIssue(ctx context.Context, byOperator bool, sender string, t
 	}
 
 	if updateErr := b.redmine.UpdateIssue(int64(issueID), statusID, text, b.getFileUploadReq(ctx, content)); updateErr != nil {
-		b.log.Error().Err(updateErr).Msg("cannot update redmine issue")
+		b.log.Error("cannot update redmine issue", "error", updateErr)
 	}
 }
 
@@ -235,22 +235,22 @@ func (b *Bot) closeIssue(ctx context.Context, roomID id.RoomID, threadID id.Even
 	if err != nil || issueID == 0 {
 		return
 	}
-	log := b.log.With().Int("issue_id", issueID).Logger()
+	log := b.log.With("issue_id", issueID)
 	issue, err := b.redmine.GetIssue(int64(issueID), "attachments")
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot get redmine issue")
+		log.Warn("cannot get redmine issue", "error", err)
 		return
 	}
 	if issue.Attachments != nil {
 		//nolint:gocritic // we can't do anything with it
 		for _, attachment := range *issue.Attachments {
 			if err := b.redmine.DeleteAttachment(attachment.ID); err != nil {
-				log.Warn().Err(err).Int("attachment_id", int(attachment.ID)).Msg("cannot delete attachment")
+				log.Warn("cannot delete attachment", "error", err, "attachment_id", int(attachment.ID))
 			}
 		}
 	}
 	if updateErr := b.redmine.UpdateIssue(int64(issueID), b.redmine.StatusToID(redmine.Done), text); updateErr != nil {
-		log.Warn().Err(updateErr).Msg("cannot close redmine issue")
+		log.Warn("cannot close redmine issue", "error", updateErr)
 		return
 	}
 	b.removeRedmineMapping(ctx, threadID.String())

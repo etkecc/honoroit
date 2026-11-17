@@ -2,6 +2,7 @@ package redmine
 
 import (
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,9 +18,9 @@ type UploadRequest struct {
 
 // DeleteAttachment deletes an attachment by its ID
 func (r *Redmine) DeleteAttachment(attachmentID int64) error {
-	log := r.cfg.Log.With().Int64("attachment_id", attachmentID).Logger()
+	log := r.cfg.Log.With(slog.Int64("attachment_id", attachmentID))
 	if !r.Enabled() {
-		log.Debug().Msg("redmine is disabled, ignoring DeleteAttachment() call")
+		log.Debug("redmine is disabled, ignoring DeleteAttachment() call")
 		return nil
 	}
 	if attachmentID == 0 {
@@ -29,11 +30,11 @@ func (r *Redmine) DeleteAttachment(attachmentID int64) error {
 	r.wg.Add(1)
 	defer r.wg.Done()
 
-	err := Retry(&log, func() (redmine.StatusCode, error) {
+	err := Retry(log, func() (redmine.StatusCode, error) {
 		return r.cfg.api.Del(nil, nil, url.URL{Path: "/attachments/" + strconv.FormatInt(attachmentID, 10) + ".json"}, http.StatusNoContent)
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("failed to delete attachment")
+		log.Error("failed to delete attachment", slog.Any("error", err))
 		return err
 	}
 	return nil
@@ -56,7 +57,7 @@ func (r *Redmine) uploadAttachments(files ...*UploadRequest) *[]redmine.Attachme
 			return r.cfg.api.AttachmentUploadStream(req.Stream, req.Path)
 		})
 		if err != nil {
-			r.cfg.Log.Error().Err(err).Msg("failed to upload attachment")
+			r.cfg.Log.Error("failed to upload attachment", slog.Any("error", err))
 			continue
 		}
 		if uploads == nil {

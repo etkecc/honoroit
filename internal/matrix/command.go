@@ -23,7 +23,7 @@ func (b *Bot) parseCommand(message string) []string {
 	}
 
 	message = strings.Replace(message, b.prefix, "", 1)
-	b.log.Debug().Str("command", message).Msg("received a command")
+	b.log.Debug("received a command", "command", message)
 	return strings.Split(strings.TrimSpace(message), " ")
 }
 
@@ -60,7 +60,7 @@ func (b *Bot) runCommand(ctx context.Context, command string, evt *event.Event) 
 }
 
 func (b *Bot) renameRequest(ctx context.Context, evt *event.Event) {
-	b.log.Debug().Msg("renaming a request")
+	b.log.Debug("renaming a request")
 	content := evt.Content.AsMessage()
 	relatesTo := linkpearl.EventRelatesTo(evt)
 	relation := content.RelatesTo
@@ -92,7 +92,7 @@ func (b *Bot) renameRequest(ctx context.Context, evt *event.Event) {
 }
 
 func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
-	b.log.Debug().Msg("closing a request")
+	b.log.Debug("closing a request")
 	content := evt.Content.AsMessage()
 	relation := content.RelatesTo
 	relatesTo := linkpearl.EventRelatesTo(evt)
@@ -111,7 +111,7 @@ func (b *Bot) closeRequest(ctx context.Context, evt *event.Event, auto bool) {
 		b.SendNotice(ctx, b.roomID, linkpearl.UnwrapError(err).Error(), nil, relatesTo)
 		return
 	}
-	linkpearl.ParseContent(threadEvt, b.log)
+	b.parseContent(threadEvt)
 	threadMsg := threadEvt.Content.AsMessage()
 	lastEdit := b.getLastEdit(ctx, b.roomID, threadID)
 	if lastEdit != nil {

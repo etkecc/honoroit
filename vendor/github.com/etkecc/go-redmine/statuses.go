@@ -1,6 +1,10 @@
 package redmine
 
-import redmine "github.com/nixys/nxs-go-redmine/v5"
+import (
+	"log/slog"
+
+	redmine "github.com/nixys/nxs-go-redmine/v5"
+)
 
 const (
 	WaitingForOperator Status = iota
@@ -32,7 +36,7 @@ func (r *Redmine) StatusToID(status Status) int64 {
 		statusID = r.cfg.DoneStatusID
 	default:
 		statusID = int64(status)
-		r.cfg.Log.Warn().Int("status", int(status)).Msg("unknown status")
+		r.cfg.Log.Warn("unknown status", slog.Int("status", int(status)))
 	}
 
 	return statusID

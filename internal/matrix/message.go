@@ -22,7 +22,7 @@ func (b *Bot) greetings(ctx context.Context, userID id.UserID, roomID id.RoomID)
 	if !ownServer {
 		_, requests, err := b.countCustomerRequests(ctx, userID)
 		if err != nil {
-			b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot calculate count of the support requests")
+			b.log.Error("cannot calculate count of the support requests", "error", err, "userID", userID.String())
 		}
 		requestsStr := humanize.Ordinal(requests + 1) // including current request
 		b.SendNotice(ctx, roomID, fmt.Sprintf(b.cfg.Get(ctx, config.TextGreetingsCustomer.Key), requestsStr), nil)
@@ -34,12 +34,12 @@ func (b *Bot) greetings(ctx context.Context, userID id.UserID, roomID id.RoomID)
 func (b *Bot) handle(ctx context.Context, evt *event.Event) {
 	err := b.lp.GetClient().MarkRead(ctx, evt.RoomID, evt.ID)
 	if err != nil {
-		b.log.Warn().Err(err).Msg("cannot send mark event")
+		b.log.Warn("cannot send mark event", "error", err)
 	}
 
 	content := evt.Content.AsMessage()
 	if content == nil {
-		b.log.Error().Msg("cannot parse the message")
+		b.log.Error("cannot parse the message")
 		return
 	}
 
@@ -69,12 +69,12 @@ func (b *Bot) handle(ctx context.Context, evt *event.Event) {
 func (b *Bot) replace(ctx context.Context, eventID id.EventID, prefix, suffix, body, formattedBody string) error {
 	evt, err := b.lp.GetClient().GetEvent(ctx, b.roomID, eventID)
 	if err != nil {
-		b.log.Error().Err(err).Str("eventID", eventID.String()).Msg("cannot find event to replace")
+		b.log.Error("cannot find event to replace", "error", err, "eventID", eventID.String())
 		b.SendNotice(ctx, b.roomID, "cannot find event to replace", nil)
 		return err
 	}
 
-	linkpearl.ParseContent(evt, b.log)
+	b.parseContent(evt)
 	content := evt.Content.AsMessage()
 	b.clearPrefix(ctx, content)
 	if body == "" {
@@ -131,7 +131,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 
 	eventID, err := b.findEventID(ctx, roomID)
 	if err != nil && !errors.Is(err, errNotMapped) {
-		b.log.Error().Err(err).Str("userID", userID.String()).Str("roomID", roomID.String()).Msg("user tried to send a message from the room, but account data operation failed")
+		b.log.Error("user tried to send a message from the room, but account data operation failed", "error", err, "userID", userID.String(), "roomID", roomID.String())
 		if !isSilent {
 			b.SendNotice(ctx, roomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 		}
@@ -166,7 +166,7 @@ func (b *Bot) startThread(ctx context.Context, roomID id.RoomID, userID id.UserI
 func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (id.EventID, int64, error) {
 	customerRequests, hsRequests, err := b.countCustomerRequests(ctx, userID)
 	if err != nil {
-		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot calculate count of the support requests")
+		b.log.Error("cannot calculate count of the support requests", "error", err, "userID", userID.String())
 	}
 	customerRequestsStr := humanize.Ordinal(customerRequests + 1) // including current request
 	hsRequestsStr := humanize.Ordinal(hsRequests + 1)             // including current request
@@ -194,7 +194,7 @@ func (b *Bot) newThread(ctx context.Context, prefix string, userID id.UserID) (i
 		fmt.Sprintf("Matrix thread: [%s](%s)", threadURL, threadURL),
 	)
 	if err != nil {
-		b.log.Error().Err(err).Str("userID", userID.String()).Msg("cannot create a new issue in Redmine")
+		b.log.Error("cannot create a new issue in Redmine", "error", err, "userID", userID.String())
 	}
 	return eventID, issueID, nil
 }
@@ -297,7 +297,7 @@ func (b *Bot) forwardToThread(ctx context.Context, evt *event.Event, content *ev
 
 	_, err = b.lp.Send(ctx, b.roomID, fullContent)
 	if err != nil {
-		b.log.Error().Err(err).Str("userID", evt.Sender.String()).Str("roomID", evt.RoomID.String()).Msg("user tried to send a message, but creation of the thread failed")
+		b.log.Error("user tried to send a message, but creation of the thread failed", "error", err, "userID", evt.Sender.String(), "roomID", evt.RoomID.String())
 		if !isSilent {
 			b.SendNotice(ctx, evt.RoomID, b.cfg.Get(ctx, config.TextError.Key), nil)
 		}

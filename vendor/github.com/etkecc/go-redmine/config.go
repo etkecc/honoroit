@@ -1,26 +1,26 @@
 package redmine
 
 import (
+	"log/slog"
 	"sync"
 
 	redmine "github.com/nixys/nxs-go-redmine/v5"
-	"github.com/rs/zerolog"
 )
 
 // Config is a configuration for Redmine
 type Config struct {
 	mu                         sync.Mutex
-	api                        API             // API interface
-	Log                        *zerolog.Logger // Logger, defaults to discard
-	Host                       string          // Redmine host, e.g. "https://redmine.example.com"
-	APIKey                     string          // Redmine REST API Key
-	ProjectIdentifier          string          // Redmine project identifier, e.g. "my-project"
-	ProjectID                  int64           // Redmine project ID, e.g. 123. This is set automatically if you use ProjectIdentifier
-	UserID                     int64           // Current redmine user ID, e.g. 123. This is set automatically
-	TrackerID                  int64           // Task Tracker ID, e.g. 1
-	WaitingForOperatorStatusID int64           // Status ID for "Waiting for operator", e.g. 1
-	WaitingForCustomerStatusID int64           // Status ID for "Waiting for customer", e.g. 2
-	DoneStatusID               int64           // Status ID for "Done", e.g. 3
+	api                        API          // API interface
+	Log                        *slog.Logger // Logger, defaults to discard
+	Host                       string       // Redmine host, e.g. "https://redmine.example.com"
+	APIKey                     string       // Redmine REST API Key
+	ProjectIdentifier          string       // Redmine project identifier, e.g. "my-project"
+	ProjectID                  int64        // Redmine project ID, e.g. 123. This is set automatically if you use ProjectIdentifier
+	UserID                     int64        // Current redmine user ID, e.g. 123. This is set automatically
+	TrackerID                  int64        // Task Tracker ID, e.g. 1
+	WaitingForOperatorStatusID int64        // Status ID for "Waiting for operator", e.g. 1
+	WaitingForCustomerStatusID int64        // Status ID for "Waiting for customer", e.g. 2
+	DoneStatusID               int64        // Status ID for "Done", e.g. 3
 }
 
 // Option is a functional option for Config
@@ -40,8 +40,7 @@ func (cfg *Config) apply(opts ...Option) *Config {
 	}
 
 	if cfg.Log == nil {
-		discardLogger := zerolog.New(nil)
-		cfg.Log = &discardLogger
+		cfg.Log = slog.New(slog.DiscardHandler)
 	}
 
 	if cfg.api == nil {
@@ -69,7 +68,7 @@ func withAPI(api API) Option {
 }
 
 // WithLog sets the logger
-func WithLog(log *zerolog.Logger) Option {
+func WithLog(log *slog.Logger) Option {
 	return func(c *Config) {
 		c.Log = log
 	}

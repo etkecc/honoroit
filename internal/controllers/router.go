@@ -1,46 +1,69 @@
 package controllers
 
 import (
-	"bytes"
+	"fmt"
 	"net/http"
+	"time"
 
-	echobasicauth "github.com/etkecc/go-echo-basic-auth"
+	apm "github.com/etkecc/go-apm/v2"
+	echobasicauth "github.com/etkecc/go-echo-basic-auth/v2"
 	"github.com/etkecc/go-kit"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 
 	"github.com/etkecc/honoroit/internal/metrics"
 )
 
+const logTimeFormat = "2/Jan/2006:15:04:05 -0700"
+
 // ConfigureRouter configures echo router
 func ConfigureRouter(e *echo.Echo, auth *echobasicauth.Auth) {
-	//nolint:staticcheck // new logger is less convenient
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Skipper: func(c echo.Context) bool {
+	e.Use(apm.WithSentry())
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		Skipper: func(c *echo.Context) bool {
 			return c.Request().URL.Path == "/_health"
 		},
-		Format:           `${custom} - - [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"` + "\n",
-		CustomTimeFormat: "2/Jan/2006:15:04:05 -0700",
-		CustomTagFunc: func(c echo.Context, w *bytes.Buffer) (int, error) {
-			return w.WriteString(kit.AnonymizeIP(c.RealIP()))
+		LogMethod:       true,
+		LogURIPath:      true,
+		LogProtocol:     true,
+		LogRemoteIP:     true,
+		LogReferer:      true,
+		LogUserAgent:    true,
+		LogStatus:       true,
+		LogResponseSize: true,
+		HandleError:     true,
+		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
+			if v.Status >= http.StatusInternalServerError {
+				c.Logger().Error("request failed", "status", v.Status, "path", v.URIPath, "error", v.Error)
+			}
+			c.Logger().Info(fmt.Sprintf(`%s - - [%s] %q %d %d %q %q`,
+				kit.AnonymizeIP(v.RemoteIP),
+				time.Now().Format(logTimeFormat),
+				v.Method+" "+v.URIPath+" "+v.Protocol,
+				v.Status,
+				max(v.ResponseSize, 0),
+				v.Referer,
+				v.UserAgent,
+			))
+			return nil
 		},
 	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.Secure())
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			c.Response().Header().Set(echo.HeaderReferrerPolicy, "origin")
 			return next(c)
 		}
 	})
-	e.HideBanner = true
+	// XFF trusted from loopback, link-local and private peers; keep aligned with the proxy topology
 	e.IPExtractor = echo.ExtractIPFromXFFHeader(
 		echo.TrustLoopback(true),
 		echo.TrustLinkLocal(true),
 		echo.TrustPrivateNet(true),
 	)
 
-	e.GET("/_health", func(c echo.Context) error {
+	e.GET("/_health", func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), echobasicauth.NewMiddleware(auth))

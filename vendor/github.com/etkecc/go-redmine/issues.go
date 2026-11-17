@@ -1,10 +1,12 @@
 package redmine
 
 import (
+	"cmp"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
-	"sort"
+	"slices"
 	"strings"
 
 	redmine "github.com/nixys/nxs-go-redmine/v5"
@@ -23,10 +25,10 @@ type IssueRelationRequest struct {
 
 // GetIssue returns an issue by its ID
 func (r *Redmine) GetIssue(issueID int64, includes ...redmine.IssueInclude) (redmine.IssueObject, error) {
-	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
+	log := r.cfg.Log.With(slog.Int64("issue_id", issueID))
 	var issue redmine.IssueObject
 	if !r.Enabled() {
-		log.Debug().Msg("redmine is disabled, ignoring GetIssue() call")
+		log.Debug("redmine is disabled, ignoring GetIssue() call")
 		return issue, nil
 	}
 	if issueID == 0 {
@@ -36,11 +38,11 @@ func (r *Redmine) GetIssue(issueID int64, includes ...redmine.IssueInclude) (red
 	r.wg.Add(1)
 	defer r.wg.Done()
 
-	issue, err := RetryResult(&log, func() (redmine.IssueObject, redmine.StatusCode, error) {
+	issue, err := RetryResult(log, func() (redmine.IssueObject, redmine.StatusCode, error) {
 		return r.cfg.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{Includes: includes})
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get issue")
+		log.Error("failed to get issue", slog.Any("error", err))
 		return issue, err
 	}
 	return issue, nil
@@ -48,13 +50,13 @@ func (r *Redmine) GetIssue(issueID int64, includes ...redmine.IssueInclude) (red
 
 // NewIssue creates a new issue in Redmine
 func (r *Redmine) NewIssue(subject, senderMedium, senderAddress, text string, files ...*UploadRequest) (int64, error) {
-	log := r.cfg.Log.With().Str(senderMedium, senderAddress).Logger()
+	log := r.cfg.Log.With(slog.String(senderMedium, senderAddress))
 	if !r.Enabled() {
-		log.Debug().Msg("redmine is disabled, ignoring NewIssue() call")
+		log.Debug("redmine is disabled, ignoring NewIssue() call")
 		return 0, nil
 	}
 	if subject == "" || senderMedium == "" || senderAddress == "" || text == "" {
-		log.Warn().Msg("missing required fields, ignoring NewIssue() call")
+		log.Warn("missing required fields, ignoring NewIssue() call")
 		return 0, nil
 	}
 
@@ -65,7 +67,7 @@ func (r *Redmine) NewIssue(subject, senderMedium, senderAddress, text string, fi
 	fmt.Fprintf(&description, "Sender: `%s` (%s)\n\n", senderAddress, senderMedium)
 	description.WriteString(text)
 	text = description.String()
-	issue, err := RetryResult(&log, func() (redmine.IssueObject, redmine.StatusCode, error) {
+	issue, err := RetryResult(log, func() (redmine.IssueObject, redmine.StatusCode, error) {
 		return r.cfg.api.IssueCreate(redmine.IssueCreate{
 			Issue: redmine.IssueCreateObject{
 				ProjectID:   r.cfg.ProjectID,
@@ -78,29 +80,29 @@ func (r *Redmine) NewIssue(subject, senderMedium, senderAddress, text string, fi
 		})
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create issue")
+		log.Error("failed to create issue", slog.Any("error", err))
 		return 0, err
 	}
-	log.Info().Int64("issue_id", issue.ID).Msg("issue created")
+	log.Info("issue created", slog.Int64("issue_id", issue.ID))
 	return issue.ID, nil
 }
 
 // UpdateIssue updates the status using one of the constants and notes of an issue
 func (r *Redmine) UpdateIssue(issueID, statusID int64, text string, files ...*UploadRequest) error {
-	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
+	log := r.cfg.Log.With(slog.Int64("issue_id", issueID))
 	if !r.Enabled() {
-		log.Debug().Msg("redmine is disabled, ignoring UpdateIssue() call")
+		log.Debug("redmine is disabled, ignoring UpdateIssue() call")
 		return nil
 	}
 	if issueID == 0 || text == "" {
-		log.Debug().Msg("missing required fields, ignoring UpdateIssue() call")
+		log.Debug("missing required fields, ignoring UpdateIssue() call")
 		return nil
 	}
 
 	r.wg.Add(1)
 	defer r.wg.Done()
 
-	err := Retry(&log, func() (redmine.StatusCode, error) {
+	err := Retry(log, func() (redmine.StatusCode, error) {
 		return r.cfg.api.IssueUpdate(issueID, redmine.IssueUpdate{
 			Issue: redmine.IssueUpdateObject{
 				ProjectID: redmine.Int64Ptr(r.cfg.ProjectID),
@@ -111,7 +113,7 @@ func (r *Redmine) UpdateIssue(issueID, statusID int64, text string, files ...*Up
 		})
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("failed to update issue")
+		log.Error("failed to update issue", slog.Any("error", err))
 		return err
 	}
 	return nil
@@ -119,9 +121,9 @@ func (r *Redmine) UpdateIssue(issueID, statusID int64, text string, files ...*Up
 
 // DeleteIssue deletes an issue by its ID
 func (r *Redmine) DeleteIssue(issueID int64) error {
-	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
+	log := r.cfg.Log.With(slog.Int64("issue_id", issueID))
 	if !r.Enabled() {
-		log.Debug().Msg("redmine is disabled, ignoring DeleteIssue() call")
+		log.Debug("redmine is disabled, ignoring DeleteIssue() call")
 		return nil
 	}
 	if issueID == 0 {
@@ -131,11 +133,11 @@ func (r *Redmine) DeleteIssue(issueID int64) error {
 	r.wg.Add(1)
 	defer r.wg.Done()
 
-	err := Retry(&log, func() (redmine.StatusCode, error) {
+	err := Retry(log, func() (redmine.StatusCode, error) {
 		return r.cfg.api.IssueDelete(issueID)
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("failed to delete issue")
+		log.Error("failed to delete issue", slog.Any("error", err))
 		return err
 	}
 	return nil
@@ -143,10 +145,10 @@ func (r *Redmine) DeleteIssue(issueID int64) error {
 
 // IsClosed returns true if the issue is closed or has "Done" status
 func (r *Redmine) IsClosed(issueID int64) (bool, error) {
-	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
+	log := r.cfg.Log.With(slog.Int64("issue_id", issueID))
 	status, err := r.GetStatus(issueID)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get issue")
+		log.Error("failed to get issue", slog.Any("error", err))
 		return false, err
 	}
 
@@ -159,9 +161,9 @@ func (r *Redmine) IsClosed(issueID int64) (bool, error) {
 
 // GetNotes returns the notes of an issue
 func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error) {
-	log := r.cfg.Log.With().Int64("issue_id", issueID).Logger()
+	log := r.cfg.Log.With(slog.Int64("issue_id", issueID))
 	if !r.Enabled() {
-		log.Debug().Msg("redmine is disabled, ignoring GetNotes() call")
+		log.Debug("redmine is disabled, ignoring GetNotes() call")
 		return nil, nil
 	}
 	if issueID == 0 {
@@ -171,7 +173,7 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 	r.wg.Add(1)
 	defer r.wg.Done()
 
-	issue, err := RetryResult(&log, func() (redmine.IssueObject, redmine.StatusCode, error) {
+	issue, err := RetryResult(log, func() (redmine.IssueObject, redmine.StatusCode, error) {
 		return r.cfg.api.IssueSingleGet(issueID, redmine.IssueSingleGetRequest{
 			Includes: []redmine.IssueInclude{redmine.IssueIncludeJournals},
 		})
@@ -180,17 +182,17 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 		return nil, nil
 	}
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get issue")
+		log.Error("failed to get issue", slog.Any("error", err))
 		return nil, err
 	}
 	if issue.Journals == nil {
-		log.Debug().Msg("no journals found")
+		log.Debug("no journals found")
 		return nil, nil
 	}
 	journals := *issue.Journals
 	// sort journals by id asc
-	sort.Slice(journals, func(i, j int) bool {
-		return journals[i].ID < journals[j].ID
+	slices.SortFunc(journals, func(a, b redmine.IssueJournalObject) int {
+		return cmp.Compare(a.ID, b.ID)
 	})
 	eligibleJournals := []*redmine.IssueJournalObject{}
 	for _, journal := range journals {
@@ -202,18 +204,22 @@ func (r *Redmine) GetNotes(issueID int64) ([]*redmine.IssueJournalObject, error)
 		}
 		eligibleJournals = append(eligibleJournals, &journal)
 	}
-	log.Debug().Int("journals", len(eligibleJournals)).Msg("journals found")
+	log.Debug("journals found", slog.Int("journals", len(eligibleJournals)))
 	return eligibleJournals, nil
 }
 
 func (r *Redmine) NewIssueRelation(issueID, relatedIssueID int64, relationType string) error {
-	log := r.cfg.Log.With().Int64("issue_id", issueID).Int64("related_issue_id", relatedIssueID).Str("relation_type", relationType).Logger()
+	log := r.cfg.Log.With(
+		slog.Int64("issue_id", issueID),
+		slog.Int64("related_issue_id", relatedIssueID),
+		slog.String("relation_type", relationType),
+	)
 	if !r.Enabled() {
-		log.Debug().Msg("redmine is disabled, ignoring NewIssueRelation() call")
+		log.Debug("redmine is disabled, ignoring NewIssueRelation() call")
 		return nil
 	}
 	if issueID == 0 || relatedIssueID == 0 {
-		log.Warn().Msg("missing required fields, ignoring NewIssueRelation() call")
+		log.Warn("missing required fields, ignoring NewIssueRelation() call")
 		return nil
 	}
 	if relationType == "" {
@@ -230,11 +236,11 @@ func (r *Redmine) NewIssueRelation(issueID, relatedIssueID int64, relationType s
 		},
 	}
 
-	err := Retry(&log, func() (redmine.StatusCode, error) {
+	err := Retry(log, func() (redmine.StatusCode, error) {
 		return r.cfg.api.Post(relation, nil, url.URL{Path: fmt.Sprintf("/issues/%d/relations.json", issueID)}, http.StatusCreated)
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create issue relation")
+		log.Error("failed to create issue relation", slog.Any("error", err))
 		return err
 	}
 	return nil

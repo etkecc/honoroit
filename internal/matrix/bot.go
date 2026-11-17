@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"context"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/etkecc/go-mxidwc"
 	"github.com/etkecc/go-redmine"
 	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/rs/zerolog"
 	"maunium.net/go/mautrix/id"
 
 	"github.com/etkecc/honoroit/internal/matrix/config"
@@ -23,7 +23,7 @@ const TypingTimeout = 5_000
 // Bot represents matrix bot
 type Bot struct {
 	cfg                 *config.Manager
-	log                 *zerolog.Logger
+	log                 *slog.Logger
 	redmine             *redmine.Redmine
 	lp                  *linkpearl.Linkpearl
 	mu                  *kit.Mutex
@@ -41,7 +41,7 @@ type Bot struct {
 // NewBot creates a new matrix bot
 func NewBot(
 	lp *linkpearl.Linkpearl,
-	log *zerolog.Logger,
+	log *slog.Logger,
 	cfg *config.Manager,
 	rdm *redmine.Redmine,
 	prefix string,
@@ -77,7 +77,7 @@ func NewBot(
 		noEncryptionWarning: noEncryptionWarning,
 	}
 	if !bot.roomConfigured {
-		bot.log.Warn().Msg("the operators room is not configured. Please, set operators room id to the `HONOROIT_ROOMID` env var. The bot won't work until that.")
+		bot.log.Warn("the operators room is not configured. Please, set operators room id to the `HONOROIT_ROOMID` env var. The bot won't work until that.")
 	}
 	bot.ignoreBefore = bot.cfg.Mautrix015Migration(context.Background())
 
@@ -90,7 +90,7 @@ func (b *Bot) AutoCloseRequests() {
 	maxTS := time.Now().UTC().Add(-7 * 24 * time.Hour).UnixMilli()
 	threadIDs := b.getThreadIDs(ctx)
 	if len(threadIDs) == 0 {
-		b.log.Info().Msg("no threads to close")
+		b.log.Info("no threads to close")
 		return
 	}
 
@@ -101,7 +101,7 @@ func (b *Bot) AutoCloseRequests() {
 		}
 		lastEvt := b.getLastThreadMessage(ctx, threadID)
 		if lastEvt == nil {
-			b.log.Info().Any("threadID", threadID).Msg("no last event fount")
+			b.log.Info("no last event fount", "threadID", threadID)
 			continue
 		}
 		// set relates_to to the thread

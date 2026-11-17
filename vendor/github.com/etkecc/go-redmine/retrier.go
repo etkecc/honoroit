@@ -2,11 +2,11 @@ package redmine
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	redmine "github.com/nixys/nxs-go-redmine/v5"
-	"github.com/rs/zerolog"
 )
 
 const (
@@ -17,47 +17,35 @@ const (
 )
 
 // Retry retries fn until it succeeds or MaxRetries is reached; use it for every call to the underlying API object.
-func Retry(log *zerolog.Logger, fn func() (redmine.StatusCode, error)) error {
-	for i := 1; i <= MaxRetries; i++ {
+func Retry(log *slog.Logger, fn func() (redmine.StatusCode, error)) error {
+	_, err := retry(log, func() (struct{}, redmine.StatusCode, error) {
 		statusCode, err := fn()
-		if statusCode == http.StatusNotFound {
-			log.Warn().Msg("issue not found")
-			return nil
-		}
-		if statusCode > 499 {
-			if i < MaxRetries {
-				log.Warn().Int("retries", i).Int("status_code", int(statusCode)).Err(err).Msg("retrying")
-				time.Sleep(RetryDelay * time.Duration(i))
-				continue
-			}
-			log.Warn().Int("retries", i).Int("status_code", int(statusCode)).Err(err).Msg("giving up")
-		}
-
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-	return fmt.Errorf("failed after %d retries", MaxRetries)
+		return struct{}{}, statusCode, err
+	})
+	return err
 }
 
 // RetryResult retries fn until it succeeds or MaxRetries is reached; use for every underlying API object call.
-func RetryResult[V any](log *zerolog.Logger, fn func() (V, redmine.StatusCode, error)) (V, error) {
+func RetryResult[V any](log *slog.Logger, fn func() (V, redmine.StatusCode, error)) (V, error) {
+	return retry(log, fn)
+}
+
+// retry is the shared retry loop behind Retry and RetryResult.
+func retry[V any](log *slog.Logger, fn func() (V, redmine.StatusCode, error)) (V, error) {
 	var zero V
 	for i := 1; i <= MaxRetries; i++ {
 		v, statusCode, err := fn()
 		if statusCode == http.StatusNotFound {
-			log.Warn().Msg("issue not found")
+			log.Warn("issue not found")
 			return zero, nil
 		}
 		if statusCode > 499 {
 			if i < MaxRetries {
-				log.Warn().Int("retries", i).Int("status_code", int(statusCode)).Err(err).Msg("retrying")
+				log.Warn("retrying", retryAttrs(i, statusCode, err)...)
 				time.Sleep(RetryDelay * time.Duration(i))
 				continue
 			}
-			log.Warn().Int("retries", i).Int("status_code", int(statusCode)).Err(err).Msg("giving up")
+			log.Warn("giving up", retryAttrs(i, statusCode, err)...)
 		}
 
 		if err != nil {
@@ -67,4 +55,13 @@ func RetryResult[V any](log *zerolog.Logger, fn func() (V, redmine.StatusCode, e
 		return v, nil
 	}
 	return zero, fmt.Errorf("failed after %d retries", MaxRetries)
+}
+
+// retryAttrs builds the fields shared by the retry warnings, omitting a nil error.
+func retryAttrs(attempt int, statusCode redmine.StatusCode, err error) []any {
+	attrs := []any{slog.Int("retries", attempt), slog.Int("status_code", int(statusCode))}
+	if err != nil {
+		attrs = append(attrs, slog.Any("error", err))
+	}
+	return attrs
 }

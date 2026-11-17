@@ -12,6 +12,15 @@ import (
 	"github.com/etkecc/honoroit/internal/matrix/config"
 )
 
+func (b *Bot) parseContent(evt *event.Event) {
+	if evt.Content.Parsed != nil {
+		return
+	}
+	if err := evt.Content.ParseRaw(evt.Type); err != nil {
+		b.log.Error("cannot parse event content", "error", err)
+	}
+}
+
 // SendNotice is linkpearl.SendNotice plus raw content support and config-based msg type setting
 func (b *Bot) SendNotice(ctx context.Context, roomID id.RoomID, message string, raw map[string]any, relates ...*event.RelatesTo) id.EventID {
 	var relatesTo *event.RelatesTo
@@ -25,13 +34,13 @@ func (b *Bot) SendNotice(ctx context.Context, roomID id.RoomID, message string, 
 
 	eventID, err := b.lp.Send(ctx, roomID, fullContent)
 	if err != nil {
-		b.log.Error().Err(linkpearl.UnwrapError(err)).Str("roomID", roomID.String()).Str("retries", "1/2").Msg("cannot send a notice into the room")
+		b.log.Error("cannot send a notice into the room", "error", linkpearl.UnwrapError(err), "roomID", roomID.String(), "retries", "1/2")
 		if relatesTo != nil {
 			content.RelatesTo = nil
 			fullContent.Parsed = &content
 			eventID, err = b.lp.Send(ctx, roomID, fullContent)
 			if err != nil {
-				b.log.Error().Err(linkpearl.UnwrapError(err)).Str("roomID", roomID.String()).Str("retries", "2/2").Msg("cannot send a notice into the room even without relations")
+				b.log.Error("cannot send a notice into the room even without relations", "error", linkpearl.UnwrapError(err), "roomID", roomID.String(), "retries", "2/2")
 				return ""
 			}
 		}

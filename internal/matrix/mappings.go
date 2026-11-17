@@ -56,7 +56,7 @@ func (b *Bot) getMapping(ctx context.Context, identifier string) (string, error)
 func (b *Bot) setMapping(ctx context.Context, from, to string) {
 	err := b.lp.SetAccountData(ctx, mappingPrefix+from, map[string]string{"id": to})
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot set mapping")
+		b.log.Error("cannot set mapping", "error", err)
 	}
 }
 
@@ -83,7 +83,7 @@ func (b *Bot) getRedmineMapping(ctx context.Context, identifier string) (string,
 func (b *Bot) setRedmineMapping(ctx context.Context, from, to string) {
 	err := b.lp.SetAccountData(ctx, mappingPrefixRedmine+from, map[string]string{"id": to})
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot set mapping")
+		b.log.Error("cannot set mapping", "error", err)
 	}
 }
 

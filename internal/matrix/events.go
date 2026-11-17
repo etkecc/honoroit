@@ -24,7 +24,7 @@ func (b *Bot) countCustomerRequests(ctx context.Context, userID id.UserID) (user
 	for {
 		resp, err := b.lp.Threads(ctx, b.roomID)
 		if err != nil {
-			b.log.Error().Err(err).Str("from", from).Str("roomID", b.roomID.String()).Msg("cannot request threads for the room")
+			b.log.Error("cannot request threads for the room", "error", err, "from", from, "roomID", b.roomID.String())
 			return user, hs, err
 		}
 		for _, evt := range resp.Chunk {
@@ -54,7 +54,7 @@ func (b *Bot) getName(ctx context.Context, userID id.UserID) (md, html string) {
 
 	dnresp, err := b.lp.GetClient().GetDisplayName(ctx, userID)
 	if err != nil {
-		b.log.Warn().Err(err).Str("userID", userID.String()).Msg("cannot get display name")
+		b.log.Warn("cannot get display name", "error", err, "userID", userID.String())
 	}
 	if dnresp != nil {
 		md = fmt.Sprintf("%s (%s)", dnresp.DisplayName, userID.String())
@@ -90,7 +90,7 @@ func (b *Bot) getMSC4144Profie(ctx context.Context, userID id.UserID) *MSC4144Pr
 
 	remoteProfile, err := b.lp.GetClient().GetProfile(ctx, userID)
 	if err != nil {
-		b.log.Warn().Err(err).Str("userID", userID.String()).Msg("cannot get profile")
+		b.log.Warn("cannot get profile", "error", err, "userID", userID.String())
 		return nil
 	}
 	profile := &MSC4144Profile{
@@ -107,7 +107,7 @@ func (b *Bot) getThreadIDs(ctx context.Context, fromToken ...string) []id.EventI
 	threadIDs := []id.EventID{}
 	threads, err := b.lp.Threads(ctx, b.roomID, fromToken...)
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot get room threads")
+		b.log.Error("cannot get room threads", "error", err)
 		return threadIDs
 	}
 	for _, thread := range threads.Chunk {
@@ -126,7 +126,7 @@ func (b *Bot) isLastThreadMessageEligible(ctx context.Context, evt *event.Event)
 	if evt.Type != event.EventMessage {
 		return false, true
 	}
-	linkpearl.ParseContent(evt, b.log)
+	b.parseContent(evt)
 	content := evt.Content.AsMessage()
 	// not a message - ignore
 	if content == nil {
@@ -151,7 +151,7 @@ func (b *Bot) isLastThreadMessageEligible(ctx context.Context, evt *event.Event)
 func (b *Bot) getLastThreadMessage(ctx context.Context, threadID id.EventID, fromToken ...string) *event.Event {
 	evts, err := b.lp.Relations(ctx, b.roomID, threadID, "m.thread", fromToken...)
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot get thread messages")
+		b.log.Error("cannot get thread messages", "error", err)
 		return nil
 	}
 	var lastEvt *event.Event
@@ -179,7 +179,7 @@ func (b *Bot) getLastThreadMessage(ctx context.Context, threadID id.EventID, fro
 func (b *Bot) getLastEdit(ctx context.Context, roomID id.RoomID, eventID id.EventID) *event.Event {
 	edits, err := b.lp.Relations(ctx, roomID, eventID, string(event.RelReplace))
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot get edits")
+		b.log.Error("cannot get edits", "error", err)
 		return nil
 	}
 	if len(edits.Chunk) == 0 {
@@ -188,22 +188,22 @@ func (b *Bot) getLastEdit(ctx context.Context, roomID id.RoomID, eventID id.Even
 
 	evt := edits.Chunk[len(edits.Chunk)-1]
 	isEncrypted := evt.Type == event.EventEncrypted
-	linkpearl.ParseContent(evt, b.log)
-	log := b.log.With().
-		Str("originalEventID", eventID.String()).
-		Str("lastEditID", evt.ID.String()).
-		Bool("encrypted", isEncrypted).
-		Logger()
-	log.Debug().Msg("found last edit")
+	b.parseContent(evt)
+	log := b.log.With(
+		"originalEventID", eventID.String(),
+		"lastEditID", evt.ID.String(),
+		"encrypted", isEncrypted,
+	)
+	log.Debug("found last edit")
 	if !isEncrypted {
 		return evt
 	}
 	decrypted, derr := b.lp.GetClient().Crypto.Decrypt(ctx, evt)
 	if derr != nil {
-		log.Error().Err(derr).Msg("cannot decrypt last edit")
+		log.Error("cannot decrypt last edit", "error", derr)
 		return nil
 	}
-	log.Debug().Msg("successfully decrypted last edit")
-	linkpearl.ParseContent(decrypted, b.log)
+	log.Debug("successfully decrypted last edit")
+	b.parseContent(decrypted)
 	return decrypted
 }

@@ -49,12 +49,12 @@ func (b *Bot) initSync() {
 func (b *Bot) joinPermit(ctx context.Context, evt *event.Event) bool {
 	allowed, err := parseMXIDpatterns(b.cfg.Get(ctx, config.AllowedUsers.Key))
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot parse MXID patterns")
+		b.log.Error("cannot parse MXID patterns", "error", err)
 		return false
 	}
 
 	if !mxidwc.Match(evt.Sender.String(), allowed) {
-		b.log.Debug().Str("userID", evt.Sender.String()).Msg("Rejecting room invitation from unallowed user")
+		b.log.Debug("Rejecting room invitation from unallowed user", "userID", evt.Sender.String())
 		return false
 	}
 
@@ -78,7 +78,7 @@ func (b *Bot) onLeave(ctx context.Context, evt *event.Event, threadID id.EventID
 
 	members, err := b.lp.GetClient().StateStore.GetRoomJoinedOrInvitedMembers(ctx, evt.RoomID)
 	if err != nil {
-		b.log.Error().Err(err).Str("roomID", evt.RoomID.String()).Msg("cannot get joined or invited members")
+		b.log.Error("cannot get joined or invited members", "error", err, "roomID", evt.RoomID.String())
 		return
 	}
 
@@ -109,7 +109,7 @@ func (b *Bot) onMembership(ctx context.Context, evt *event.Event) {
 		return
 	}
 	if err != nil {
-		b.log.Error().Err(err).Msg("cannot find eventID for the room")
+		b.log.Error("cannot find eventID for the room", "error", err)
 		return
 	}
 
@@ -179,7 +179,7 @@ func (b *Bot) onEncryptedMessage(ctx context.Context, evt *event.Event) {
 	content.MsgType = event.MsgNotice
 	fullContent := &event.Content{Parsed: &content}
 	if _, err := b.lp.GetClient().SendMessageEvent(ctx, evt.RoomID, event.EventMessage, fullContent, mautrix.ReqSendEvent{DontEncrypt: true}); err != nil {
-		b.log.Error().Err(err).Str("roomID", evt.RoomID.String()).Msg("cannot send a notice about encrypted messages")
+		b.log.Error("cannot send a notice about encrypted messages", "error", err, "roomID", evt.RoomID.String())
 	}
 }
 
